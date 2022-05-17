@@ -28,11 +28,11 @@ export function coordEclEq(osv)
 
     const eps = 23.439279444444445 - 0.013010213611111*T - 5.086111111111112e-08*T2 
         + 0.565e-07*T3 - 1.6e-10*T4 - 1.205555555555555e-11*T5;
-    rEq = rotateCart1d(osv.r, -eps);
+    const rEq = rotateCart1d(osv.r, -eps);
 
     // The change in eps is less than arcminute in century. Thus, the influence to the
     // velocity of objects in the solar system is small.
-    vEq = rotateCart1d(osv.v, -eps);
+    const vEq = rotateCart1d(osv.v, -eps);
 
     return {r : rEq, v : vEq, JT : osv.JT};
 }
@@ -180,7 +180,7 @@ export function coordTodMod(osv, nutTerms)
  */
 export function coordTodPef(osv, nutParams)
 {
-    const GAST = timeGast(JT, nutParams);
+    const GAST = timeGast(osv.JT, nutParams);
     const rPef = rotateCart3d(osv.r, GAST);
     const vPef = rotateCart3d(osv.v, GAST);
 
@@ -188,14 +188,14 @@ export function coordTodPef(osv, nutParams)
     const k1 = 360.985647366;
     const k2 = 2.90788e-13;
     const k3 = -5.3016e-22;
-    const MJD = JT - 2451544.5;
+    const MJD = osv.JT - 2451544.5;
     
     // Compute time-derivative of the GAST to convert velocities:
-    const dGASTdt = (1/86400.0) * (k_1 + 2*k_2*MJD + 3*k_3*MJD*MJD);
+    const dGASTdt = (1/86400.0) * (k1 + 2*k2*MJD + 3*k3*MJD*MJD);
     vPef[0] += dGASTdt * (Math.PI/180.0) * (-sind(GAST) * osv.r[0] + cosd(GAST) * osv.r[1]);
-    vPef[0] += dGASTdt * (Math.PI/180.0) * (-cosd(GAST) * osv.r[0] - sind(GAST) * osv.r[1]);
+    vPef[1] += dGASTdt * (Math.PI/180.0) * (-cosd(GAST) * osv.r[0] - sind(GAST) * osv.r[1]);
 
-    return {r : rPef, v : vPef, JT : JT};
+    return {r : rPef, v : vPef, JT : osv.JT};
 }
 
 /**
@@ -210,27 +210,27 @@ export function coordTodPef(osv, nutParams)
  */
  export function coordPefTod(osv, nutParams)
  {
-     const GAST = timeGast(JT, nutParams);
+     const GAST = timeGast(osv.JT, nutParams);
      const rTod = rotateCart3d(osv.r, -GAST);
  
      // Alternative expression for the GMST is \sum_{i=0}^3 k_i MJD^i.
      const k1 = 360.985647366;
      const k2 = 2.90788e-13;
      const k3 = -5.3016e-22;
-     const MJD = JT - 2451544.5;
+     const MJD = osv.JT - 2451544.5;
      
      // Compute time-derivative of the GAST to convert velocities:     
-     const dGASTdt = (1/86400.0) * (k_1 + 2*k_2*MJD + 3*k_3*MJD*MJD);
+     const dGASTdt = (1/86400.0) * (k1 + 2*k2*MJD + 3*k3*MJD*MJD);
 
      let dRdt_rTod = [0, 0, 0];
-     dRdt_rTod[0] = dGASTdt * (Math.PI/180.0) * (-sind(GAST) * osv.r[0] + cosd(GAST) * osv.r[1]); 
-     dRdt_rTod[1] = dGASTdt * (Math.PI/180.0) * (-cosd(GAST) * osv.r[0] - sind(GAST) * osv.r[1]); 
+     dRdt_rTod[0] = dGASTdt * (Math.PI/180.0) * (-sind(GAST) * rTod[0] + cosd(GAST) * rTod[1]); 
+     dRdt_rTod[1] = dGASTdt * (Math.PI/180.0) * (-cosd(GAST) * rTod[0] - sind(GAST) * rTod[1]); 
 
      const vTod = rotateCart3d([osv.v[0] - dRdt_rTod[0], 
                                 osv.v[1] - dRdt_rTod[1], 
                                 osv.v[2]], -GAST);
  
-     return {r : rTod, v : vTod, JT : JT};
+     return {r : rTod, v : vTod, JT : osv.JT};
  }
 
  /**

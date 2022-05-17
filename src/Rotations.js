@@ -1,3 +1,4 @@
+import {cosd, sind} from './MathUtils.js';
 
 /**
  * Create rotation matrix w.r.t. the first coordinate.

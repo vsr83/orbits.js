@@ -26,6 +26,25 @@ function checkFloat(val, exp, tol)
     assert.equal(Math.abs(val - exp) <= tol, true);
 }
 
+/**
+ * Check floating point array with tolerance.   
+ * 
+ * @param {*} val 
+ *      The value to be checked.
+ * @param {*} exp 
+ *      The expected value.
+ * @param {*} tol 
+ *      The tolerance for the check.
+ */
+ function checkFloatArray(val, exp, tol)
+ {
+     for (let indVal = 0; indVal < val.length; indVal++)
+     {
+         checkFloat(val[indVal], exp[indVal], tol);
+     }
+ }
+ 
+
 describe('Angles', function() {
     describe('limitAngleDeg', function() {
         it('Test Ranges', function() {
@@ -203,6 +222,165 @@ describe('Nutation', function() {
             checkFloat(eps, 23.436381788329449, 1e-9);
             checkFloat(deps, 0.001487806899909, 1e-9);
             checkFloat(dpsi, -0.004098746414266, 1e-9);
+        });
+    });
+});
+
+describe('Frames', function() {
+    describe('coordEclEq, coordEqEcl', function() {
+        it('Venus', function() {
+            const osvEcl = {
+                r : [ 7.653966861471243e+10,
+                     -7.269230239742627e+10,
+                      3.069790583074071e+09],
+                v : [ 2.472162821491882e+04,
+                      6.277680984101855e+03,
+                     -1.813571001229737e+03],
+                JT : 2459662.467361111
+            };
+            const osvJ2000Exp = 
+            {
+                r : [ 76539668614.71243,
+                     -67916298380.10200,
+                     -26095418302.98473],
+                v : [2.472162821491882e+04,
+                     6.481099018198909e+03,
+                     8.328708368988578e+02],
+                JT : 2459662.467361111
+            };
+
+            const osvJ2000 = coordEclEq(osvEcl);
+            checkFloatArray(osvJ2000.r, osvJ2000Exp.r, 1);
+            checkFloatArray(osvJ2000.v, osvJ2000Exp.v, 1e-4);
+            checkFloat(osvJ2000.JT, osvJ2000Exp.JT, 1e-6);
+        });
+    });
+
+    describe('coordJ2000Mod, coordModJ2000', function() {
+        it('Venus', function() {
+            const osvJ2000 = {
+                r : [ 76539668614.71243,
+                    -67916298380.10200,
+                    -26095418302.98473],
+                v : [2.472162821491882e+04,
+                    6.481099018198909e+03,
+                    8.328708368988578e+02],
+                JT : 2459662.467361111
+            };
+            const osvModExp = {
+                r : [76932446023.74319,
+                    -67534911860.58974,
+                    -25929707721.04863
+                  ],
+                v : [2.468725514893796e+04,
+                    6.603882768282808e+03,
+                    8.862197838793985e+02],
+                JT : 2459662.467361111
+            };
+
+            const osvMod = coordJ2000Mod(osvJ2000);
+            checkFloatArray(osvMod.r, osvModExp.r, 1);
+            checkFloatArray(osvMod.v, osvModExp.v, 1e-4);
+
+            const osvJ20002 = coordModJ2000(osvMod);
+            checkFloatArray(osvJ20002.r, osvJ2000.r, 1);
+            checkFloatArray(osvJ20002.v, osvJ2000.v, 1e-4);
+        });
+    });
+
+    describe('coordModTod, coordTodMod', function() {
+        it('Venus', function() {
+            const osvMod = {
+                r : [76932446023.74319,
+                    -67534911860.58974,
+                    -25929707721.04863
+                  ],
+                v : [2.468725514893796e+04,
+                    6.603882768282808e+03,
+                    8.862197838793985e+02],
+                JT : 2459662.467361111
+            };
+            const osvTodExp = {
+                r : [ 76927508947.49406,
+                     -67539009327.52528,
+                     -25933682729.27057],
+                v : [2.468769303715834e+04,
+                     6.602310869956531e+03,
+                     8.857333632777005e+02],
+                JT : 2459662.467361111
+            };
+
+            const osvTod = coordModTod(osvMod);
+            checkFloatArray(osvTod.r, osvTodExp.r, 1);
+            checkFloatArray(osvTod.v, osvTodExp.v, 1e-4);
+
+            const osvMod2 = coordTodMod(osvTod);
+            checkFloatArray(osvMod2.r, osvMod.r, 1);
+            checkFloatArray(osvMod2.v, osvMod.v, 1e-4);
+        });
+    });
+
+    describe('coordTodPef, coordPefTod', function() {
+        it('Venus', function() {
+            const osvTod = {
+                r : [ 76927508947.49406,
+                     -67539009327.52528,
+                     -25933682729.27057],
+                v : [2.468769303715834e+04,
+                     6.602310869956531e+03,
+                     8.857333632777005e+02],
+                JT : 2459662.467361111
+            };
+            const osvPefExp = {
+                r : [-87793943599.69176,
+                      52645824915.41444,
+                     -25933682729.27057
+                  ],
+                v : [3.815891418527184e+06,
+                     6.391112794089540e+06,
+                     8.857333632777005e+02],
+                JT : 2459662.467361111
+            };
+
+            const osvPef = coordTodPef(osvTod);
+            checkFloatArray(osvPef.r, osvPefExp.r, 1);
+            checkFloatArray(osvPef.v, osvPefExp.v, 1e-4);
+
+            const osvTod2 = coordPefTod(osvPef);
+            checkFloatArray(osvTod2.r, osvTod.r, 1);
+            checkFloatArray(osvTod2.v, osvTod.v, 1e-4);
+        });
+    });
+
+    describe('coordPefEfi, coordEfiPef', function() {
+        it('Venus', function() {
+            const osvPef = {
+                r : [-87793943599.69176,
+                      52645824915.41444,
+                     -25933682729.27057
+                  ],
+                v : [3.815891418527184e+06,
+                     6.391112794089540e+06,
+                     8.857333632777005e+02],
+                JT : 2459662.467361111
+            };
+            const osvEfiExp = {
+                r : [-87838751662.35324,
+                      52736029625.35403,
+                     -25596488029.92342],
+                v : [3.815926089266752e+06,
+                    6.391070765456880e+06,
+                    1.653485602488094e+04],
+                JT : 2459662.467361111
+            };
+
+            const osvEfi = coordPefEfi(osvPef, 0.1, 0.2);
+            checkFloatArray(osvEfi.r, osvEfiExp.r, 1);
+            checkFloatArray(osvEfi.v, osvEfiExp.v, 1e-4);
+
+            const osvPef2 = coordEfiPef(osvEfi, 0.1, 0.2);
+            checkFloatArray(osvPef2.r, osvPef.r, 1);
+            checkFloatArray(osvPef2.v, osvPef.v, 1e-4);
         });
     });
 });
