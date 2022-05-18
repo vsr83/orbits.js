@@ -3,7 +3,8 @@ import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHm
 import {nutationTerms} from "../src/Nutation.js";
 import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from '../src/Time.js';
 import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
-    coordTodPef, coordPefTod, coordPefEfi, coordEfiPef } from '../src/Frames.js';
+    coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
+    coordEfiEnu, coordEnuEfi } from '../src/Frames.js';
 
 /**
  * Check floating point value with tolerance.   
@@ -381,6 +382,62 @@ describe('Frames', function() {
             const osvPef2 = coordEfiPef(osvEfi, 0.1, 0.2);
             checkFloatArray(osvPef2.r, osvPef.r, 1);
             checkFloatArray(osvPef2.v, osvPef.v, 1e-4);
+        });
+    });
+
+    describe('coordEfiWgs84, coordWgs84Efi', function() {
+        it('Venus', function() {
+            const rEfi = [-87838751662.35324,
+                           52736029625.35403,
+                          -25596488029.92342];
+            const latExp = -14.02735035654504;
+            const lonExp = 149.0205247603176;
+            const hExp = 105596252409.9468;
+
+            const {lat, lon, h} = coordEfiWgs84(rEfi, 10, 1e-16, false);
+            checkFloat(lat, latExp, 1e-6);
+            checkFloat(lon, lonExp, 1e-6);
+            checkFloat(h, hExp, 100);
+
+            const rEfi2 = coordWgs84Efi(lat, lon, h);
+            checkFloatArray(rEfi2, rEfi, 1);
+        });
+    });
+
+    describe('coordEfiEnu, coordEnuEfi', function() {
+        it('Venus', function() {
+            const osvEfi = {
+                r : [-87838751662.35324,
+                      52736029625.35403,
+                     -25596488029.92342],
+                v : [3.815926089266752e+06,
+                    6.391070765456880e+06,
+                    1.653485602488094e+04],
+                JT : 2459662.467361111
+            };
+            const lat = 60.205490;
+            const lon = 24.0206;
+            const h = 105596252409.9468;
+
+            const osvEnuExp = {
+                r : [ 83925132910.53931,
+                      38278260514.84691,
+                     -51419041065.68192],
+                v : [ 4284268.453380695,
+                     -5274201.499041729,
+                      3038946.069965863],
+                JT : 2459662.467361111
+            };
+
+            const osvEnu = coordEfiEnu(osvEfi, lat, lon, 0);
+            console.log(osvEnu);
+
+            checkFloatArray(osvEnu.r, osvEnuExp.r, 1);
+            checkFloatArray(osvEnu.v, osvEnuExp.v, 1e-4);
+
+            const osvEfi2 = coordEnuEfi(osvEnu, lat, lon, 0);
+            checkFloatArray(osvEfi2.r, osvEfi.r, 1);
+            checkFloatArray(osvEfi2.v, osvEfi.v, 1e-4);
         });
     });
 });

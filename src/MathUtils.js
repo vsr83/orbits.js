@@ -51,6 +51,34 @@ export function norm(u)
 }
 
 /**
+ * Compute sum of two 3d vectors.
+ * 
+ * @param {*} u 
+ *      The first vector.
+ * @param {*} v
+ *      The second vector.
+ * @returns The sum.
+ */
+ export function vecSum(u, v)
+ {
+     return [u[0]+v[0], u[1]+v[1], u[2]+v[2]];
+ }
+
+/**
+ * Compute difference of two 3d vectors.
+ * 
+ * @param {*} u 
+ *      The first vector.
+ * @param {*} v
+ *      The second vector.
+ * @returns The difference.
+ */
+ export function vecDiff(u, v)
+ {
+     return [u[0]-v[0], u[1]-v[1], u[2]-v[2]];
+ }
+ 
+/**
  * Convert degrees to radians.
  * 
  * @param {*} deg 
@@ -83,7 +111,7 @@ export function rad2Deg(rad)
  */
 export function tand(deg)
 {
-    return Math.tan(this.deg2Rad(deg));
+    return Math.tan(deg2Rad(deg));
 }
 
 /**
@@ -95,7 +123,7 @@ export function tand(deg)
  */
 export function asind(val)
 {
-    return this.rad2Deg(Math.asin(val));
+    return rad2Deg(Math.asin(val));
 }
 
 /**
@@ -105,9 +133,9 @@ export function asind(val)
  *      The value.
  * @returns The angle in degrees.
  */
- export function acosd(val)
+export function acosd(val)
 {
-    return this.rad2Deg(Math.acos(val));
+    return rad2Deg(Math.acos(val));
 }
 
 /**
@@ -119,9 +147,9 @@ export function asind(val)
  *      The x value.
  * @returns The angle in degrees.
  */
- export function atan2d(y, x)
+export function atan2d(y, x)
 {
-    return this.rad2Deg(Math.atan2(y, x));
+    return rad2Deg(Math.atan2(y, x));
 }
 
 /**
