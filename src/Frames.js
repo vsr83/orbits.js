@@ -449,6 +449,7 @@ export function coordEnuAzEl(osv)
                osv.dist * cosd(osv.az) * cosd(osv.el), 
                osv.dist * sind(osv.el)];
 
+    // TODO: 
     const v = [0, 0, 0];
  
     return {r : r, v : v, JT : osv.JT};
