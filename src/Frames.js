@@ -1,7 +1,7 @@
 import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
 import { nutationTerms } from "./Nutation.js";
 import { timeGast } from "./Time.js";
-import { cosd, sind, vecDiff, norm, atand, atan2d, rad2Deg, vecSum } from "./MathUtils.js";
+import { cosd, sind, vecDiff, norm, atand, atan2d, asind, rad2Deg, vecSum } from "./MathUtils.js";
 
 /*
  * References:
@@ -404,12 +404,52 @@ export function coordEfiEnu(osv, lat, lon, h)
  *      Observer altitude (in meters).
  * @returns Object r, v, JT fields for position, velocity and Julian date.
  */
-  export function coordEnuEfi(osv, lat, lon, h)
-  {
-      const rObs = coordWgs84Efi(lat, lon, h);
-      const rEnu = vecSum(rotateCart3d(rotateCart1d(osv.r, lat - 90), -90 - lon), rObs);
-      const vEnu = rotateCart3d(rotateCart1d(osv.v, lat - 90), -90 - lon);
-      
-      return {r : rEnu, v : vEnu, JT : osv.JT};
-  }
+export function coordEnuEfi(osv, lat, lon, h)
+{
+    const rObs = coordWgs84Efi(lat, lon, h);
+    const rEnu = vecSum(rotateCart3d(rotateCart1d(osv.r, lat - 90), -90 - lon), rObs);
+    const vEnu = rotateCart3d(rotateCart1d(osv.v, lat - 90), -90 - lon);
+    
+    return {r : rEnu, v : vEnu, JT : osv.JT};
+}
   
+/**
+ * Compute azimuth and elevation from ENU coordinates. The azimuth is
+ * measured clockwise from North.
+ * 
+ * @param {*} osv
+ *      Orbit state vector with fields r, v and JT in ENU frame.
+ * @returns Object with az, el fields for azimuth and elevation.
+ */
+export function coordEnuAzEl(osv)
+{
+    const rNorm = norm(osv.r);
+    const ru = [osv.r[0]/rNorm, osv.r[1]/rNorm, osv.r[2]/rNorm];
+
+    const az = atan2d(ru[0], ru[1]);
+    const el = asind(ru[2]);
+
+    // TODO:
+    const dazdt = 0;
+    const deldt = 0;
+
+    return {az : az, el : el, dazdt : 0, deldt : 0, dist : rNorm, JT : osv.JT};
+}
+
+/**
+ * Compute ENU coordinates from azimuth and elevation. 
+ * 
+ * @param {*} osv
+ *      Orbit state vector with fields az, el, dazdt, deldt and dist.
+ * @returns Object r, v, JT fields for position, velocity and Julian date.
+ */
+ export function coordAzElEnu(osv)
+ {
+    const r = [osv.dist * sind(osv.az) * cosd(osv.el), 
+               osv.dist * cosd(osv.az) * cosd(osv.el), 
+               osv.dist * sind(osv.el)];
+
+    const v = [0, 0, 0];
+ 
+    return {r : r, v : v, JT : osv.JT};
+}

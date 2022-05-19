@@ -1,10 +1,11 @@
 import {AssertionError, strict as assert} from 'assert';
+import {norm} from "../src/MathUtils.js";
 import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHmsDeg} from "../src/Angles.js";
 import {nutationTerms} from "../src/Nutation.js";
 import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from '../src/Time.js';
 import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
-    coordEfiEnu, coordEnuEfi } from '../src/Frames.js';
+    coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu } from '../src/Frames.js';
 
 /**
  * Check floating point value with tolerance.   
@@ -282,10 +283,12 @@ describe('Frames', function() {
             const osvMod = coordJ2000Mod(osvJ2000);
             checkFloatArray(osvMod.r, osvModExp.r, 1);
             checkFloatArray(osvMod.v, osvModExp.v, 1e-4);
+            checkFloat(osvMod.JT, osvModExp.JT, 1e-6);
 
             const osvJ20002 = coordModJ2000(osvMod);
             checkFloatArray(osvJ20002.r, osvJ2000.r, 1);
             checkFloatArray(osvJ20002.v, osvJ2000.v, 1e-4);
+            checkFloat(osvJ20002.JT, osvJ2000.JT, 1e-6);
         });
     });
 
@@ -314,10 +317,12 @@ describe('Frames', function() {
             const osvTod = coordModTod(osvMod);
             checkFloatArray(osvTod.r, osvTodExp.r, 1);
             checkFloatArray(osvTod.v, osvTodExp.v, 1e-4);
+            checkFloat(osvTod.JT, osvTodExp.JT, 1e-6);
 
             const osvMod2 = coordTodMod(osvTod);
             checkFloatArray(osvMod2.r, osvMod.r, 1);
             checkFloatArray(osvMod2.v, osvMod.v, 1e-4);
+            checkFloat(osvMod2.JT, osvMod.JT, 1e-6);
         });
     });
 
@@ -346,10 +351,12 @@ describe('Frames', function() {
             const osvPef = coordTodPef(osvTod);
             checkFloatArray(osvPef.r, osvPefExp.r, 1);
             checkFloatArray(osvPef.v, osvPefExp.v, 1e-4);
+            checkFloat(osvPef.JT, osvPefExp.JT, 1e-6);
 
             const osvTod2 = coordPefTod(osvPef);
             checkFloatArray(osvTod2.r, osvTod.r, 1);
             checkFloatArray(osvTod2.v, osvTod.v, 1e-4);
+            checkFloat(osvTod2.JT, osvTod.JT, 1e-6);
         });
     });
 
@@ -378,10 +385,12 @@ describe('Frames', function() {
             const osvEfi = coordPefEfi(osvPef, 0.1, 0.2);
             checkFloatArray(osvEfi.r, osvEfiExp.r, 1);
             checkFloatArray(osvEfi.v, osvEfiExp.v, 1e-4);
+            checkFloat(osvEfi.JT, osvEfiExp.JT, 1e-6);
 
             const osvPef2 = coordEfiPef(osvEfi, 0.1, 0.2);
             checkFloatArray(osvPef2.r, osvPef.r, 1);
             checkFloatArray(osvPef2.v, osvPef.v, 1e-4);
+            checkFloat(osvPef2.JT, osvPef.JT, 1e-6);
         });
     });
 
@@ -430,14 +439,40 @@ describe('Frames', function() {
             };
 
             const osvEnu = coordEfiEnu(osvEfi, lat, lon, 0);
-            console.log(osvEnu);
-
             checkFloatArray(osvEnu.r, osvEnuExp.r, 1);
             checkFloatArray(osvEnu.v, osvEnuExp.v, 1e-4);
+            checkFloat(osvEnu.JT, osvEnuExp.JT, 1e-6);
 
             const osvEfi2 = coordEnuEfi(osvEnu, lat, lon, 0);
             checkFloatArray(osvEfi2.r, osvEfi.r, 1);
             checkFloatArray(osvEfi2.v, osvEfi.v, 1e-4);
+            checkFloat(osvEfi2.JT, osvEfi.JT, 1e-6);
+        });
+    });
+
+    describe('coordEnuAzEl, coordAzElEnu', function() {
+        it('Venus', function() {
+            const osvEnu = {
+                r : [ 83925132910.53931,
+                      38278260514.84691,
+                     -51419041065.68192],
+                v : [ 4284268.453380695,
+                     -5274201.499041729,
+                      3038946.069965863],
+                JT : 2459662.467361111
+            };
+            const azExp = 65.48226691416835;
+            const elExp = -29.13678780543464;
+
+            const osv = coordEnuAzEl(osvEnu);
+            checkFloat(osv.az, azExp, 1e-6);
+            checkFloat(osv.el, elExp, 1e-6);
+            checkFloat(osv.dist, norm(osvEnu.r), 1);
+            checkFloat(osv.JT, osvEnu.JT, 1e-6);
+
+            const osvEnu2 = coordAzElEnu(osv);
+            checkFloatArray(osvEnu2.r, osvEnu.r, 1);
+            checkFloat(osvEnu2.JT, osvEnu.JT, 1e-6);
         });
     });
 });
