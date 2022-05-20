@@ -5,7 +5,7 @@ import {nutationTerms} from "../src/Nutation.js";
 import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from '../src/Time.js';
 import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
-    coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu } from '../src/Frames.js';
+    coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
 
 /**
  * Check floating point value with tolerance.   
@@ -475,4 +475,43 @@ describe('Frames', function() {
             checkFloat(osvEnu2.JT, osvEnu.JT, 1e-6);
         });
     });
+
+    describe('coordPerIne, coordInePer', function() {
+        it('Venus', function() {
+            const osvPer = {
+                r : [2.593281124802490e+10,
+                     1.468514157356373e+11,
+                                         0],
+                v : [-2.933489929039629e+04,
+                      5.677830279125575e+03,
+                                          0],
+                JT : 2459662.467361111
+            };
+
+            const Omega = 347.6140484010017;
+            const incl = 359.9971073661852;
+            const omega = -244.6045207975887;
+            
+            const osvIneExp = {
+                r : [-1.489199431961666e+11,
+                     -7.790989491059203e+09,
+                      1.996839980819461e+06],
+                v : [1.071574068660730e+03,
+                    -2.986010381659133e+04,
+                     1.460825013954209e+00],
+                JT : 2459662.467361111
+            };
+
+            const osvIne = coordPerIne(osvPer, Omega, incl, omega);
+            checkFloatArray(osvIne.r, osvIneExp.r, 1);
+            checkFloatArray(osvIne.v, osvIneExp.v, 1e-4);
+            checkFloat(osvIne.JT, osvIneExp.JT, 1e-6);
+
+            const osvPer2 = coordInePer(osvIne, Omega, incl, omega);
+            checkFloatArray(osvPer2.r, osvPer.r, 1);
+            checkFloatArray(osvPer2.v, osvPer.v, 1e-4);
+            checkFloat(osvPer2.JT, osvPer.JT, 1e-6);
+        });
+    });
+
 });

@@ -454,3 +454,53 @@ export function coordEnuAzEl(osv)
  
     return {r : r, v : v, JT : osv.JT};
 }
+
+/**
+ * Convert coordinates from perifocal to an inertial frame.
+ *  
+ * Important: The inertial frame is one relative to which the Keplerian 
+ * elements are defined. In practice, this can correspond to Ecliptic,
+ * J2000, MoD and ToD coordinates.
+ * 
+ * @param {*} osv
+ *      Orbit state vector with fields r, v and JT in the perifocal frame.
+ * @param {*} Omega 
+ *      The longitude of the ascending node (in degrees).
+ * @param {*} incl
+ *      The inclination (in degrees).
+ * @param {*} omega 
+ *      The argument of periapsis (in degrees).
+ * @returns Object r, v, JT fields for position, velocity and Julian date.
+ */
+export function coordPerIne(osv, Omega, incl, omega)
+{
+    const rIne = rotateCart3d(rotateCart1d(rotateCart3d(osv.r, -omega), -incl), -Omega);
+    const vIne = rotateCart3d(rotateCart1d(rotateCart3d(osv.v, -omega), -incl), -Omega);
+
+    return {r : rIne, v : vIne, JT : osv.JT};
+}
+
+/**
+ * Convert coordinates from inertial to perifocal frame.
+ *  
+ * Important: The inertial frame is one relative to which the Keplerian 
+ * elements are defined. In practice, this can correspond to Ecliptic,
+ * J2000, MoD and ToD coordinates.
+ * 
+ * @param {*} osv
+ *      Orbit state vector with fields r, v and JT in inertial frame.
+ * @param {*} Omega 
+ *      The longitude of the ascending node (in degrees).
+ * @param {*} incl
+ *      The inclination (in degrees).
+ * @param {*} omega 
+ *      The argument of periapsis (in degrees).
+ * @returns Object r, v, JT fields for position, velocity and Julian date.
+ */
+export function coordInePer(osv, Omega, incl, omega)
+{
+    const rPer = rotateCart3d(rotateCart1d(rotateCart3d(osv.r, Omega), incl), omega);
+    const vPer = rotateCart3d(rotateCart1d(rotateCart3d(osv.v, Omega), incl), omega);
+
+    return {r : rPer, v : vPer, JT : osv.JT};
+}
