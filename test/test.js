@@ -1,11 +1,12 @@
 import {AssertionError, strict as assert} from 'assert';
-import {norm} from "../src/MathUtils.js";
+import {norm, atan2d, asind} from "../src/MathUtils.js";
 import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHmsDeg} from "../src/Angles.js";
 import {nutationTerms} from "../src/Nutation.js";
 import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from '../src/Time.js';
 import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
+import {keplerSolve, keplerPerifocal, keplerPlanets} from "../src/Kepler.js";
 
 /**
  * Check floating point value with tolerance.   
@@ -513,5 +514,126 @@ describe('Frames', function() {
             checkFloat(osvPer2.JT, osvPer.JT, 1e-6);
         });
     });
+});
 
+describe('Kepler', function() {
+    describe('keplerPlanets', function() {
+        it('Values', function() {
+            const planets = keplerPlanets(0);
+            const earth = keplerPlanets.earth;
+
+            //keplerPerifocal(earth.a, earth.b, earth.E, 1, 1);
+        });
+    });
+
+    describe('keplerSolve', function() {
+        it('Values', function() {
+            console.log(keplerSolve(100, 0.1, 1e-9, 10));
+        });
+    });
+
+    describe('Integration test', function() {
+        describe('Ecliptic coordinates', function() {
+            const JTs = [
+                timeJulianYmdhms(2022, 1, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 2, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 3, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 4, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 5, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 6, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 7, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 8, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 9, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 10, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 11, 1, 0, 0, 0),
+                timeJulianYmdhms(2022, 12, 1, 0, 0, 0),
+                timeJulianYmdhms(2023, 1, 1, 0, 0, 0),
+            ];
+
+            let eclLonExp = {};
+            let eclLatExp = {};
+
+            eclLonExp.mercury = [353.4975, 166.5912, 257.4250,   3.0501, 171.0689, 268.5480,
+                                18.4637, 187.2563, 279.9118,  41.0846, 201.6988, 288.7606,
+                                65.6639];
+            eclLatExp.mercury = [-5.7328, 6.1741, -3.4215, -4.9864, 5.8978, -4.5380,
+                                -3.4978, 4.6121, -5.5000, -0.8842, 3.1488, -6.1005,
+                                2.0995];
+            eclLonExp.venus = [95.4130, 145.7195, 191.1252, 240.8421, 288.4039, 337.4525,
+                            25.1782,  74.8979, 125.0697, 173.7997, 223.7525, 271.4698,
+                            320.4988];
+            eclLatExp.venus = [1.0946,  3.1715, 3.0892, 0.9239, -1.7895, -3.3512,
+                            -2.6555, -0.1020, 2.5417, 3.3678,  1.8435, -0.8711,
+                            -3.0485];
+            eclLonExp.earth = [100.2247, 131.7846, 160.0640, 190.9365, 220.3094, 250.2043,
+                               278.8624, 308.4439, 338.2473,   7.4912,  38.2244,  68.4376,
+                                99.9669];
+            eclLatExp.earth = [-0.0027, -0.0018, -0.0005,  0.0010,  0.0021,  0.0027, 
+                                0.0026,  0.0019,  0.0008, -0.0006, -0.0019, -0.0027,
+                                -0.0028];
+            eclLonExp.mars = [235.6571, 251.9803, 267.4983, 285.5377, 303.7659, 323.1819,
+                              342.2155,   1.7557,  20.8147,  38.5492,  56.0022,  72.0318,
+                               87.7659];
+            eclLatExp.mars = [-0.1986, -0.7071, -1.1381, -1.5330, -1.7788, -1.8441,
+                              -1.7046, -1.3677, -0.8869, -0.3508, 0.2097, 0.7087,
+                               1.1450];
+            eclLonExp.jupiter = [338.9281, 341.7255, 344.2586, 347.0692, 349.7941, 352.6157,
+                                 355.3507, 358.1804,   1.0143,   3.7594,   6.5977,   9.3467,
+                                  12.1882];
+            eclLatExp.jupiter = [-1.1105, -1.1425, -1.1691, -1.1960, -1.2193, -1.2405,
+                                 -1.2582, -1.2735, -1.2857, -1.2945, -1.3005, -1.3033,
+                                 -1.3030];
+            eclLonExp.saturn = [314.5631, 315.5229, 316.3910, 317.3534, 318.2859, 319.2510,
+                                320.1862, 321.1539, 322.1232, 323.0624, 324.0344, 324.9767,
+                                325.9516];
+            eclLatExp.saturn = [-0.8902, -0.9290, -0.9638, -1.0022, -1.0391, -1.0770,
+                                -1.1135, -1.1509, -1.1880, -1.2237, -1.2602, -1.2953,
+                                -1.3312];
+            eclLonExp.uranus = [43.1108, 43.4551, 43.7663, 44.1111, 44.4448, 44.7899,
+                                45.1240, 45.4694, 45.8151, 46.1498, 46.4957, 46.8307, 
+                                47.1771];
+            eclLatExp.uranus = [-0.3966, -0.3926, -0.3890, -0.3850, -0.3811, -0.3771,
+                                -0.3731, -0.3691, -0.3650, -0.3610, -0.3569, -0.3529,
+                                -0.3487];
+            eclLonExp.neptune = [352.1394, 352.3272, 352.4969, 352.6848, 352.8666, 353.0545,
+                                353.2364, 353.4243, 353.6122, 353.7941, 353.9820, 354.1639,
+                                354.3518];
+            eclLatExp.neptune = [-1.1466, -1.1510, -1.1550, -1.1594, -1.1636, -1.1680,
+                                -1.1722, -1.1765, -1.1808, -1.1850, -1.1893, -1.1935,
+                                -1.1977];
+            const tolerances = {
+                mercury : {lon : 2/60,  lat : 16/3600},
+                venus   : {lon : 1/60,  lat : 4/3600},
+                earth   : {lon : 40/3600,  lat : 2/3600},
+                mars    : {lon : 2/60,  lat : 1/3600},
+                jupiter : {lon : 15/60, lat : 3/3600},
+                saturn  : {lon : 5/60,  lat : 10/3600},
+                uranus  : {lon : 2/60,  lat : 2/3600},
+                neptune : {lon : 1/60,  lat : 2/3600},
+            }
+
+            for (let planetName in eclLonExp)
+            {
+                it(planetName, function() {
+                    for (let indTs = 0; indTs < JTs.length; indTs++)
+                    {
+                        const JT = JTs[indTs].JT;
+                        const planets = keplerPlanets(JT);
+
+                        const planet = planets[planetName];
+
+                        const osvPer = keplerPerifocal(planet.a, planet.b, planet.E, planet.mu, JT);
+                        const osvIne = coordPerIne(osvPer, planet.Omega, planet.i, planet.omega);
+        
+                        const r = osvIne.r;
+                        const eclLon = limitAngleDeg(atan2d(r[1], r[0]));
+                        const eclLat = asind(r[2] / norm(r));
+        
+                        checkFloat(eclLon, eclLonExp[planetName][indTs], tolerances[planetName].lon);
+                        checkFloat(eclLat, eclLatExp[planetName][indTs], tolerances[planetName].lat);
+                    }
+                });
+            }
+        });
+    });
 });

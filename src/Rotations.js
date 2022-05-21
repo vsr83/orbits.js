@@ -25,7 +25,7 @@ export function rotateCart1d(p, angle)
  *      Angle in degrees. 
  * @returns The rotated vector.
  */
- export function rotateCart2d(p, angle)
+export function rotateCart2d(p, angle)
 {
     return [cosd(angle) * p[0] - sind(angle) * p[2], 
             p[1],
@@ -41,7 +41,7 @@ export function rotateCart1d(p, angle)
  *      Angle in degrees. 
  * @returns The rotated vector.
  */
- export function rotateCart3d(p, angle)
+export function rotateCart3d(p, angle)
 {
     return [cosd(angle) * p[0] + sind(angle) * p[1], 
             -sind(angle) * p[0] + cosd(angle) * p[1],
