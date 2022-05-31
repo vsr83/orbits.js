@@ -80,6 +80,14 @@ export function keplerPerifocal(a, b, E, mu, JT)
     return {r : rPer, v : vPer, JT : JT};
 }
 
+/**
+ * Compute approximate Keplerian elements for the 8 planets.
+ * 
+ * @param {*} JT 
+ *      Julian time.
+ * @returns JSON with orbital elements {a, e, i, L, Lperi, Omega} for each
+ *          planet.
+ */
 export function keplerPlanets(JT)
 {
     // Julian centuries after J2000.0 epoch.

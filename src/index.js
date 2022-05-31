@@ -5,6 +5,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer} from './Frames.js';
 import {keplerSolve, keplerPerifocal, keplerPlanets} from './Kepler.js';
+import {hipparchusFind, hipparchusGet, hipparchusData} from './Hipparchus.js';
 
 export {limitAngleDeg, angleDiff, angleArcDeg, angleDegArc, angleDegHms, angleHmsDeg};
 export {nutationTerms};
@@ -13,3 +14,4 @@ export {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiEnu, coordEnuEfi, 
     coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer};
 export {keplerSolve, keplerPerifocal, keplerPlanets};
+export {hipparchusFind, hipparchusGet, hipparchusData};

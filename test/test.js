@@ -8,6 +8,8 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
 import {keplerSolve, keplerPerifocal, keplerPlanets} from "../src/Kepler.js";
 
+import {hipparchusFind, hipparchusGet} from "../src/Hipparchus.js";
+
 /**
  * Check floating point value with tolerance.   
  * 
@@ -516,6 +518,27 @@ describe('Frames', function() {
     });
 });
 
+describe('Hipparchus', function() {
+    describe('hipparchusFind', function() {
+        it('SingleMatch', function() {
+            const resultsVega = hipparchusFind('Vega');
+            assert.equal(resultsVega.length, 1);
+            assert.equal(resultsVega[0], "3 Alpha Lyrae (Vega)");
+        });
+    });
+    describe('hipparchusGet', function() {
+        it('SingleMatch', function() {
+            const vega = hipparchusGet("3 Alpha Lyrae (Vega)");
+            const RAexp = 279.2347344323626;
+            const DEexp = 38.783688589075688;
+
+            checkFloat(vega.RA, RAexp, 1e-5);
+            checkFloat(vega.DE, DEexp, 1e-5);
+            checkFloat(vega.mag, 0.086800, 1e-20);
+        });
+    });
+});
+
 describe('Kepler', function() {
     describe('keplerPlanets', function() {
         it('Values', function() {
@@ -528,7 +551,7 @@ describe('Kepler', function() {
 
     describe('keplerSolve', function() {
         it('Values', function() {
-            console.log(keplerSolve(100, 0.1, 1e-9, 10));
+            keplerSolve(100, 0.1, 1e-9, 10);
         });
     });
 
