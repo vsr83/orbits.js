@@ -9,6 +9,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
 import {keplerSolve, keplerPerifocal, keplerPlanets} from "../src/Kepler.js";
 
 import {hipparchusFind, hipparchusGet} from "../src/Hipparchus.js";
+import {vsop87} from "../src/Vsop87A.js";
 
 /**
  * Check floating point value with tolerance.   
@@ -663,6 +664,101 @@ describe('Kepler', function() {
                     }
                 });
             }
+        });
+    });
+});
+
+describe('Vsop87A', function() {
+    describe('vsop87', function() {
+        let JT = dateJulianYmd(2022, 6, 4);
+
+        it('Mercury', function() {
+            let {r, v} = vsop87('mercury', JT);
+            const rExp = [0.832216213265148e10,
+                         -6.797620046569159e10,
+                         -0.631833047746736e10];
+            const vExp = [ 3.858225040730701e4,
+                           0.841936365251681e4,
+                          -0.285100298395750e4];
+            checkFloatArray(r, rExp, 1);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Venus', function() {
+            let {r, v} = vsop87('venus', JT);
+            const rExp = [1.034553614357372e11,
+                         -0.331752946333728e11,
+                         -0.064250597873576e11];
+            const vExp = [ 1.050760766009897e4,
+                           3.319522640775217e4,
+                          -0.015061516960006e4];
+            checkFloatArray(r, rExp, 1);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Earth', function() {
+            let {r, v} = vsop87('earth', JT);
+            const rExp = [-0.441603031327149e11,
+                          -1.451855385436845e11,
+                           0.000070723106588e11];
+            const vExp = [ 2.802462046043991e4,
+                          -0.877593220974710e4,
+                          -0.000006085918161e4];
+            checkFloatArray(r, rExp, 1);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Mars', function() {
+            let {r, v} = vsop87('mars', JT);
+            const rExp =[ 1.696288009064622e11,
+                         -1.184051043620771e11,
+                         -0.066425106325372e11];
+            const vExp = [1.478752475232476e4,
+                          2.194392463015448e4,
+                          0.009715597396017e4];
+            checkFloatArray(r, rExp, 1);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Jupiter', function() {
+            let {r, v} = vsop87('jupiter', JT);
+            const rExp =[ 7.370688842802807e11,
+                         -0.919165975255762e11,
+                         -0.161087368565761e11];
+            const vExp = [ 0.146404196154004e4,
+                           1.359336294642521e4,
+                          -0.008922200077270e4];
+            checkFloatArray(r, rExp, 1);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Saturn', function() {
+            let {r, v} = vsop87('saturn', JT);
+            const rExp =[ 1.121823661255941e12,
+                         -0.963345953041318e12,
+                         -0.027895459837396e12];
+            const vExp = [ 5.758138754399658e3,
+                           7.321848375466634e3,
+                          -0.356301821101666e3];
+            checkFloatArray(r, rExp, 1);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Uranus', function() {
+            let {r, v} = vsop87('uranus', JT);
+            const rExp =[ 2.090329648084641e12,
+                          2.077548675094168e12,
+                         -0.019375227735338e12];
+            const vExp = [-4.849445825477810e3,
+                           4.526483779517674e3,
+                           0.079428295534293e3];
+            checkFloatArray(r, rExp, 300);
+            checkFloatArray(v, vExp, 1e-3);
+        });
+        it('Neptune', function() {
+            let {r, v} = vsop87('neptune', JT);
+            const rExp =[ 4.441950700597463e12,
+                         -0.539571281726818e12,
+                         -0.091260681739656e12];
+            const vExp = [0.622289525677747e3,
+                          5.443509008569659e3,
+                         -0.126229531062381e3];
+            checkFloatArray(r, rExp, 300);
+            checkFloatArray(v, vExp, 1e-3);
         });
     });
 });

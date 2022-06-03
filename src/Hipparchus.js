@@ -31,6 +31,7 @@ export function hipparchusFind(searchKey)
  *      Designation of the object.
  * @param {*} JT
  *      Julian time.
+ * @returns JSON object with fields RA, DE and mag.
  */
 export function hipparchusGet(designation, JT)
 {

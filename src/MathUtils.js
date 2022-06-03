@@ -73,11 +73,25 @@ export function norm(u)
  *      The second vector.
  * @returns The difference.
  */
- export function vecDiff(u, v)
- {
-     return [u[0]-v[0], u[1]-v[1], u[2]-v[2]];
- }
- 
+export function vecDiff(u, v)
+{
+    return [u[0]-v[0], u[1]-v[1], u[2]-v[2]];
+}
+
+/**
+ * Multiply vector with a scalar.
+ * 
+ * @param {*} u 
+ *      The vector.
+ * @param {*} s
+ *      The scalar.
+ * @returns The result.
+ */
+export function vecMul(u, s)
+{
+    return [u[0]*s, u[1]*s, u[2]*s];
+}
+  
 /**
  * Convert degrees to radians.
  * 
@@ -159,7 +173,7 @@ export function atan2d(y, x)
  *      The value.
  * @returns The angle in degrees.
  */
- export function atand(val)
+export function atand(val)
 {
     return rad2Deg(Math.atan(val));
 }
