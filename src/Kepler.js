@@ -85,7 +85,7 @@ export function keplerPerifocal(a, b, E, mu, JT)
  * 
  * @param {*} JT 
  *      Julian time.
- * @returns JSON with orbital elements {a, e, i, L, Lperi, Omega} for each
+ * @returns JSON with orbital elements (a, e, i, L, Lperi, Omega) for each
  *          planet.
  */
 export function keplerPlanets(JT)
