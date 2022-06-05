@@ -8,6 +8,7 @@ import {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerP
 import {hipparchusFind, hipparchusGet, hipparchusData} from './Hipparchus.js';
 import {vsop87, vsop87AData} from './Vsop87A.js';
 import {aberrationStellarSph, aberrationStellarCart} from './Aberration.js';
+import {moonEquitorial, moonPositionTod} from './Moon.js';
 
 export {limitAngleDeg, angleDiff, angleArcDeg, angleDegArc, angleDegHms, angleHmsDeg};
 export {nutationTerms};
@@ -19,3 +20,4 @@ export {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerP
 export {hipparchusFind, hipparchusGet, hipparchusData};
 export {vsop87, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
+export {moonEquitorial, moonPositionTod};
