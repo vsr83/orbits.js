@@ -10,6 +10,7 @@ import {keplerSolve, keplerPerifocal, keplerPlanets} from "../src/Kepler.js";
 
 import {hipparchusFind, hipparchusGet} from "../src/Hipparchus.js";
 import {vsop87} from "../src/Vsop87A.js";
+import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 
 /**
  * Check floating point value with tolerance.   
@@ -760,5 +761,25 @@ describe('Vsop87A', function() {
             checkFloatArray(r, rExp, 300);
             checkFloatArray(v, vExp, 1e-3);
         });
+    });
+});
+
+describe('Aberration', function() {
+    describe('aberrationStellarCart', function() {
+        let rJ2000 = [1.250964636332911e24,
+            -7.694131278689816e24,
+            6.263819229905307e24]; 
+        const vObsJ2000 = [0.290007812179439e2,
+                          -2.298670535956016e2,
+                          -0.000564533814336e2];
+        const rJ2000Exp = [ 1.250891664149846e24,
+                           -7.694700506965913e24,
+                            6.263134530940476e24];
+        const JT = 2.459659458332178e+06;
+        rJ2000 = aberrationStellarCart(JT, rJ2000, vObsJ2000);
+        checkFloatArray(rJ2000, rJ2000Exp, 1e10);
+
+        rJ2000 = aberrationStellarCart(JT, rJ2000);
+        checkFloatArray(rJ2000, rJ2000Exp, 1e21);
     });
 });
