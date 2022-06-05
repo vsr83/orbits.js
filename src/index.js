@@ -14,8 +14,8 @@ export {nutationTerms};
 export {timeGast, timeGmst};
 export {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiEnu, coordEnuEfi, 
-    coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer};
-export {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating};
+    coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer, coordEfiWgs84, coordWgs84Efi};
+export {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerPlanets};
 export {hipparchusFind, hipparchusGet, hipparchusData};
 export {vsop87, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
