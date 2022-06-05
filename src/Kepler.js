@@ -1,5 +1,6 @@
 import { limitAngleDeg } from "./Angles.js";
-import { sind, cosd} from "./MathUtils.js";
+import { sind, cosd, cross, acosd, vecMul, vecDiff, vecSum, norm, atan2d} from "./MathUtils.js";
+import { rotateCart1d, rotateCart3d } from "./Rotations.js";
 
 /**
  * Solve the Kepler equation.
@@ -79,6 +80,144 @@ export function keplerPerifocal(a, b, E, mu, JT)
 
     return {r : rPer, v : vPer, JT : JT};
 }
+
+/**
+ * Compute osculating Keplerian elements.
+ * 
+ * @param {*} r 
+ *      Position vector in inertial coordinates.
+ * @param {*} v 
+ *      Velocity vector in inertial coordinates.
+ * @param {*} mu 
+ *      Standard gravitational parameters. 
+ *      If not filled, parameter for Sun is assumed.
+ *      For Earth, use 3.986004418e14.
+ * @returns Keplerian elements (a, ecc_norm, incl, Omega, omega, E, M, f).
+ */
+export function keplerOsculating(r, v, mu)
+{
+    const incl_min = 1e-7;
+
+    if (mu === undefined)
+    {
+        // Standard gravitational parameter for Sun (m^3/s^2).
+        mu = 1.32712440018e20;
+    }
+    const kepler = {};
+    kepler.mu = mu;
+
+    // Angular momentum per unit mass.
+    kepler.k = cross(r, v);
+    // Eccentricity vector.
+    kepler.ecc = vecDiff(vecMul(cross(v, kepler.k), 1/kepler.mu), vecMul(r, 1/norm(r)));
+    kepler.ecc_norm = norm(kepler.ecc);
+    
+    // Inclination
+    kepler.incl = acosd(kepler.k[2] / norm(kepler.k));
+    
+    // Energy integral.
+    kepler.h = 0.5 * norm(v) * norm(v) - mu / norm(r);
+    
+    // Semi-major axis.
+    kepler.a = -mu / (2*kepler.h);
+    kepler.b = kepler.a * Math.sqrt(1 - kepler.ecc_norm * kepler.ecc_norm);
+    
+    // Longitude of the ascending node.
+    kepler.Omega = atan2d(kepler.k[0], -kepler.k[1]);
+    
+    // Argument of periapsis.
+    kepler.omega = 0;
+
+    // When inclination is close to zero, we wish to compute the argument of periapsis
+    // on the XY-plane and avoid division by zero:
+    if (kepler.incl < incl_min)
+    {
+        kepler.omega = atan2d(kepler.ecc[1], kepler.ecc[0]) - kepler.Omega;
+    }
+    else
+    {
+        // We wish to avoid division by zero and thus use the formula, which has larger
+        // absolute value for the denominator:
+        if (Math.abs(sind(kepler.Omega)) < Math.abs(cosd(kepler.Omega)))
+        {
+            const asc_y = kepler.ecc[2] / sind(kepler.incl);
+            const asc_x = (1 / cosd(kepler.Omega)) * (kepler.ecc[0] 
+                        + sind(kepler.Omega)*cosd(kepler.incl)*kepler.ecc[2] / sind(kepler.incl));
+    
+            kepler.omega = atan2d(asc_y, asc_x);
+        }
+        else
+        {
+            const asc_y = kepler.ecc[2] / sind(kepler.incl);
+            const asc_x = (1 / sind(kepler.Omega)) * (kepler.ecc[1] 
+                        - cosd(kepler.Omega)*cosd(kepler.incl)*kepler.ecc[2] / sind(kepler.incl));
+    
+            kepler.omega = atan2d(asc_y, asc_x)
+        }
+    }
+    
+    // Eccentric anomaly
+    kepler.r_orbital = rotateCart3d(rotateCart1d(rotateCart3d(r, kepler.Omega), kepler.incl), kepler.omega);
+    kepler.E = atan2d(kepler.r_orbital[1] / kepler.b, kepler.r_orbital[0] / kepler.a + kepler.ecc_norm);
+
+    // Mean anomaly
+    kepler.M = kepler.E - (180/Math.PI) * kepler.ecc_norm * sind(kepler.E);
+    
+    // Natural anomaly
+    const xu = (cosd(kepler.E) - kepler.ecc_norm) / (1 - kepler.ecc_norm*cosd(kepler.E));
+    const yu = Math.sqrt(1 - kepler.ecc_norm * kepler.ecc_norm) * sind(kepler.E) / (1 - kepler.ecc_norm * cosd(kepler.E));
+    
+    kepler.f = atan2d(yu, xu);
+
+    return kepler;
+}
+
+/**
+ * Propagate mean and eccentric anomalies on a Keplerian orbit.
+ * 
+ * @param {*} deltaJT 
+ *     Time difference in Julian time.
+ * @param {*} M 
+ *     Mean anomaly (in degrees).
+ * @param {*} a 
+ *     Semi-major axis (in meters).
+ * @param {*} ecc_norm 
+ *     Eccentricity.
+ * @param {*} mu 
+ *     Standard gravitational parameter (in m^3/s^2).
+ *     If not filled, parameter for Sun is assumed.
+ *     For Earth, use 3.986004418e14.
+ * @returns Object with propagated mean and eccentric anomalies.
+ */
+export function keplerPropagate(deltaJT, M, a, ecc_norm, mu)
+{
+    if (mu === undefined)
+    {
+        // Standard gravitational parameter for Sun (m^3/s^2).
+        mu = 1.32712440018e20;
+    }
+        
+    const NRMaxIterations = 10;
+    const NRTolerance = 1e-10;
+    
+    if (a == 0)
+    {
+        console.error('Semi-major axis cannot be zero.');
+    }
+    
+    // The time difference in seconds.
+    const delta_seconds = deltaJT * 86400;
+    
+    // Orbital period in seconds from Kepler's third law.
+    const period_seconds = 2 * Math.PI * Math.sqrt(a * a * a / mu);
+    
+    // Propagate mean anomaly according to the computed difference and solve natural anoamaly.
+    const Mprop = M + 360.0 * delta_seconds / period_seconds;
+    const Eprop = keplerSolve(Mprop, ecc_norm, NRTolerance, NRMaxIterations);    
+
+    return {M : Mprop, E : Eprop};
+}
+
 
 /**
  * Compute approximate Keplerian elements for the 8 planets.

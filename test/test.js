@@ -6,7 +6,7 @@ import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from
 import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
-import {keplerSolve, keplerPerifocal, keplerPlanets} from "../src/Kepler.js";
+import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPropagate} from "../src/Kepler.js";
 
 import {hipparchusFind, hipparchusGet} from "../src/Hipparchus.js";
 import {vsop87} from "../src/Vsop87A.js";
@@ -556,6 +556,55 @@ describe('Kepler', function() {
             keplerSolve(100, 0.1, 1e-9, 10);
         });
     });
+
+    describe('keplerPropagate', function() {
+        it('Jupiter', function() {
+            const M0 = -19.121440704840762;
+            const a = 7.791675475674921e+11;
+            const ecc_norm = 0.049355487491014;
+            const mu = 1.327124400180000e+20;
+
+            let {M, E} = keplerPropagate(100, M0, a, ecc_norm, mu);
+            checkFloat(M, -10.829696265596557, 1e-6);
+            checkFloat(E, 3.486119336056595e+02, 1e-6); 
+        });
+    });
+
+    describe('keplerPerifocal', function() {
+        it('Jupiter', function() {
+            const a = 7.791675475674921e+11;
+            const b = 7.782179568180367e+11;
+            const E = -20.092935136837660;
+            const mu = 1.327124400180000e+20;
+            const JT = 2.459729500000000e+06;
+
+            let {r, v} = keplerPerifocal(a, b, E, mu, JT);
+            checkFloatArray(r, [6.932885828550206e11, -2.673520294767202e11, 0], 1);
+            checkFloatArray(v, [0.470147701795366e4, 1.283663661361050e4, 0], 1e-7);
+        });
+    });
+
+    describe('keplerOsculating', function() {
+        it('Jupiter', function() {
+            // Standard gravitational parameter for the Sun.
+            const mu = 1.32712440018e20;
+            const r = [7.364141603506416e11, -0.977860704076983e11, -0.160697122476993e11];
+            const v = [0.156712533025024e4, 1.358009117984457e4, -0.009147374829921e4];
+
+            const kepler = keplerOsculating(r, v, mu);
+            checkFloat(kepler.a, 7.791675475674921e+11, 1);
+            checkFloat(kepler.b, 7.782179568180367e+11, 1);
+            checkFloat(kepler.mu, mu, 1e9);
+            checkFloat(kepler.ecc_norm, 0.049355487491014, 1e-6);
+            checkFloat(kepler.incl, 1.303571611846412, 1e-10);
+            checkFloat(kepler.Omega, 1.005183550488739e+02, 1e-6);
+            checkFloat(kepler.omega, -86.989778432121909, 1e-6);
+            checkFloat(kepler.E, -20.092935136837660, 1e-6);
+            checkFloat(kepler.M, -19.121440704840762, 1e-6);
+            checkFloat(kepler.f,-21.088074675151098, 1e-6);
+        });
+    });
+
 
     describe('Integration test', function() {
         describe('Ecliptic coordinates', function() {
