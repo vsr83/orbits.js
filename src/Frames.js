@@ -55,7 +55,6 @@ export function coordEqEcl(osv)
 
     const eps = 23.439279444444445 - 0.013010213611111*T - 5.086111111111112e-08*T2 
         + 0.565e-07*T3 - 1.6e-10*T4 - 1.205555555555555e-11*T5;
-    T = matrix_rot1d(-eps);
 
     const rEcl = rotateCart1d(osv.r, eps);
     const vEcl = rotateCart1d(osv.v, eps);
