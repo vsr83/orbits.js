@@ -1,0 +1,160 @@
+div {
+  display: inline-block;
+  position: relative;
+}
+
+div::after {
+  position: absolute;
+  top: 2px;
+  right: .5em;
+  transition: all .05s ease-in-out;
+}
+
+div:hover::after,
+div:focus-within::after {
+  right: 1.5em;
+}
+.input_degrees::after {
+  content: "\00B0";
+}
+.input_minutes::after {
+  content: '\0027';
+}
+.input_seconds::after {
+  content: '\201C';
+}
+.input_temperature::after {
+    content: '\201C';
+}
+
+.input_celsius::after {
+    content: "\00B0 C";
+}
+.input_millibars::after {
+    content: "mbar";
+}
+  
+  
+.number_arc {
+    width: 50px;
+    -moz-appearance: textfield;
+}
+/*input[type='text']{*/
+.text_degree {
+    width: 95px;
+    -moz-appearance: textfield;
+}
+.text_arcsec {
+    width: 75px;
+    -moz-appearance: textfield;
+}
+
+.text_temperature {
+    width: 55px;
+    -moz-appearance: textfield;
+}
+.text_pressure {
+    width: 95px;
+    -moz-appearance: textfield;
+}
+
+
+.text_timestamp {
+    width: 140px;
+    -moz-appearance: textfield;
+}
+.text_UT1UTC {
+    width : 75px;
+    -moz-appearance: textfield;
+}
+
+.lonlat_label {
+    width: 40px;
+    padding: 3px;
+    display: inline-block;
+}
+
+#observer_logitude_degrees {
+    width:90px;
+}
+
+.utcstart_label {
+    width: 50px;
+    padding: 3px;
+    display: inline-block;
+}
+.utcend_label {
+    width: 50px;
+    padding: 3px;
+    display: inline-block;
+}
+.utcstep_label {
+    width: 50px;
+    padding: 3px;
+    display: inline-block;
+}
+#number_timestep {
+    width: 60px;
+    padding: 3px;
+    display: inline-block;
+}
+.observer_longitude {
+    width:370px;
+    font-size:1rem;
+}
+
+.label_correction {
+    width:200px;
+    display: inline-block;
+}
+.label_coordinate {
+    width:250px;
+    display: inline-block;
+}
+#TLEListinput {
+    font-size: 8px;
+}
+
+#button_import_json {
+    width: 94px;
+    margin: 3px;
+    display: inline-block;
+}
+#button_export_json {
+    width: 94px;
+    margin: 3px;
+    display: inline-block;
+}
+#button_import_TLEs {
+    width: 94px;
+    margin: 3px;
+    display: inline-block;
+}
+#button_reset {
+    width: 94px;
+    margin: 3px;
+    display: inline-block;
+}
+
+.conf_fieldset {
+    width:380px;
+}
+
+.output_fieldset
+{
+    z-index: 11;
+    position: absolute;
+    left: 430px;
+    top: 0px;
+    width: auto;
+    /*width: 600px;
+    height: 800px;*/
+}
+
+#textarea_output
+{
+    font-size: 12px;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: scroll;
+}
