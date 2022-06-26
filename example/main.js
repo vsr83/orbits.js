@@ -118,6 +118,35 @@ function limitDeg180(deg)
 }
 
 /**
+ * Handle onchange event of number inputs for the latitude and longitude.
+ * 
+ * @param {*} event 
+ *      The event.
+ * @returns The event.
+ */
+function handleInteger(event)
+{
+    const targetElem = document.getElementById(event.target.id);
+    let value = parseInt(targetElem.value);
+
+    console.log(targetElem.max);
+    if (value < targetElem.min)
+    {
+        value = targetElem.min;
+    }
+    if (value > targetElem.max)
+    {
+        value = targetElem.max;
+    }
+
+    targetElem.value = value;
+    updateDegrees();
+
+    return event;
+}
+
+
+/**
  * Update degrees from degree-minute-second forms.
  */
 function updateDegrees()
