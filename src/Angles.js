@@ -12,6 +12,28 @@
  }
 
  /**
+ * Limit angle to [-180, 180.0) interval.
+ * 
+ * @param {*} deg 
+ *      The angle in degrees.
+ * @returns Angle limited to the interval [-180, 180).
+ */
+export function limitAngleDeg180(deg)
+{
+    deg = limitAngleDeg(deg);
+
+    if (deg > 180)
+    {
+        return deg - 360;
+    }
+    else
+    {
+        return deg;
+    }
+}
+ 
+
+ /**
   * Compute (signed) difference in angle between the angles.
   * 
   * @param {*} deg1 
@@ -68,7 +90,22 @@
   */
 export function angleArcDeg(deg, arcMin, arcSec)
 {
-    return limitAngleDeg(deg + arcMin/60.0 + arcSec/3600.0);
+    let sign = 1;
+
+    if (deg == 0 && arcMin == 0)
+    {
+        return limitAngleDeg(arcSec / 3600.0);
+    }
+    else if (deg == 0)
+    {
+        sign = Math.sign(arcMin);
+    }
+    else 
+    {
+        sign = Math.sign(deg);
+    }
+
+    return limitAngleDeg(deg + sign*arcMin/60.0 + sign*arcSec/3600.0);
 }
 
 /**
@@ -80,12 +117,33 @@ export function angleArcDeg(deg, arcMin, arcSec)
  */
 export function angleDegArc(degIn) 
 {
-    let angle = limitAngleDeg(degIn);
-    let degOut = Math.floor(angle);
-    let arcMin = Math.floor((angle - degOut) * 60.0);
-    let arcSec = (angle - degOut - arcMin / 60.0) * 3600.0;
+    let angle = limitAngleDeg180(degIn);
 
-    return {deg : degOut, arcMin : arcMin, arcSec : arcSec};
+    const angleSign = Math.sign(angle);
+    const angleSize = Math.abs(angle);
+
+    let degOut = Math.floor(angleSize);
+    let arcMin = Math.floor((angleSize - degOut) * 60.0);
+    let arcSec = (angleSize - degOut - arcMin / 60.0) * 3600.0;
+
+    let signDeg = 1;
+    let signMin = 1;
+    let signSec = 1;
+
+    if (degOut == 0 && arcMin == 0)
+    {
+        signSec = angleSign;
+    }
+    else if (degOut == 0)
+    {
+        signMin = angleSign;
+    }
+    else 
+    {
+        signDeg = angleSign;
+    }
+
+    return {deg : signDeg * degOut, arcMin : signMin * arcMin, arcSec : signSec * arcSec};
 }
 
 /**

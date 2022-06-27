@@ -114,6 +114,12 @@ describe('Angles', function() {
             assert.equal(arcMin, 2);
             checkFloat(arcSec, 3, 1e-9);
         });
+        it('Nominal Range2', function() {
+            let {deg, arcMin, arcSec} = angleDegArc(-5.5);
+            assert.equal(deg, -5);
+            assert.equal(arcMin, 30);
+            checkFloat(arcSec, 0, 1e-9);
+        });
         it('Below Range', function() {
             let {deg, arcMin, arcSec} = angleDegArc(-359 + 2/60 + 3/3600);
             assert.equal(deg, 1);
@@ -133,7 +139,7 @@ describe('Angles', function() {
             checkFloat(angleArcDeg(1, 2, 3), 1 + 2/60 + 3/3600, 1e-9);
         });
         it('Below Range', function() {
-            checkFloat(angleArcDeg(-359, 2, 3), 1 + 2/60 + 3/3600, 1e-9);
+            checkFloat(angleArcDeg(-359, 2, 3), 1 - 2/60 - 3/3600, 1e-9);
             checkFloat(angleArcDeg(1, 2 - 360 * 60, 3), 1 + 2/60 + 3/3600, 1e-9);
             checkFloat(angleArcDeg(1, 2, 3 - 360 * 3600), 1 + 2/60 + 3/3600, 1e-9);
         });

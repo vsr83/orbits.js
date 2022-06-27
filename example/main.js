@@ -158,11 +158,11 @@ function updateDegrees()
     const lonMin = parseInt(elemObsLonMin.value);
     const lonSec = parseInt(elemObsLonSec.value);
 
-    const latDegFrac = orbitsjs.angleArcDeg(latDeg, latMin, latSec).toFixed(4);
-    const lonDegFrac = orbitsjs.angleArcDeg(lonDeg, lonMin, lonSec).toFixed(4);
+    const latDegFrac = orbitsjs.angleArcDeg(latDeg, latMin, latSec);
+    const lonDegFrac = orbitsjs.angleArcDeg(lonDeg, lonMin, lonSec);
 
-    elemObsLatDegFrac.value = limitDeg180(latDegFrac);
-    elemObsLonDegFrac.value = limitDeg180(lonDegFrac);
+    elemObsLatDegFrac.value = limitDeg180(latDegFrac).toFixed(4);
+    elemObsLonDegFrac.value = limitDeg180(lonDegFrac).toFixed(4);
 }
 
 /**
@@ -458,17 +458,17 @@ function processSun(configuration, timeStamp)
  *      The Javascript time stamp.
  * @returns The OSV.
  */
- function processMoon(configuration, timeStamp)
- {
-     const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
+function processMoon(configuration, timeStamp)
+{
+    const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
 
-     const rMoon = orbitsjs.moonPositionTod(JT);
-     const osvTod = {r: rMoon, v: [0, 0, 0], JT: JT};
-     const osvMod = orbitsjs.coordTodMod(osvTod);
-     const osvJ2000 = orbitsjs.coordModJ2000(osvMod);
+    const rMoon = orbitsjs.moonPositionTod(JT);
+    const osvTod = {r: rMoon, v: [0, 0, 0], JT: JT};
+    const osvMod = orbitsjs.coordTodMod(osvTod);
+    const osvJ2000 = orbitsjs.coordModJ2000(osvMod);
 
-     return osvJ2000;
- }
+    return osvJ2000;
+}
  
 
 /**
@@ -480,7 +480,7 @@ function processSun(configuration, timeStamp)
  *      The Javascript time stamp.
  * @returns The OSV.
  */
- function processPlanet(configuration, timeStamp)
+function processPlanet(configuration, timeStamp)
 {
     const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
 
@@ -518,7 +518,7 @@ function processSun(configuration, timeStamp)
  *      The Javascript time stamp.
  * @returns The OSV.
  */
- function processSatellite(configuration, timeStamp)
+function processSatellite(configuration, timeStamp)
 {
     const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
 
@@ -547,7 +547,7 @@ function processSun(configuration, timeStamp)
  *      The Javascript time stamp.
  * @returns The OSV.
  */
- function processStar(configuration, timeStamp)
+function processStar(configuration, timeStamp)
 {
     const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
 
@@ -609,7 +609,7 @@ function getRa(r)
  *      The Cartesian coordinates.
  * @returns The azimuth.
  */
- function getAz(r)
+function getAz(r)
 {
     return orbitsjs.atan2d(r[0], r[1]);
 }
