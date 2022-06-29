@@ -213,7 +213,7 @@
 function processTimeStep(configuration, timeStamp)
 {
     //console.log(timeStamp);
-    //console.log(targetType[configuration.target]);
+    console.log(targetType[configuration.target]);
 
     let targetOsvJ2000 = null;
 
@@ -347,14 +347,14 @@ function processTimeStep(configuration, timeStamp)
             dist : orbitsjs.norm(targetOsvEfi.r)
         },
         enu : {
-            az  : getAz(targetOsvEfi.r), 
-            el : getDecl(targetOsvEfi.r), 
-            dist : orbitsjs.norm(targetOsvEfi.r)
+            az  : getAz(targetOsvEnu.r), 
+            el : getDecl(targetOsvEnu.r), 
+            dist : orbitsjs.norm(targetOsvEnu.r)
         }
     };
 
     //console.log(dateToTs(timeStamp) + " " + targetAzElEnu.az + " " + targetAzElEnu.el);
-    console.log(results);
+    //console.log(results);
     return results;
 }
 
