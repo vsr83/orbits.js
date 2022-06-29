@@ -158,3 +158,23 @@ div:focus-within::after {
     overflow-wrap: normal;
     overflow-x: scroll;
 }
+
+body .lm_content{
+    overflow: auto;
+}
+
+#textarea_output
+{
+    width: 99%;
+    height: 95%;
+}
+
+input[type="text"], textarea {
+    color: white;
+    background-color : #202020;   
+}
+
+input[type="number"], textarea {
+    color: white;
+    background-color : #202020;   
+}

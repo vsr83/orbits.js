@@ -2,9 +2,28 @@
 <html lang="en">
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="imports/goldenlayout-base.css" />
+    <link type="text/css" rel="stylesheet" href="imports/goldenlayout-dark-theme.css" />
+    <link type="text/css" rel="stylesheet" href="imports/uPlot.min.css" />
     <link rel="stylesheet" href="imports/autoComplete.02.min.css">
     <link rel="stylesheet" href="index.css">
     <script type="text/javascript" src="../dist/orbits_js.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #141619;
+            color: #c7d0d9;
+        }
+
+        .uplot {
+            margin-top: 0px;
+        }
+
+        .u-select {
+            background: rgba(255,255,255,0.07);
+        }
+    </style>
 </head>
 
 <body>
@@ -114,6 +133,7 @@
             <label for="TLEListinput">Paste a list of 3-line TLEs below:</label><br>
             <a href="https://celestrak.com/NORAD/elements/" target="_blank"> See CelesTrak for available TLEs.</a>
             <textarea id="TLEListinput" rows="10" cols="69"></textarea>
+            <br>
             <button id="TLEListAppend" onclick="processTleList()">Add</button>
         </fieldset>
         <fieldset class="conf_fieldset">
@@ -208,13 +228,19 @@
         <br-->
     </div>
 
-    <fieldset class="output_fieldset">
-        <legend>Output:</legend>
-        <textarea id="textarea_output" rows="60" cols="80" readonly="true"></textarea>
-    </fieldset>
+    <div id="csv_output">
+        <!--fieldset class="output_fieldset">
+            <legend>Output:</legend-->
+            <!--textarea id="textarea_output" rows="30" cols="120" readonly="true"></textarea-->
+            <textarea id="textarea_output" readonly="true"></textarea>
+        <!--/fieldset-->
+    </div>
 
+    <script type="text/javascript" src="imports/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="imports/goldenlayout.min.js"></script>
     <script src="imports/satellite.min.js"></script>
     <script src="imports/autoComplete.min.js"></script>
+    <script src="imports/uPlot.iife.min.js"></script>
     <script src="computation.js"></script>
     <script src="gui.js"></script>
 </body>

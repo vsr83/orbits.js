@@ -1,25 +1,72 @@
-const elemObsLatDeg = document.getElementById("observer_latitude_degrees");
-const elemObsLatMin = document.getElementById("observer_latitude_minutes");
-const elemObsLatSec = document.getElementById("observer_latitude_seconds");
-const elemObsLonDeg = document.getElementById("observer_longitude_degrees");
-const elemObsLonMin = document.getElementById("observer_longitude_minutes");
-const elemObsLonSec = document.getElementById("observer_longitude_seconds");
+var config = {
+    content: [
+        {
+            type: 'row',
+            content:[
+                {
+                    type: 'component',
+                    componentName: 'confComponent',
+                    componentState: { label: 'A' }
+                },
 
-const elemObsLatDegFrac = document.getElementById("observer_latitude_degrees_frac");
-const elemObsLonDegFrac = document.getElementById("observer_longitude_degrees_frac");
-const elemObsAlt = document.getElementById("observer_altitude_meters");
-const elemTimeStepNumber = document.getElementById("number_timestep");
-const elemTimeStepSize = document.getElementById("size_timestep");
+                {
+                    type: 'column',
+                    content : [
+                        {
+                            type: 'component',
+                            componentName: 'csvComponent',
+                            componentState: { label: 'B' }
+                        }/*,
+                        {
+                            type: 'component',
+                            componentName: 'plotComponent',
+                            componentState: { label: 'C' }
+                        }*/
+                    ]
+                }
+            ]
+        }
+        /*,{
+            type: 'column',
+            content:[{
+                type: 'component',
+                componentName: 'tableComponent',
+                componentState: { label: 'B' }
+            },{
+                type: 'component',
+                componentName: 'testComponent',
+                componentState: { label: 'C' }
+            }]
+        }]*/
+    ]
+};
 
-const timeStart = document.getElementById("timestamp_start");
-const timeEnd = document.getElementById("timestamp_end");
-const julianStart = document.getElementById("julian_start");
-const julianEnd = document.getElementById("julian_end");
+var myLayout = new GoldenLayout( config );
+
+let elemObsLatDeg = document.getElementById("observer_latitude_degrees");
+let elemObsLatMin = document.getElementById("observer_latitude_minutes");
+let elemObsLatSec = document.getElementById("observer_latitude_seconds");
+let elemObsLonDeg = document.getElementById("observer_longitude_degrees");
+let elemObsLonMin = document.getElementById("observer_longitude_minutes");
+let elemObsLonSec = document.getElementById("observer_longitude_seconds");
+
+let elemObsLatDegFrac = document.getElementById("observer_latitude_degrees_frac");
+let elemObsLonDegFrac = document.getElementById("observer_longitude_degrees_frac");
+let elemObsAlt = document.getElementById("observer_altitude_meters");
+let elemTimeStepNumber = document.getElementById("number_timestep");
+let elemTimeStepSize = document.getElementById("size_timestep");
+
+let timeStart = document.getElementById("timestamp_start");
+let timeEnd = document.getElementById("timestamp_end");
+let julianStart = document.getElementById("julian_start");
+let julianEnd = document.getElementById("julian_end");
 
 // List of satellite records for satellite.js.
 var satellites = [];
 // Indices of satellite records according to satellite name.
 var satNameToIndex = [];        
+
+let indPlot = 0;
 
 function isValid()
 {
@@ -83,6 +130,7 @@ function getJson()
 
     const target = document.getElementById('autoComplete').value;
 
+    console.log(target);
     const atmosphere = {
         temperature : parseFloat(document.getElementById("air_temperature").value),
         pressure : parseFloat(document.getElementById("air_pressure").value)
@@ -207,7 +255,7 @@ function processTleList()
         targetList.push(title);
     }
 
-    console.log(satelliteNames.length + " satellites processed.");
+    console.log(satellites.length + " satellites processed.");
 }
 
 /**
@@ -290,7 +338,7 @@ function compute()
 {
     const configuration = getJson();
 
-    //console.log(configuration.target);
+    console.log(configuration);
 
     // If the target is not found, display a dialog and stop.
     if (!targetList.includes(configuration.target))
@@ -311,6 +359,254 @@ function compute()
     //console.log(results);
 
     printResults(configuration, results);
+    createPlot(configuration, results);
+}
+
+function createPlotData(configuration, results)
+{
+    const dataFull = [
+        Array(results.length),
+
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+        Array(results.length),
+    ];
+
+    for (let timeStep = 0; timeStep < results.length; timeStep++) 
+    {
+        const output = results[timeStep];    
+        dataFull[0][timeStep] = output.timeStamp.getTime() / 1000.0;
+
+        dataFull[1][timeStep]  = output.sph.eclHel.RA;
+        dataFull[2][timeStep]  = output.sph.eclHel.decl;
+        dataFull[3][timeStep]  = output.sph.eclGeo.RA;
+        dataFull[4][timeStep]  = output.sph.eclGeo.decl;
+        dataFull[5][timeStep]  = output.sph.J2000.RA;
+        dataFull[6][timeStep]  = output.sph.J2000.decl;
+        dataFull[7][timeStep]  = output.sph.mod.RA;
+        dataFull[8][timeStep]  = output.sph.mod.decl;
+        dataFull[9][timeStep]  = output.sph.tod.RA;
+        dataFull[10][timeStep]  = output.sph.tod.decl;
+        dataFull[11][timeStep] = output.sph.pef.RA;
+        dataFull[12][timeStep] = output.sph.pef.decl;
+        dataFull[13][timeStep] = output.sph.efi.RA;
+        dataFull[14][timeStep] = output.sph.efi.decl;
+        dataFull[15][timeStep] = output.sph.enu.az;
+        dataFull[16][timeStep] = output.sph.enu.el;
+    }
+
+    let data = [];
+
+    data.push(dataFull[0]);
+
+    if (configuration.coordOutputs.sph.ecl)
+    {
+        data.push(dataFull[1]);
+        data.push(dataFull[2]);
+    }
+    if (configuration.coordOutputs.sph.eclGeo)
+    {
+        data.push(dataFull[3]);
+        data.push(dataFull[4]);
+    }
+    if (configuration.coordOutputs.sph.j2000)
+    {
+        data.push(dataFull[5]);
+        data.push(dataFull[6]);
+     }
+    if (configuration.coordOutputs.sph.mod)
+    {
+        data.push(dataFull[7]);
+        data.push(dataFull[8]);
+    }
+    if (configuration.coordOutputs.sph.tod)
+    {
+        data.push(dataFull[9]);
+        data.push(dataFull[10]);
+    }
+    if (configuration.coordOutputs.sph.pef)
+    {
+        data.push(dataFull[11]);
+        data.push(dataFull[12]);
+    }
+    if (configuration.coordOutputs.sph.efi)
+    {
+        data.push(dataFull[13]);
+        data.push(dataFull[14]);
+    }
+    if (configuration.coordOutputs.sph.enu)
+    {
+        data.push(dataFull[15]);
+        data.push(dataFull[16]);
+     }
+
+
+    return data;
+}
+
+function createPlotSeries(configuration)
+{
+    const colors = [
+        "white",
+        "red",
+        "green",
+        "blue",
+        "purple",
+        "yellow",
+        "cyan",
+        "grey"
+    ];
+    let colorInd = 0;
+
+    let series = [ 
+    {
+        label: "x",
+        stroke: "white",
+    }];
+
+    if (configuration.coordOutputs.sph.ecl)
+    {
+        series.push({label : "EclHel-Lon", stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "EclHel-Lat", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.eclGeo)
+    {
+        series.push({label : "EclGeo-Lon", stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "EclGeo-Lat", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.j2000)
+    {
+        series.push({label : "J2000-RA",   stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "J2000-decl", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.mod)
+    {
+        series.push({label : "MoD-RA"  , stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "MoD-decl", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.tod)
+    {
+        series.push({label : "ToD-RA"  , stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "ToD-decl", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.pef)
+    {
+        series.push({label : "PEF-lon", stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "PEF-lat", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.efi)
+    {
+        series.push({label : "EFI-lon", stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "EFI-lat", stroke : colors[colorInd++ % colors.length]});
+    }
+    if (configuration.coordOutputs.sph.enu)
+    {
+        series.push({label : "ENU-azi", stroke : colors[colorInd++ % colors.length]});
+        series.push({label : "ENU-el", stroke : colors[colorInd++ % colors.length]});
+    }
+    return series;
+}
+
+function createPlot(configuration, results)
+{
+    indPlot++;
+
+    const data = createPlotData(configuration, results);
+
+    const opts = {
+        title: configuration.target,
+        width: 1048,
+        height: 600,
+        scales: {
+            x: {
+           //     time: false,
+            //	auto: false,
+            //	range: [0, 6],
+            },
+            y: {
+                auto: false,
+                range: [-180, 180],
+                },
+        },
+        series: createPlotSeries(configuration),
+        axes: [
+            {
+            //	size: 30,
+                label: "Time",
+                labelSize: 20,
+                stroke: "white",
+                grid: {
+                    width: 1 / devicePixelRatio,
+                    stroke: "#444444",
+                },
+            },
+            {
+                space: 50,
+            //	size: 40,
+                side: 1,
+                label: "Angle",
+                labelGap: 8,
+                labelSize: 8 + 12 + 8,
+                stroke: "white",
+                grid: {
+                    width: 1 / devicePixelRatio,
+                    stroke: "#444444",
+                },
+            }
+        ],
+    };
+
+    myLayout.registerComponent( 'plotComponent_' + indPlot, function( container, state ){
+        container.getElement().html( '<div id="plot_' + indPlot +  '"></div>');
+        //container.getElement().html( '<div id="plot"></div>');
+        container.indPlot = indPlot;
+
+        container.on('resize', function() {
+            console.log('Resize ' + container.indPlot + " " + container.width + " " + container.height);
+            const plot = document.getElementById('plot_' + container.indPlot);
+            //const plot = document.getElementById('plot');
+
+            while (plot.firstChild)
+            {
+                plot.removeChild(plot.firstChild);
+            }
+            //console.log(plot);
+            //console.log(container.getElement()[0]);
+            u = new uPlot(opts, data, plot);
+            u.setSize({width : container.width, height : container.height-100});    
+        });
+        //container.on('resize', function() {
+        //    console.log(container.width + " " + container.height);
+        //});
+        
+    });
+
+    console.log("foobar");
+
+    var newItemConfig = {
+        title: configuration.target,
+        type: 'component',
+        //componentName: 'plot_' + indPlot,
+        componentName: 'plotComponent_' + indPlot,
+        componentState: { text: 'D', configuration : configuration, results : results }
+    };
+    myLayout.root.contentItems[ 0 ].addChild( newItemConfig );    
 }
 
 /**
@@ -501,54 +797,118 @@ function generateCsvTitle(configuration)
     return s;
 }
 
-// Initialize time configuration.
-let prevMidnight = new Date();
-let nextMidnight = new Date();
-prevMidnight.setUTCHours(0, 0, 0, 0);
-prevMidnight.setUTCMilliseconds(0);
-nextMidnight.setUTCHours(24, 0, 0, 0);
-nextMidnight.setUTCMilliseconds(0);
-timeStart.value = dateToTs(prevMidnight);
-timeEnd.value = dateToTs(nextMidnight);
-// Initialize Julian according to time stamps above.
-updateJulian();
+myLayout.registerComponent( 'csvComponent', function( container, componentState ){
+    
+    //console.log(document.getElementById('csv_output').innerHTML);
+
+    const elem = document.getElementById('csv_output');
+    const elemHtml = elem.innerHTML;
+    elem.remove();
+
+    container.getElement().html(elemHtml);
+
+    container.on('resize', function() {
+        const elemText = document.getElementById("textarea_output");
+        console.log(container.width + " " + container.height);
+        elemText.style.width = container.width;
+        elemText.style.height = container.height;
+    });
+});
+
+//myLayout.registerComponent( 'plotComponent', function( container, componentState ) {
+//    container.getElement().html = "<p>TODO</p>";
+//});
+
+
+myLayout.registerComponent( 'confComponent', function( container, componentState ) {
+    
+    //console.log(document.getElementById('Configuration').innerHTML);
+
+    const elem = document.getElementById('Configuration');
+    const elemHtml = elem.innerHTML;
+    elem.remove();
+
+    container.getElement().html(elemHtml);
+
+    container.on('open', function() {
+        elemObsLatDeg = document.getElementById("observer_latitude_degrees");
+        elemObsLatMin = document.getElementById("observer_latitude_minutes");
+        elemObsLatSec = document.getElementById("observer_latitude_seconds");
+        elemObsLonDeg = document.getElementById("observer_longitude_degrees");
+        elemObsLonMin = document.getElementById("observer_longitude_minutes");
+        elemObsLonSec = document.getElementById("observer_longitude_seconds");
+        
+        elemObsLatDegFrac = document.getElementById("observer_latitude_degrees_frac");
+        elemObsLonDegFrac = document.getElementById("observer_longitude_degrees_frac");
+        elemObsAlt = document.getElementById("observer_altitude_meters");
+        elemTimeStepNumber = document.getElementById("number_timestep");
+        elemTimeStepSize = document.getElementById("size_timestep");
+        
+        timeStart = document.getElementById("timestamp_start");
+        timeEnd = document.getElementById("timestamp_end");
+        julianStart = document.getElementById("julian_start");
+        julianEnd = document.getElementById("julian_end");
+
+        // Initialize time configuration.
+        let prevMidnight = new Date();
+        let nextMidnight = new Date();
+        prevMidnight.setUTCHours(0, 0, 0, 0);
+        prevMidnight.setUTCMilliseconds(0);
+        nextMidnight.setUTCHours(24, 0, 0, 0);
+        nextMidnight.setUTCMilliseconds(0);
+        timeStart.value = dateToTs(prevMidnight);
+        timeEnd.value = dateToTs(nextMidnight);
+        // Initialize Julian according to time stamps above.
+        updateJulian();
+
+        // Initialize target list from Hipparchus catalog.
+        targetList = Object.keys(orbitsjs.hipparchusData);
+        targetType = [];
+        targetList.forEach(function(target) {
+            targetType[target] = "star";
+        });
+        // Add planets to the target list.
+        const solarSystemTargets = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Sun'];
+        solarSystemTargets.forEach(function(target) {
+            targetType[target] = 'solar_system'
+            targetList.push(target);
+        });
+        // Add Moon to the target list.
+        targetList.push('Moon');
+        targetType['Moon'] = 'moon';
+
+        // Initialize autocomplete.
+        const autoCompleteJS = new autoComplete({
+            placeHolder: "Search for a target",
+            data: {
+                src: targetList, 
+                cache: true,
+            },
+            resultItem: {
+                highlight: true
+            },
+            resultsList:{
+                tabSelect: true,
+                noResults: true
+            },
+            events: {
+                input: {
+                    selection: (event) => {
+                        const selection = event.detail.selection.value;
+                        autoCompleteJS.input.value = selection;
+                    }
+                }
+            }
+        });
+        container.setSize(440, 1000);
+    });
+    container.on('resize', function() {
+        console.log(container.width + " " + container.height);
+    });
+});
 
 // Initialize target list from Hipparchus catalog.
 let targetList = Object.keys(orbitsjs.hipparchusData);
 let targetType = [];
-targetList.forEach(function(target) {
-    targetType[target] = "star";
-});
-// Add planets to the target list.
-const solarSystemTargets = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Sun'];
-solarSystemTargets.forEach(function(target) {
-    targetType[target] = 'solar_system'
-    targetList.push(target);
-});
-// Add Moon to the target list.
-targetList.push('Moon');
-targetType['Moon'] = 'moon';
 
-// Initialize autocomplete.
-const autoCompleteJS = new autoComplete({
-    placeHolder: "Search for a target",
-    data: {
-        src: targetList, 
-        cache: true,
-    },
-    resultItem: {
-        highlight: true
-    },
-    resultsList:{
-        tabSelect: true,
-        noResults: true
-    },
-    events: {
-        input: {
-            selection: (event) => {
-                const selection = event.detail.selection.value;
-                autoCompleteJS.input.value = selection;
-            }
-        }
-    }
-});
+myLayout.init();
