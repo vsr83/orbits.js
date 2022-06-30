@@ -1,5 +1,13 @@
 // GoldenLayout configuration. 
 var config = {
+    settings: 
+    {
+        showPopoutIcon: false
+    },
+    dimensions :
+    {
+        minItemWidth : 420
+    },
     content: [
         {
             type: 'row',
@@ -7,7 +15,9 @@ var config = {
                 {
                     type: 'component',
                     componentName: 'confComponent',
-                    componentState: { label: 'A' }
+                    componentState: { label: 'A' },
+                    isClosable: false,
+                    showPopoutIcon: false,
                 },
 
                 {
@@ -16,7 +26,9 @@ var config = {
                         {
                             type: 'component',
                             componentName: 'csvComponent',
-                            componentState: { label: 'B' }
+                            componentState: { label: 'B' },
+                            isClosable: false,
+                            showPopoutIcon: false,
                         }
                     ]
                 }
