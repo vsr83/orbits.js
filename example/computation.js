@@ -381,6 +381,8 @@ function processTimeStep(configuration, timeStamp)
  
      // Get time step size in milliseconds.
      let timeStepSize = 1000;
+     let timeStepNumber = parseInt(elemTimeStepNumber.value);
+
      switch (elemTimeStepSize.value)
      {
          case "second":
@@ -396,6 +398,8 @@ function processTimeStep(configuration, timeStamp)
              timeStepSize = 1000 * 3600 * 24;
              break;
      }
+
+     timeStepSize *= timeStepNumber;
  
      while (timeCurrent < timeEnd)
      {
