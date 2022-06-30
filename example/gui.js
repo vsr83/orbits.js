@@ -1,3 +1,4 @@
+// GoldenLayout configuration. 
 var config = {
     content: [
         {
@@ -16,33 +17,18 @@ var config = {
                             type: 'component',
                             componentName: 'csvComponent',
                             componentState: { label: 'B' }
-                        }/*,
-                        {
-                            type: 'component',
-                            componentName: 'plotComponent',
-                            componentState: { label: 'C' }
-                        }*/
+                        }
                     ]
                 }
             ]
         }
-        /*,{
-            type: 'column',
-            content:[{
-                type: 'component',
-                componentName: 'tableComponent',
-                componentState: { label: 'B' }
-            },{
-                type: 'component',
-                componentName: 'testComponent',
-                componentState: { label: 'C' }
-            }]
-        }]*/
     ]
 };
 
 var myLayout = new GoldenLayout( config );
 
+// Elements are updated when the configuration form content is moved to a new
+// element.
 let elemObsLatDeg = document.getElementById("observer_latitude_degrees");
 let elemObsLatMin = document.getElementById("observer_latitude_minutes");
 let elemObsLatSec = document.getElementById("observer_latitude_seconds");
@@ -66,8 +52,7 @@ var satellites = [];
 // Indices of satellite records according to satellite name.
 var satNameToIndex = [];        
 
-let indPlot = 0;
-
+// TODO:
 function isValid()
 {
     return true;
@@ -358,356 +343,8 @@ function compute()
     }
     //console.log(results);
 
-    printResults(configuration, results);
-    createPlot(configuration, results);
-}
-
-function createPlotData(configuration, results)
-{
-    const dataFull = [
-        Array(results.length),
-
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-        Array(results.length),
-    ];
-
-    for (let timeStep = 0; timeStep < results.length; timeStep++) 
-    {
-        const output = results[timeStep];    
-        dataFull[0][timeStep] = output.timeStamp.getTime() / 1000.0;
-
-        dataFull[1][timeStep]  = output.sph.eclHel.RA;
-        dataFull[2][timeStep]  = output.sph.eclHel.decl;
-        dataFull[3][timeStep]  = output.sph.eclGeo.RA;
-        dataFull[4][timeStep]  = output.sph.eclGeo.decl;
-        dataFull[5][timeStep]  = output.sph.J2000.RA;
-        dataFull[6][timeStep]  = output.sph.J2000.decl;
-        dataFull[7][timeStep]  = output.sph.mod.RA;
-        dataFull[8][timeStep]  = output.sph.mod.decl;
-        dataFull[9][timeStep]  = output.sph.tod.RA;
-        dataFull[10][timeStep]  = output.sph.tod.decl;
-        dataFull[11][timeStep] = output.sph.pef.RA;
-        dataFull[12][timeStep] = output.sph.pef.decl;
-        dataFull[13][timeStep] = output.sph.efi.RA;
-        dataFull[14][timeStep] = output.sph.efi.decl;
-        dataFull[15][timeStep] = output.sph.enu.az;
-        dataFull[16][timeStep] = output.sph.enu.el;
-    }
-
-    let data = [];
-
-    data.push(dataFull[0]);
-
-    if (configuration.coordOutputs.sph.ecl)
-    {
-        data.push(dataFull[1]);
-        data.push(dataFull[2]);
-    }
-    if (configuration.coordOutputs.sph.eclGeo)
-    {
-        data.push(dataFull[3]);
-        data.push(dataFull[4]);
-    }
-    if (configuration.coordOutputs.sph.j2000)
-    {
-        data.push(dataFull[5]);
-        data.push(dataFull[6]);
-     }
-    if (configuration.coordOutputs.sph.mod)
-    {
-        data.push(dataFull[7]);
-        data.push(dataFull[8]);
-    }
-    if (configuration.coordOutputs.sph.tod)
-    {
-        data.push(dataFull[9]);
-        data.push(dataFull[10]);
-    }
-    if (configuration.coordOutputs.sph.pef)
-    {
-        data.push(dataFull[11]);
-        data.push(dataFull[12]);
-    }
-    if (configuration.coordOutputs.sph.efi)
-    {
-        data.push(dataFull[13]);
-        data.push(dataFull[14]);
-    }
-    if (configuration.coordOutputs.sph.enu)
-    {
-        data.push(dataFull[15]);
-        data.push(dataFull[16]);
-     }
-
-
-    return data;
-}
-
-function createPlotSeries(configuration)
-{
-    const colors = [
-        "white",
-        "red",
-        "green",
-        "blue",
-        "purple",
-        "yellow",
-        "cyan",
-        "grey"
-    ];
-    let colorInd = 0;
-
-    let series = [ 
-    {
-        label: "x",
-        stroke: "white",
-    }];
-
-    if (configuration.coordOutputs.sph.ecl)
-    {
-        series.push({label : "EclHel-Lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "EclHel-Lat", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.eclGeo)
-    {
-        series.push({label : "EclGeo-Lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "EclGeo-Lat", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.j2000)
-    {
-        series.push({label : "J2000-RA",   stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "J2000-decl", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.mod)
-    {
-        series.push({label : "MoD-RA"  , stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "MoD-decl", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.tod)
-    {
-        series.push({label : "ToD-RA"  , stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "ToD-decl", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.pef)
-    {
-        series.push({label : "PEF-lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "PEF-lat", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.efi)
-    {
-        series.push({label : "EFI-lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "EFI-lat", stroke : colors[colorInd++ % colors.length]});
-    }
-    if (configuration.coordOutputs.sph.enu)
-    {
-        series.push({label : "ENU-azi", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "ENU-el", stroke : colors[colorInd++ % colors.length]});
-    }
-    return series;
-}
-
-function createPlot(configuration, results)
-{
-    indPlot++;
-
-    const data = createPlotData(configuration, results);
-
-    const opts = {
-        title: configuration.target,
-        width: 1048,
-        height: 600,
-        scales: {
-            x: {
-           //     time: false,
-            //	auto: false,
-            //	range: [0, 6],
-            },
-            y: {
-                auto: false,
-                range: [-180, 180],
-                },
-        },
-        series: createPlotSeries(configuration),
-        axes: [
-            {
-            //	size: 30,
-                label: "Time",
-                labelSize: 20,
-                stroke: "white",
-                grid: {
-                    width: 1 / devicePixelRatio,
-                    stroke: "#444444",
-                },
-            },
-            {
-                space: 50,
-            //	size: 40,
-                side: 1,
-                label: "Angle",
-                labelGap: 8,
-                labelSize: 8 + 12 + 8,
-                stroke: "white",
-                grid: {
-                    width: 1 / devicePixelRatio,
-                    stroke: "#444444",
-                },
-            }
-        ],
-    };
-
-    myLayout.registerComponent( 'plotComponent_' + indPlot, function( container, state ){
-        container.getElement().html( '<div id="plot_' + indPlot +  '"></div>');
-        //container.getElement().html( '<div id="plot"></div>');
-        container.indPlot = indPlot;
-
-        container.on('resize', function() {
-            console.log('Resize ' + container.indPlot + " " + container.width + " " + container.height);
-            const plot = document.getElementById('plot_' + container.indPlot);
-            //const plot = document.getElementById('plot');
-
-            while (plot.firstChild)
-            {
-                plot.removeChild(plot.firstChild);
-            }
-            //console.log(plot);
-            //console.log(container.getElement()[0]);
-            u = new uPlot(opts, data, plot);
-            u.setSize({width : container.width, height : container.height-100});    
-        });
-        //container.on('resize', function() {
-        //    console.log(container.width + " " + container.height);
-        //});
-        
-    });
-
-    console.log("foobar");
-
-    var newItemConfig = {
-        title: configuration.target,
-        type: 'component',
-        //componentName: 'plot_' + indPlot,
-        componentName: 'plotComponent_' + indPlot,
-        componentState: { text: 'D', configuration : configuration, results : results }
-    };
-    myLayout.root.contentItems[ 0 ].addChild( newItemConfig );    
-}
-
-/**
- * Print results.
- * 
- * @param {*} configuration 
- *      Configuration JSON from the GUI.
- * @param {*} results 
- *      Array of results.
- */
-function printResults(configuration, results)
-{
-    // Display CSV title.
-    console.log(generateCsvTitle(configuration));
-    addToOutput(generateCsvTitle(configuration));
-
-    for (let timeStep = 0; timeStep < results.length; timeStep++) 
-    {
-        const output = results[timeStep];
-
-        let s = dateToTs(output.timeStamp);
-
-        if (configuration.coordOutputs.cart.ecl)
-        {
-            s += "," + output.osv.eclHel.r;
-        }
-        if (configuration.coordOutputs.sph.ecl)
-        {
-            s += "," + output.sph.eclHel.RA + "," + output.sph.eclHel.decl + "," + output.sph.eclHel.dist;
-        }
-        if (configuration.coordOutputs.cart.eclGeo)
-        {
-            s += "," + output.osv.eclGeo.r;
-        }
-        if (configuration.coordOutputs.sph.eclGeo)
-        {
-            s += "," + output.sph.eclGeo.RA + "," + output.sph.eclGeo.decl + "," + output.sph.eclGeo.dist;
-        }
-        if (configuration.coordOutputs.cart.j2000)
-        {
-            s += "," + output.osv.J2000.r;
-        }
-        if (configuration.coordOutputs.sph.j2000)
-        {
-            s += "," + output.sph.J2000.RA + "," + output.sph.J2000.decl + "," + output.sph.J2000.dist;
-        }
-        if (configuration.coordOutputs.cart.mod)
-        {
-            s += "," + output.osv.mod.r;
-        }
-        if (configuration.coordOutputs.sph.mod)
-        {
-            s += "," + output.sph.mod.RA + "," + output.sph.mod.decl + "," + output.sph.mod.dist;
-        }
-        if (configuration.coordOutputs.cart.tod)
-        {
-            s += "," + output.osv.tod.r;
-        }
-        if (configuration.coordOutputs.sph.tod)
-        {
-            s += "," + output.sph.tod.RA + "," + output.sph.tod.decl + "," + output.sph.tod.dist;
-        }
-        if (configuration.coordOutputs.cart.pef)
-        {
-            s += "," + output.osv.pef.r;
-        }
-        if (configuration.coordOutputs.sph.pef)
-        {
-            s += "," + output.sph.pef.RA + "," + output.sph.pef.decl + "," + output.sph.pef.dist;
-        }
-        if (configuration.coordOutputs.cart.efi)
-        {
-            s += "," + output.osv.efi.r;
-        }
-        if (configuration.coordOutputs.sph.efi)
-        {
-            s += "," + output.sph.efi.RA + "," + output.sph.efi.decl + "," + output.sph.efi.dist;
-        }
-        if (configuration.coordOutputs.cart.enu)
-        {
-            s += "," + output.osv.enu.r;
-        }
-        if (configuration.coordOutputs.sph.enu)
-        {
-            s += "," + output.sph.enu.az + "," + output.sph.enu.el + "," + output.sph.enu.dist;
-        }
-    
-        console.log(s);
-        addToOutput(s);
-    }
-}
-
-/**
- * Add line to output textarea.
- * 
- * @param {*} s 
- *      The line to be added.
- */
-function addToOutput(s)
-{
-    document.getElementById("textarea_output").value += (s + '\r\n');
+    csvPrint(configuration, results);
+    plotCreate(configuration, results);
 }
 
 /**
@@ -718,89 +355,8 @@ function clearOutput()
     document.getElementById("textarea_output").value = "";
 }
 
-/**
- * Generate title for the CSV output.
- * 
- * @param {*} configuration 
- *      The configuration.
- * @returns 
- */
-function generateCsvTitle(configuration)
-{
-    let s = 'Timestamp'
-
-    if (configuration.coordOutputs.cart.ecl)
-    {
-        s += ",EclHel_x,EclHel_y,EclHel_z";
-    }
-    if (configuration.coordOutputs.sph.ecl)
-    {
-        s += ",EclHel_RA,EclHel_decl,EclHel_dist";
-    }
-    if (configuration.coordOutputs.cart.eclGeo)
-    {
-        s += ",EclGeo_x,EclGeo_y,EclGeo_z";
-    }
-    if (configuration.coordOutputs.sph.eclGeo)
-    {
-        s += ",EclGeo_RA,EclGeo_decl,EclGeo_dist";
-    }
-    if (configuration.coordOutputs.cart.j2000)
-    {
-        s += ",J2000_x,J2000_y,J2000_z";
-    }
-    if (configuration.coordOutputs.sph.j2000)
-    {
-        s += ",J2000_RA,J2000_decl,J2000_dist";
-    }
-    if (configuration.coordOutputs.cart.mod)
-    {
-        s += ",MoD_x,MoD_y,MoD_z";
-    }
-    if (configuration.coordOutputs.sph.mod)
-    {
-        s += ",MoD_RA,MoD_decl,MoD_dist";
-    }
-    if (configuration.coordOutputs.cart.tod)
-    {
-        s += ",ToD_x,ToD_y,ToD_z";
-    }
-    if (configuration.coordOutputs.sph.tod)
-    {
-        s += ",ToD_RA,ToD_decl,ToD_dist";
-    }
-    if (configuration.coordOutputs.cart.pef)
-    {
-        s += ",PEF_x,PEF_y,PEF_z";
-    }
-    if (configuration.coordOutputs.sph.pef)
-    {
-        s += ",PEF_RA,PEF_decl,PEF_dist";
-    }
-    if (configuration.coordOutputs.cart.efi)
-    {
-        s += ",EFI_x,EFI_y,EFI_z";
-    }
-    if (configuration.coordOutputs.sph.efi)
-    {
-        s += ",EFI_RA,EFI_decl,EFI_dist";
-    }
-    if (configuration.coordOutputs.cart.enu)
-    {
-        s += ",ENU_x,ENU_y,ENU_z";
-    }
-    if (configuration.coordOutputs.sph.enu)
-    {
-        s += ",Azi,Elev,ENU_dist";
-    }
-
-    return s;
-}
-
+// Register the CSV textarea as a window.
 myLayout.registerComponent( 'csvComponent', function( container, componentState ){
-    
-    //console.log(document.getElementById('csv_output').innerHTML);
-
     const elem = document.getElementById('csv_output');
     const elemHtml = elem.innerHTML;
     elem.remove();
@@ -809,28 +365,22 @@ myLayout.registerComponent( 'csvComponent', function( container, componentState 
 
     container.on('resize', function() {
         const elemText = document.getElementById("textarea_output");
-        console.log(container.width + " " + container.height);
+        console.log("CSV Resize: " + container.width + " " + container.height);
         elemText.style.width = container.width;
         elemText.style.height = container.height;
     });
 });
 
-//myLayout.registerComponent( 'plotComponent', function( container, componentState ) {
-//    container.getElement().html = "<p>TODO</p>";
-//});
-
-
+// Register configuration form as a window.
 myLayout.registerComponent( 'confComponent', function( container, componentState ) {
-    
-    //console.log(document.getElementById('Configuration').innerHTML);
-
     const elem = document.getElementById('Configuration');
+    // Remove the configuration element and copy its contents into a new element.
     const elemHtml = elem.innerHTML;
     elem.remove();
-
     container.getElement().html(elemHtml);
 
     container.on('open', function() {
+        // Update DOM element references.
         elemObsLatDeg = document.getElementById("observer_latitude_degrees");
         elemObsLatMin = document.getElementById("observer_latitude_minutes");
         elemObsLatSec = document.getElementById("observer_latitude_seconds");
