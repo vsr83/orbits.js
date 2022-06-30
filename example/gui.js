@@ -14,7 +14,7 @@ var config = {
             content:[
                 {
                     type: 'component',
-                    componentName: 'confComponent',
+                    componentName: 'Configuration',
                     componentState: { label: 'A' },
                     isClosable: false,
                     showPopoutIcon: false,
@@ -25,7 +25,7 @@ var config = {
                     content : [
                         {
                             type: 'component',
-                            componentName: 'csvComponent',
+                            componentName: 'CSV Output',
                             componentState: { label: 'B' },
                             isClosable: false,
                             showPopoutIcon: false,
@@ -127,7 +127,6 @@ function getJson()
 
     const target = document.getElementById('autoComplete').value;
 
-    console.log(target);
     const atmosphere = {
         temperature : parseFloat(document.getElementById("air_temperature").value),
         pressure : parseFloat(document.getElementById("air_pressure").value)
@@ -174,7 +173,6 @@ function handleInteger(event)
     const targetElem = document.getElementById(event.target.id);
     let value = parseInt(targetElem.value);
 
-    console.log(targetElem.max);
     if (value < targetElem.min)
     {
         value = targetElem.min;
@@ -335,8 +333,6 @@ function compute()
 {
     const configuration = getJson();
 
-    console.log(configuration);
-
     // If the target is not found, display a dialog and stop.
     if (!targetList.includes(configuration.target))
     {
@@ -360,15 +356,15 @@ function compute()
 }
 
 /**
- * Clear output textarea.
+ * Clear CSV textarea.
  */
-function clearOutput()
+function clearCsv()
 {
     document.getElementById("textarea_output").value = "";
 }
 
 // Register the CSV textarea as a window.
-myLayout.registerComponent( 'csvComponent', function( container, componentState ){
+myLayout.registerComponent( 'CSV Output', function( container, componentState ){
     const elem = document.getElementById('csv_output');
     const elemHtml = elem.innerHTML;
     elem.remove();
@@ -384,7 +380,7 @@ myLayout.registerComponent( 'csvComponent', function( container, componentState 
 });
 
 // Register configuration form as a window.
-myLayout.registerComponent( 'confComponent', function( container, componentState ) {
+myLayout.registerComponent( 'Configuration', function( container, componentState ) {
     const elem = document.getElementById('Configuration');
     // Remove the configuration element and copy its contents into a new element.
     const elemHtml = elem.innerHTML;

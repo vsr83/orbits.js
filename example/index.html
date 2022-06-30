@@ -33,6 +33,15 @@
             <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="on" autocapitalize="off">
         </div>
         <br><br>
+        <button id="button_compute" onclick="compute()">Compute</button>
+        <!--button id="button_reset">Reset</button-->
+        <button id="button_clear" onclick="clearOutput()">Clear CSV</button>
+        <!--button id="button_import_json" onclick="importJson()">Import JSON</button>
+        <button id="button_export_json" onclick="exportJson()">Export JSON</button>
+        <button id="button_import_TLEs" onclick="importTle()">Import TLEs</button>
+        <button id="button_reset">Reset</button>
+        <br-->
+        <br><br>
         <fieldset class="conf_fieldset">
             <legend>Observer Location:</legend>
             <div class="observer_latitude">
@@ -127,14 +136,6 @@
             <legend>General Options:</legend>
         </fieldset-->
         <fieldset class="conf_fieldset">
-            <legend>Add Satellite TLEs to Targets</legend>
-            <label for="TLEListinput">Paste a list of 3-line TLEs below:</label><br>
-            <a href="https://celestrak.com/NORAD/elements/" target="_blank"> See CelesTrak for available TLEs.</a>
-            <textarea id="TLEListinput" rows="10" cols="69"></textarea>
-            <br>
-            <button id="TLEListAppend" onclick="processTleList()">Add</button>
-        </fieldset>
-        <fieldset class="conf_fieldset">
             <legend>Corrections:</legend>
             <label class="label_correction" for="cb_refraction">Atmospheric Refraction: </label>
             <input type="checkbox" id="cb_refraction" name="cb_refraction">
@@ -216,14 +217,14 @@
             /
             <input type="checkbox" id="cb_cart_enu" name="cb_cart_enu">
         </fieldset>
-        <button id="button_compute" onclick="compute()">Compute</button>
-        <button id="button_reset">Reset</button>
-        <button id="button_clear" onclick="clearOutput()">Clear Output</button>
-        <!--button id="button_import_json" onclick="importJson()">Import JSON</button>
-        <button id="button_export_json" onclick="exportJson()">Export JSON</button>
-        <button id="button_import_TLEs" onclick="importTle()">Import TLEs</button>
-        <button id="button_reset">Reset</button>
-        <br-->
+        <fieldset class="conf_fieldset">
+            <legend>Add Satellite TLEs to Targets</legend>
+            <label for="TLEListinput">Paste a list of 3-line TLEs below:</label><br>
+            <a href="https://celestrak.com/NORAD/elements/" target="_blank"> See CelesTrak for available TLEs.</a>
+            <textarea id="TLEListinput" rows="10" cols="69"></textarea>
+            <br>
+            <button id="TLEListAppend" onclick="processTleList()">Add</button>
+        </fieldset>
     </div>
     </div>
 
