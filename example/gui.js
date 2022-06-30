@@ -392,6 +392,10 @@ myLayout.registerComponent( 'confComponent', function( container, componentState
     container.getElement().html(elemHtml);
 
     container.on('open', function() {
+        const conf2 = document.getElementById("Configuration2");
+        conf2.style.display = 'inline-block';
+        conf2.style.position = 'relative';
+
         // Update DOM element references.
         elemObsLatDeg = document.getElementById("observer_latitude_degrees");
         elemObsLatMin = document.getElementById("observer_latitude_minutes");

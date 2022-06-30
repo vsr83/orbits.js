@@ -1,19 +1,61 @@
-div {
-  display: inline-block;
-  position: relative;
+
+.input_degrees::after {
+    position: relative;
+    top: 2px;
+    right: 1.2em;
+}
+.input_minutes::after {
+    position: relative;
+    top: 2px;
+    right: 1.2em;
+}
+.input_seconds::after {
+    position: relative;
+    top: 2px;
+    right: 1.2em;
+}
+.input_meters::after {
+    position: relative;
+    top: 0px;
+    right: 1.3em;
+}
+.input_celsius::after {
+    position: relative;
+    top: 0px;
+    right: 2.0em;
+}
+.input_millibars::after {
+    position: relative;
+    top: 0px;
+    right: 2.6em;
 }
 
-div::after {
-  position: absolute;
-  top: 2px;
-  right: .5em;
-  transition: all .05s ease-in-out;
+
+.input_degrees
+{
+    display: inline;
+}
+.input_minutes
+{
+    display: inline;
+}
+.input_seconds
+{
+    display: inline;
+}
+.input_meters
+{
+    display: inline;
+}
+.input_celsius
+{
+    display: inline;
+}
+.input_millibars
+{
+    display: inline;
 }
 
-div:hover::after,
-div:focus-within::after {
-  right: 1.5em;
-}
 .input_degrees::after {
   content: "\00B0";
 }
@@ -26,6 +68,9 @@ div:focus-within::after {
 .input_temperature::after {
     content: '\201C';
 }
+.input_meters::after {
+    content: "m";
+}
 
 .input_celsius::after {
     content: "\00B0 C";
@@ -36,16 +81,30 @@ div:focus-within::after {
   
   
 .number_arc {
-    width: 50px;
+    width: 55px;
     -moz-appearance: textfield;
 }
-/*input[type='text']{*/
+.number_meters {
+    width: 55px;
+    -moz-appearance: textfield;
+}
+
+.lonlat_label
+{
+    width: 40px;
+    display: inline-block;
+}
+
 .text_degree {
-    width: 95px;
+    width: 65px;
+    -moz-appearance: textfield;
+}
+.text_arcmin {
+    width: 65px;
     -moz-appearance: textfield;
 }
 .text_arcsec {
-    width: 75px;
+    width: 65px;
     -moz-appearance: textfield;
 }
 
@@ -54,7 +113,7 @@ div:focus-within::after {
     -moz-appearance: textfield;
 }
 .text_pressure {
-    width: 95px;
+    width: 80px;
     -moz-appearance: textfield;
 }
 
@@ -68,15 +127,11 @@ div:focus-within::after {
     -moz-appearance: textfield;
 }
 
-.lonlat_label {
-    width: 40px;
-    padding: 3px;
-    display: inline-block;
-}
 
 #observer_logitude_degrees {
     width:90px;
 }
+
 
 .utcstart_label {
     width: 50px;
@@ -104,13 +159,15 @@ div:focus-within::after {
 }
 
 .label_correction {
-    width:200px;
+    width:160px;
     display: inline-block;
 }
 .label_coordinate {
     width:250px;
     display: inline-block;
 }
+
+
 #TLEListinput {
     font-size: 8px;
 }
@@ -136,6 +193,7 @@ div:focus-within::after {
     display: inline-block;
 }
 
+
 .conf_fieldset {
     width:380px;
 }
@@ -147,8 +205,6 @@ div:focus-within::after {
     left: 430px;
     top: 0px;
     width: auto;
-    /*width: 600px;
-    height: 800px;*/
 }
 
 #textarea_output
@@ -158,6 +214,7 @@ div:focus-within::after {
     overflow-wrap: normal;
     overflow-x: scroll;
 }
+
 
 body .lm_content{
     overflow: auto;
@@ -178,3 +235,9 @@ input[type="number"], textarea {
     color: white;
     background-color : #202020;   
 }
+
+#Configuration2 > div{
+    display: inline;
+    position: relative;
+}
+

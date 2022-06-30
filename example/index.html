@@ -28,7 +28,8 @@
 
 <body>
     <div id="Configuration">
-        <div class="autoComplete_wrapper">
+        <div id="Configuration2">
+            <div class="autoComplete_wrapper">
             <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="on" autocapitalize="off">
         </div>
         <br><br>
@@ -56,7 +57,7 @@
                     value="0" class="text_degree" onchange="updateArc(event)"/>
                 </div>
             </div>
-            <br>
+            
             <div class="observer_longitude">
                 <label for="observer_longitude_degrees_frac" class="lonlat_label">
                     Lon: 
@@ -79,7 +80,6 @@
                     value="0" class="text_degree" onchange="updateArc(event)"/>
                 </div>
             </div>
-            <br>
             <div class="observer_altitude">
                 <label class="lonlat_label" for="observer_altitude_meters">
                     Alt: 
@@ -89,7 +89,7 @@
                     value="0" class="number_meters"/>
                 </div>
             </div>
-            <br><br>
+            <br>
             <button id="observer_GPS" onclick="locationGps()">Retrieve from GPS</button>
 
         </fieldset>
@@ -103,7 +103,6 @@
                 <input type="text" id="timestamp_start" class="text_timestamp" onchange="updateJulian()" value="0"/>
                 <input type="text" id="julian_start" class="text_timestamp" onchange="updateJulian()" value="0"/>
             </div>
-            <br>
             <div class="input_timestamp_end">
                 <label class="utcend_label" for="timestamp_end">
                     End: 
@@ -111,7 +110,6 @@
                 <input type="text" id="timestamp_end" class="text_timestamp" onchange="updateJulian()" value="0"/>
                 <input type="text" id="julian_end" class="text_timestamp" onchange="updateJulian()" value="0"/>
             </div>
-            <br>
             <div class="input_timestamp_step">
                 <label class="utcstep_label" for="number_timestep">
                     Step: 
@@ -226,6 +224,7 @@
         <button id="button_import_TLEs" onclick="importTle()">Import TLEs</button>
         <button id="button_reset">Reset</button>
         <br-->
+    </div>
     </div>
 
     <div id="csv_output">
