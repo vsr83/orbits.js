@@ -203,8 +203,8 @@ function plotCreate(configuration, results)
             //	range: [0, 6],
             },
             y: {
-                auto: false,
-                range: [-180, 180],
+                auto: true,
+               // range: [-180, 180],
                 },
         },
         series: plotCreateSeries(configuration),
