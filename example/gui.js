@@ -132,13 +132,23 @@ function getJson()
         pressure : parseFloat(document.getElementById("air_pressure").value)
     };
 
+    const plotOptions = {
+        timeZone : document.getElementById("plot_time_zone").value,
+        //elevFormat : document.getElementById("plot_elevation_format").value,
+        //aziFormat : document.getElementById("plot_azimuth_format").value,
+        //raFormat : document.getElementById("plot_RA_format").value,
+        drawAzi : document.getElementById("plot_draw_az").checked,
+        drawEl : document.getElementById("plot_draw_el").checked
+    };
+
     const conf = {
         target : target,
         observer : observer, 
         time : time, 
         corrections : corrections,
         coordOutputs : coordOutputs,
-        atmosphere : atmosphere
+        atmosphere : atmosphere,
+        plotOptions : plotOptions
     };
 
     return conf;
@@ -187,7 +197,6 @@ function handleInteger(event)
 
     return event;
 }
-
 
 /**
  * Update degrees from degree-minute-second forms.
@@ -327,9 +336,9 @@ function tsToDate(ts)
 }
 
 /**
- * Perform the actual computation.
+ * Create a plot.
  */
-function compute()
+function createPlot()
 {
     const configuration = getJson();
 
@@ -341,7 +350,6 @@ function compute()
     }
 
     const timeSteps = getTimeSteps(configuration.time);
-
     const results = [];
 
     // Process individual time steps.
@@ -349,16 +357,42 @@ function compute()
     {
         results.push(processTimeStep(configuration, timeSteps[indTimeStep]));
     }
-    //console.log(results);
 
-    csvPrint(configuration, results);
     plotCreate(configuration, results);
 }
 
 /**
+ * Create a CSV.
+ */
+function createCsv()
+{
+    const configuration = getJson();
+
+    console.log(configuration);
+
+    // If the target is not found, display a dialog and stop.
+    if (!targetList.includes(configuration.target))
+    {
+        window.alert("Target \"" + configuration.target + "\" not found!");
+        return;
+    }
+
+    const timeSteps = getTimeSteps(configuration.time);
+    const results = [];
+
+    // Process individual time steps.
+    for (let indTimeStep = 0; indTimeStep < timeSteps.length; indTimeStep++)
+    {
+        results.push(processTimeStep(configuration, timeSteps[indTimeStep]));
+    }
+
+    csvPrint(configuration, results);
+}
+ 
+/**
  * Clear CSV textarea.
  */
-function clearCsv()
+function clearOutput()
 {
     document.getElementById("textarea_output").value = "";
 }

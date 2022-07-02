@@ -39,8 +39,12 @@ function plotCreateData(configuration, results)
     for (let timeStep = 0; timeStep < results.length; timeStep++) 
     {
         const output = results[timeStep];    
-        dataFull[0][timeStep] = output.timeStamp.getTime() / 1000.0;
-
+        dataFull[0][timeStep] = (output.timeStamp.getTime()) / 1000.0;
+        if (configuration.plotOptions.timeZone === "UTC")
+        {
+            dataFull[0][timeStep] += output.timeStamp.getTimezoneOffset() * 60.0;
+        }
+    
         dataFull[1][timeStep]  = output.sph.eclHel.RA;
         dataFull[2][timeStep]  = output.sph.eclHel.decl;
         dataFull[3][timeStep]  = output.sph.eclGeo.RA;
@@ -50,7 +54,7 @@ function plotCreateData(configuration, results)
         dataFull[7][timeStep]  = output.sph.mod.RA;
         dataFull[8][timeStep]  = output.sph.mod.decl;
         dataFull[9][timeStep]  = output.sph.tod.RA;
-        dataFull[10][timeStep]  = output.sph.tod.decl;
+        dataFull[10][timeStep] = output.sph.tod.decl;
         dataFull[11][timeStep] = output.sph.pef.RA;
         dataFull[12][timeStep] = output.sph.pef.decl;
         dataFull[13][timeStep] = output.sph.efi.RA;
@@ -63,45 +67,47 @@ function plotCreateData(configuration, results)
 
     data.push(dataFull[0]);
 
+    const plotOpts = configuration.plotOptions;
+
     if (configuration.coordOutputs.sph.ecl)
     {
-        data.push(dataFull[1]);
-        data.push(dataFull[2]);
+        if (plotOpts.drawAzi) data.push(dataFull[1]);
+        if (plotOpts.drawEl)  data.push(dataFull[2]);
     }
     if (configuration.coordOutputs.sph.eclGeo)
     {
-        data.push(dataFull[3]);
-        data.push(dataFull[4]);
+        if (plotOpts.drawAzi) data.push(dataFull[3]);
+        if (plotOpts.drawEl)  data.push(dataFull[4]);
     }
     if (configuration.coordOutputs.sph.j2000)
     {
-        data.push(dataFull[5]);
-        data.push(dataFull[6]);
+        if (plotOpts.drawAzi) data.push(dataFull[5]);
+        if (plotOpts.drawEl)  data.push(dataFull[6]);
      }
     if (configuration.coordOutputs.sph.mod)
     {
-        data.push(dataFull[7]);
-        data.push(dataFull[8]);
+        if (plotOpts.drawAzi) data.push(dataFull[7]);
+        if (plotOpts.drawEl)  data.push(dataFull[8]);
     }
     if (configuration.coordOutputs.sph.tod)
     {
-        data.push(dataFull[9]);
-        data.push(dataFull[10]);
+        if (plotOpts.drawAzi) data.push(dataFull[9]);
+        if (plotOpts.drawEl)  data.push(dataFull[10]);
     }
     if (configuration.coordOutputs.sph.pef)
     {
-        data.push(dataFull[11]);
-        data.push(dataFull[12]);
+        if (plotOpts.drawAzi) data.push(dataFull[11]);
+        if (plotOpts.drawEl)  data.push(dataFull[12]);
     }
     if (configuration.coordOutputs.sph.efi)
     {
-        data.push(dataFull[13]);
-        data.push(dataFull[14]);
+        if (plotOpts.drawAzi) data.push(dataFull[13]);
+        if (plotOpts.drawEl)  data.push(dataFull[14]);
     }
     if (configuration.coordOutputs.sph.enu)
     {
-        data.push(dataFull[15]);
-        data.push(dataFull[16]);
+        if (plotOpts.drawAzi) data.push(dataFull[15]);
+        if (plotOpts.drawEl)  data.push(dataFull[16]);
      }
 
 
@@ -135,45 +141,47 @@ function plotCreateSeries(configuration)
         stroke: "white",
     }];
 
+    const plotOpts = configuration.plotOptions;
+
     if (configuration.coordOutputs.sph.ecl)
     {
-        series.push({label : "EclHel-Lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "EclHel-Lat", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "EclHel-Lon", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "EclHel-Lat", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.eclGeo)
     {
-        series.push({label : "EclGeo-Lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "EclGeo-Lat", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "EclGeo-Lon", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "EclGeo-Lat", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.j2000)
     {
-        series.push({label : "J2000-RA",   stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "J2000-decl", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "J2000-RA",   stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "J2000-decl", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.mod)
     {
-        series.push({label : "MoD-RA"  , stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "MoD-decl", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "MoD-RA"  , stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "MoD-decl", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.tod)
     {
-        series.push({label : "ToD-RA"  , stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "ToD-decl", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "ToD-RA"  , stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "ToD-decl", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.pef)
     {
-        series.push({label : "PEF-lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "PEF-lat", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "PEF-lon", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "PEF-lat", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.efi)
     {
-        series.push({label : "EFI-lon", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "EFI-lat", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "EFI-lon", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "EFI-lat", stroke : colors[colorInd++ % colors.length]});
     }
     if (configuration.coordOutputs.sph.enu)
     {
-        series.push({label : "ENU-azi", stroke : colors[colorInd++ % colors.length]});
-        series.push({label : "ENU-el", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawAzi) series.push({label : "ENU-azi", stroke : colors[colorInd++ % colors.length]});
+        if (plotOpts.drawEl)  series.push({label : "ENU-el", stroke : colors[colorInd++ % colors.length]});
     }
     return series;
 }

@@ -33,7 +33,8 @@
             <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="on" autocapitalize="off">
         </div>
         <br><br>
-        <button id="button_compute" onclick="compute()">Compute</button>
+        <button id="button_plot" onclick="createPlot()">Create Plot</button>
+        <button id="button_plot" onclick="createCsv()">Create CSV</button>
         <!--button id="button_reset">Reset</button-->
         <button id="button_clear" onclick="clearOutput()">Clear CSV</button>
         <!--button id="button_import_json" onclick="importJson()">Import JSON</button>
@@ -218,7 +219,57 @@
             <input type="checkbox" id="cb_cart_enu" name="cb_cart_enu">
         </fieldset>
         <fieldset class="conf_fieldset">
-            <legend>Add Satellite TLEs to Targets</legend>
+            <legend>Plot Configuration:</legend>
+            <label class="label_plot_angle" for="plot_time_zone">Time Zone:</label>
+            <select name="plot_time_zone" id="plot_time_zone">
+                <option value="local" selected="selected">Local Time</option>
+                <option value="UTC">UTC Time</option>
+            </select>
+            <br>
+            <!--label class="label_plot_angle" for="plot_elevation_format">Elevation/Declination Format:</label>
+            <select name="plot_elevation_format" id="plot_elevation_format">
+                <option value="degrees" selected="selected">Frac. Degrees</option>
+                <option value="arc">Deg-Min-Sec</option>
+            </select>
+            <br>
+            <label class="label_plot_angle" for="plot_azimuth_format">Azimuth Format:</label>
+            <select name="plot_azimuth_format" id="plot_azimuth_format">
+                <option value="degrees" selected="selected">Frac. Degrees</option>
+                <option value="arc">Deg-Min-Sec</option>
+            </select>
+            <br>
+            <label class="label_plot_angle" for="plot_RA_format">Right-Ascension Format:</label>
+            <select name="plot_RA_format" id="plot_RA_format">
+                <option value="degrees" selected="selected">Frac. Degrees</option>
+                <option value="hms">Hour-Min-Sec</option>
+            </select->
+            <br-->
+            <label class="label_plot_angle" for="plot_draw_az">Draw Azimuth/RA/Lon: </label>
+            <input type="checkbox" id="plot_draw_az" name="plot_draw_az"  checked="true">
+            <br>
+            <label class="label_plot_angle" for="plot_draw_el">Draw Elevation/Decl/Lat: </label>
+            <input type="checkbox" id="plot_draw_el" name="plot_draw_el"  checked="true">
+
+            <!--label class="timeformat_label" for="plot_time_format">
+                X Axis Format: 
+            </label>
+
+            <select name="plot_time_format" id="plot_time_format">
+                <option value="utc_timestamp" selected="selected">UTC Timestamp</option>
+                <option value="local_timestamp">Local Timestamp</option>
+                <option value="julian">Julian time</option>
+            </select>
+            <br>
+            <label class="alt_format_label" for="plot_alt_format">
+                X Axis Format: 
+            </label>
+            <select name="plot_alt_format" id="plot_alt_format">
+                <option value="degrees_fractional" selected="selected">Fractional Degrees</option>
+                <option value="deg_min_sec">With arc minutes/seconds.</option>
+            </select-->
+    </fieldset>
+        <fieldset class="conf_fieldset">
+            <legend>Add Satellite TLEs to Targets:</legend>
             <label for="TLEListinput">Paste a list of 3-line TLEs below:</label><br>
             <a href="https://celestrak.com/NORAD/elements/" target="_blank"> See CelesTrak for available TLEs.</a>
             <textarea id="TLEListinput" rows="10" cols="69"></textarea>

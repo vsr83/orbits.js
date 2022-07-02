@@ -241,3 +241,8 @@ input[type="number"], textarea {
     position: relative;
 }
 
+.label_plot_angle
+{
+    width: 250px;
+    display: inline-block;
+}
