@@ -200,25 +200,38 @@ function plotCreate(configuration, results)
 
     const data = plotCreateData(configuration, results);
 
+    let timeLabel = "Time (UTC)"
+    if (configuration.plotOptions.timeZone == "local")
+    {
+        let offset = new Date().getTimezoneOffset() / 60.0;
+        if (offset >= 0)
+        {        
+            timeLabel = "Time (UTC+" + offset + ")";
+        }
+        else 
+        {
+            timeLabel = "Time (UTC" + offset + ")";
+        }
+    }
+
     const opts = {
         title: configuration.target,
         width: 1048,
         height: 600,
         scales: {
-            x: {
-           //     time: false,
-            //	auto: false,
-            //	range: [0, 6],
+            x: 
+            {
+                time: true
             },
-            y: {
-                auto: true,
-               // range: [-180, 180],
-                },
+            y: 
+            {
+                auto: true
+            },
         },
         series: plotCreateSeries(configuration),
         axes: [
             {
-                label: "Time",
+                label: timeLabel,
                 labelSize: 20,
                 stroke: "white",
                 grid: {
