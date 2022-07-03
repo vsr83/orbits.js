@@ -246,3 +246,9 @@ input[type="number"], textarea {
     width: 250px;
     display: inline-block;
 }
+
+#csv_separator
+{
+    width: 50px;
+    display: inline-block;
+}

@@ -270,6 +270,21 @@
                 <option value="degrees_fractional" selected="selected">Fractional Degrees</option>
                 <option value="deg_min_sec">With arc minutes/seconds.</option>
             </select-->
+        </fieldset>
+        <fieldset class="conf_fieldset">
+            <legend>CSV Configuration:</legend>
+            <label class="label_plot_angle" for="csv_time_zone">Time Format:</label>
+            <select name="csv_time_zone" id="csv_time_zone">
+                <option value="local" selected="selected">Local Time</option>
+                <option value="UTC">UTC Time</option>
+                <option value="julian">Julian Time</option>
+            </select>
+            <label class="label_plot_angle" for="csv_separator">
+                CSV Separator: 
+            </label>
+            <input type="text" value="," name="csv_separator" id="csv_separator" />
+            <label class="label_plot_angle" for="csv_title">Print CSV Title: </label>
+            <input type="checkbox" id="csv_title" name="csv_title"  checked="true">
     </fieldset>
         <fieldset class="conf_fieldset">
             <legend>Add Satellite TLEs to Targets:</legend>

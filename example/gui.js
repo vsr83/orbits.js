@@ -142,6 +142,12 @@ function getJson()
         limit180 : document.getElementById("plot_limit_180").checked
     };
 
+    const csvOptions = {
+        timeFormat : document.getElementById("csv_time_zone").value,
+        separator : document.getElementById("csv_separator").value,
+        printTitle : document.getElementById("csv_title").checked        
+    };
+
     const conf = {
         target : target,
         observer : observer, 
@@ -149,7 +155,8 @@ function getJson()
         corrections : corrections,
         coordOutputs : coordOutputs,
         atmosphere : atmosphere,
-        plotOptions : plotOptions
+        plotOptions : plotOptions,
+        csvOptions : csvOptions
     };
 
     return conf;
@@ -293,19 +300,45 @@ function locationGps()
  * 
  * @param {*} d 
  *      Javascript date.
+ * @param {*} format 
+ *      UTC, local or julian. If undefined, UTC is used.
  * @returns Timestamp.
  */
-function dateToTs(d)
+function dateToTs(d, format)
 {
-    const yearStr = d.getUTCFullYear().toString().padStart(4, '0');
-    const monthStr = (d.getUTCMonth() + 1).toString().padStart(2, '0');
-    const dayStr = d.getUTCDate().toString().padStart(2, '0');
-    const hourStr = d.getUTCHours().toString().padStart(2, '0');
-    const minuteStr = d.getUTCMinutes().toString().padStart(2, '0');
-    const secondsStr = d.getUTCSeconds().toString().padStart(2, '0');
+    if (format === undefined)
+    {
+        format = "UTC"
+    }
 
-    return yearStr + '-' + monthStr + '-' + dayStr + 'T' + 
-           hourStr + ':' + minuteStr + ':' + secondsStr;
+    if (format == "UTC")
+    {
+        const yearStr = d.getUTCFullYear().toString().padStart(4, '0');
+        const monthStr = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+        const dayStr = d.getUTCDate().toString().padStart(2, '0');
+        const hourStr = d.getUTCHours().toString().padStart(2, '0');
+        const minuteStr = d.getUTCMinutes().toString().padStart(2, '0');
+        const secondsStr = d.getUTCSeconds().toString().padStart(2, '0');
+
+        return yearStr + '-' + monthStr + '-' + dayStr + 'T' + 
+            hourStr + ':' + minuteStr + ':' + secondsStr;
+    }
+    else if (format == "local")
+    {
+        const yearStr = d.getFullYear().toString().padStart(4, '0');
+        const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
+        const dayStr = d.getDate().toString().padStart(2, '0');
+        const hourStr = d.getHours().toString().padStart(2, '0');
+        const minuteStr = d.getMinutes().toString().padStart(2, '0');
+        const secondsStr = d.getSeconds().toString().padStart(2, '0');
+
+        return yearStr + '-' + monthStr + '-' + dayStr + 'T' + 
+            hourStr + ':' + minuteStr + ':' + secondsStr;
+    }
+    else if (format == "julian")
+    {
+        return orbitsjs.timeJulianTs(d).JT;        
+    }
 }
 
 /**

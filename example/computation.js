@@ -343,7 +343,7 @@ function processTimeStep(configuration, timeStamp)
             configuration.atmosphere.temperature, configuration.atmosphere.pressure);
     }
 
-    let s = dateToTs(timeStamp);
+    //let s = dateToTs(timeStamp);
     const limit180 = configuration.plotOptions.limit180;
 
     results.sph = {
