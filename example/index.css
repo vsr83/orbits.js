@@ -252,3 +252,15 @@ input[type="number"], textarea {
     width: 50px;
     display: inline-block;
 }
+
+.button
+{
+    background-color: #222222;
+    color: white;
+}
+
+.select
+{
+    background-color: #222222;
+    color: white;
+}
