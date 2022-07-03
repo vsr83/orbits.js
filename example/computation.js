@@ -1,14 +1,40 @@
 /**
+ * Limit angle to [0, 360) range.
+ * 
+ * @param {*} deg 
+ *      Angle in degrees.
+ * @returns Limited angle.
+ */
+function limitDeg360(deg)
+{
+    if (deg < 0)
+    {
+        return deg + 360;
+    }
+
+    return deg;
+}
+ 
+/**
  * Compute right ascension from Cartesian coordinates in an equatorial frame.
  * 
  * @param {*} r 
  *      The Cartesian coordinates.
+ * @param {*} limit180 
+ *      Limit to [-180, 180) degree interval.
  * @returns The right ascension.
  */
- function getRa(r)
- {
-     return orbitsjs.atan2d(r[1], r[0]);
- }
+function getRa(r, limit180)
+{
+    if (limit180)
+    {
+        return orbitsjs.atan2d(r[1], r[0]);
+    }
+    else 
+    {
+        return limitDeg360(orbitsjs.atan2d(r[1], r[0]));
+    }
+}
  
  /**
   * Compute declination from Cartesian coordinates in an equatorial frame.
@@ -17,21 +43,30 @@
   *      The Cartesian coordinates.
   * @returns The right ascension.
   */
-  function getDecl(r)
- {
-     return orbitsjs.asind(r[2] / orbitsjs.norm(r));
- }
+function getDecl(r)
+{
+    return orbitsjs.asind(r[2] / orbitsjs.norm(r));
+}
  
  /**
   * Compute azimuth from Cartesian coordinates in ENU frame.
   * 
   * @param {*} r 
   *      The Cartesian coordinates.
+ * @param {*} limit180 
+ *      Limit to [-180, 180) degree interval.
   * @returns The azimuth.
   */
- function getAz(r)
+ function getAz(r, limit180)
  {
-     return orbitsjs.atan2d(r[0], r[1]);
+    if (limit180)
+    {
+        return orbitsjs.atan2d(r[0], r[1]);
+    }
+    else
+    {
+        return limitDeg360(orbitsjs.atan2d(r[0], r[1]));
+    }
  }
  
 /**
@@ -81,56 +116,56 @@
   *      The Javascript time stamp.
   * @returns The OSV.
   */
- function processMoon(configuration, timeStamp)
- {
-     const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
- 
-     const rMoon = orbitsjs.moonPositionTod(JT);
-     const osvTod = {r: rMoon, v: [0, 0, 0], JT: JT};
-     const osvMod = orbitsjs.coordTodMod(osvTod);
-     const osvJ2000 = orbitsjs.coordModJ2000(osvMod);
- 
-     return osvJ2000;
- }
+function processMoon(configuration, timeStamp)
+{
+    const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
+
+    const rMoon = orbitsjs.moonPositionTod(JT);
+    const osvTod = {r: rMoon, v: [0, 0, 0], JT: JT};
+    const osvMod = orbitsjs.coordTodMod(osvTod);
+    const osvJ2000 = orbitsjs.coordModJ2000(osvMod);
+
+    return osvJ2000;
+}
   
  
- /**
-  * Compute the OSV for a planet in J2000 frame.
-  * 
-  * @param {*} configuration 
-  *      The configuration.
-  * @param {*} timeStamp 
-  *      The Javascript time stamp.
-  * @returns The OSV.
-  */
- function processPlanet(configuration, timeStamp)
- {
-     const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
- 
-     const posVelEarth = orbitsjs.vsop87('earth', JT);
-     const posVelInitial = orbitsjs.vsop87(configuration.target.toLowerCase(), JT);
- 
-     const diffPosInitial = orbitsjs.vecDiff(posVelInitial.r, posVelEarth.r);
-     const diffVelInitial = orbitsjs.vecDiff(posVelInitial.v, posVelEarth.v);
- 
-     if (configuration.corrections.lightTime)
-     {
-         const distInitial = orbitsjs.norm(diffPosInitial);
-         const lightTimeInitial = distInitial / 299792458.0;
- 
-         const posVelUpdated = orbitsjs.vsop87(configuration.target.toLowerCase(), 
-                 JT - lightTimeInitial / 86400.0);
- 
-         const diffPosUpdated = orbitsjs.vecDiff(posVelUpdated.r, posVelEarth.r);
-         const diffVelUpdated = orbitsjs.vecDiff(posVelUpdated.v, posVelEarth.v);
- 
-         return orbitsjs.coordEclEq({r: diffPosUpdated, v: diffVelUpdated, JT : JT});
-     }
-     else 
-     {
-         return orbitsjs.coordEclEq({r: diffPosInitial, v: diffVelInitial, JT : JT});
-     }
- }
+/**
+ * Compute the OSV for a planet in J2000 frame.
+ * 
+ * @param {*} configuration 
+ *      The configuration.
+ * @param {*} timeStamp 
+ *      The Javascript time stamp.
+ * @returns The OSV.
+ */
+function processPlanet(configuration, timeStamp)
+{
+    const {JD, JT} = orbitsjs.timeJulianTs(timeStamp);
+
+    const posVelEarth = orbitsjs.vsop87('earth', JT);
+    const posVelInitial = orbitsjs.vsop87(configuration.target.toLowerCase(), JT);
+
+    const diffPosInitial = orbitsjs.vecDiff(posVelInitial.r, posVelEarth.r);
+    const diffVelInitial = orbitsjs.vecDiff(posVelInitial.v, posVelEarth.v);
+
+    if (configuration.corrections.lightTime)
+    {
+        const distInitial = orbitsjs.norm(diffPosInitial);
+        const lightTimeInitial = distInitial / 299792458.0;
+
+        const posVelUpdated = orbitsjs.vsop87(configuration.target.toLowerCase(), 
+                JT - lightTimeInitial / 86400.0);
+
+        const diffPosUpdated = orbitsjs.vecDiff(posVelUpdated.r, posVelEarth.r);
+        const diffVelUpdated = orbitsjs.vecDiff(posVelUpdated.v, posVelEarth.v);
+
+        return orbitsjs.coordEclEq({r: diffPosUpdated, v: diffVelUpdated, JT : JT});
+    }
+    else 
+    {
+        return orbitsjs.coordEclEq({r: diffPosInitial, v: diffVelInitial, JT : JT});
+    }
+}
  
  /**
   * Compute the OSV for a satellite in J2000 frame.
@@ -309,45 +344,46 @@ function processTimeStep(configuration, timeStamp)
     }
 
     let s = dateToTs(timeStamp);
+    const limit180 = configuration.plotOptions.limit180;
 
     results.sph = {
         eclHel : {
-            RA   : getRa(targetOsvEcl.r), 
+            RA   : getRa(targetOsvEcl.r, limit180), 
             decl : getDecl(targetOsvEcl.r), 
             dist : orbitsjs.norm(targetOsvEcl.r)
         },
         eclGeo : {
-            RA  : getRa(targetOsvEclGeo.r), 
+            RA  : getRa(targetOsvEclGeo.r, limit180), 
             decl : getDecl(targetOsvEclGeo.r), 
             dist : orbitsjs.norm(targetOsvEclGeo.r)
         },
         J2000 : {
-            RA  : getRa(targetOsvJ2000.r), 
+            RA  : getRa(targetOsvJ2000.r, limit180), 
             decl : getDecl(targetOsvJ2000.r), 
             dist : orbitsjs.norm(targetOsvJ2000.r)
         },
         mod : {
-            RA  : getRa(targetOsvMod.r), 
+            RA  : getRa(targetOsvMod.r, limit180), 
             decl : getDecl(targetOsvMod.r), 
             dist : orbitsjs.norm(targetOsvMod.r)
         },
         tod : {
-            RA  : getRa(targetOsvTod.r), 
+            RA  : getRa(targetOsvTod.r, limit180), 
             decl : getDecl(targetOsvTod.r), 
             dist : orbitsjs.norm(targetOsvTod.r)
         },
         pef : {
-            RA  : getRa(targetOsvPef.r), 
+            RA  : getRa(targetOsvPef.r, limit180), 
             decl : getDecl(targetOsvPef.r), 
             dist : orbitsjs.norm(targetOsvPef.r)
         },
         efi : {
-            RA  : getRa(targetOsvEfi.r), 
+            RA  : getRa(targetOsvEfi.r, limit180), 
             decl : getDecl(targetOsvEfi.r), 
             dist : orbitsjs.norm(targetOsvEfi.r)
         },
         enu : {
-            az  : getAz(targetOsvEnu.r), 
+            az  : getAz(targetOsvEnu.r, limit180), 
             el : getDecl(targetOsvEnu.r), 
             dist : orbitsjs.norm(targetOsvEnu.r)
         }

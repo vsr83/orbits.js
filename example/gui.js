@@ -138,7 +138,8 @@ function getJson()
         //aziFormat : document.getElementById("plot_azimuth_format").value,
         //raFormat : document.getElementById("plot_RA_format").value,
         drawAzi : document.getElementById("plot_draw_az").checked,
-        drawEl : document.getElementById("plot_draw_el").checked
+        drawEl : document.getElementById("plot_draw_el").checked,
+        limit180 : document.getElementById("plot_limit_180").checked
     };
 
     const conf = {
