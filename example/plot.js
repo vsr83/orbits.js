@@ -203,7 +203,7 @@ function plotCreate(configuration, results)
     let timeLabel = "Time (UTC)"
     if (configuration.plotOptions.timeZone == "local")
     {
-        let offset = new Date().getTimezoneOffset() / 60.0;
+        let offset = -new Date().getTimezoneOffset() / 60.0;
         if (offset >= 0)
         {        
             timeLabel = "Time (UTC+" + offset + ")";
