@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive --require @babel/register",
-    "build": "webpack"
+    "build": "webpack",
+    "data": "cd data && node download_vsop87a.js && node create_json_vsop87a.js > vsop87a.json & cd .."
   },
   "keywords": [],
   "author": "Ville Räisänen",
