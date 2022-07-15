@@ -1,4 +1,4 @@
-// This script download VSOP87A dataset from:
+// This script downloads VSOP87A dataset from:
 // https://ftp.imcce.fr/pub/ephem/planets/vsop87/
 
 import {get} from 'https';

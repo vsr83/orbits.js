@@ -74,7 +74,7 @@ function parseVsopLines(fileName, planet)
 }
 
 /**
- * Parse VSOP87A array into an array.
+ * Parse VSOP87A array into an higher-dimensional array.
  * 
  * @param {*} vsopArray 
  *      The array parsed.
