@@ -66,4 +66,10 @@ export function hipparchusGet(designation, JT)
     return {RA : RA, DE : DE, mag : mag};
 }
 
-export {hipparchusData};
+const hipparchusIndToName = [];
+for (const [key, value] of Object.entries(hipparchusData))
+{
+    hipparchusIndToName[value.id] = key; 
+}
+
+export {hipparchusData, hipparchusIndToName};

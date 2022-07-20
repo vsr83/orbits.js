@@ -3,8 +3,32 @@
 // The script should be executed only after download_xhip.js.
 
 import {readFileSync} from 'fs';
+import constellations from './constellations.json'  assert {type: "json"};
 
 const magLimit = 6;
+
+// We wish to include all stars that are used in the constellation lines
+// regardless of their magnitude:
+const constStarList = [];
+
+for (const [abbr, value] of Object.entries(constellations))
+{
+
+    const lines = value.hip;
+    for (let indLine = 0; indLine < lines.length; indLine++)
+    {
+        const line = lines[indLine];
+        if (!constStarList.includes(line[0]))
+        {
+            constStarList.push(line[0]);
+        }
+        if (!constStarList.includes(line[1]))
+        {
+            constStarList.push(line[1]);
+        }
+    }
+}
+
 
 let contentBiblio;
 let contentPhoto;
@@ -46,15 +70,16 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
         name = 'XHIP_' + idData;
     }
 
-    if (HPmag <= magLimit)
+    if (HPmag <= magLimit || constStarList.includes[parseInt(idData)])
     {
         const data = {
+            id : parseInt(idData),
             RA : RAdeg_1991,
             DE : DEdeg_1991,
             RA_delta : RAdeg_proper,
             DE_delta : DEdeg_proper,
             mag : HPmag, 
-            constellation : constellation
+            constellation : constellation.toUpperCase()
         };
         output[name] = data;
     }
