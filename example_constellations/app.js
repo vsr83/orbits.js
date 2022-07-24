@@ -1,6 +1,11 @@
 
+// Create controls.
 const guiControls = new function()
 {
+    this.equator = false;
+    this.constellations = true;
+    this.constellationBnd = true;
+    this.stars = true;
     this.mercury = false;
     this.venus   = false;
     this.earth   = false;
@@ -12,6 +17,14 @@ const guiControls = new function()
 };
 
 const gui = new dat.GUI();
+const coordControls = {};
+coordControls.equator = gui.add(guiControls, 'equator').name("Equator");
+
+const starControls = {};
+starControls.constellations = gui.add(guiControls, 'constellations').name("Constellations");
+starControls.constellationBnd = gui.add(guiControls, 'constellationBnd').name("Boundaries");
+starControls.stars = gui.add(guiControls, 'stars').name("Stars");
+
 const planetControls = {};
 planetControls.sun = gui.add(guiControls, 'earth').name('Sun');
 planetControls.mercury = gui.add(guiControls, 'mercury').name('Mercury');
@@ -50,7 +63,28 @@ controls.enablePan = false;
 // Create the scene.
 const scene = new THREE.Scene();
 
+// Create equatorial circle.
+let equator = null;
+{
+    const points = [];
+    for (let RA = 0; RA < 361; RA++)
+    {
+        const R = 500;
+        const DE = 0.0;
+        const pStart = [R * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
+                        R * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
+                        R * orbitsjs.sind(DE)];
+        points.push(new THREE.Vector3(pStart[0], pStart[1], pStart[2]));
+    }
+    const lineGeom = new THREE.BufferGeometry().setFromPoints( points );
+    const lineMaterial = new THREE.LineBasicMaterial( { color: 0xaaaaaa } );
+    equator = new THREE.Line( lineGeom, lineMaterial );
+    scene.add(equator);
+}
+
 // Create constellation boundaries.
+const boundaryGroup = new THREE.Group();
+scene.add(boundaryGroup);
 for (let [cName, cPoints] of Object.entries(orbitsjs.constellationBoundaries))
 {
     const points = [];
@@ -68,11 +102,13 @@ for (let [cName, cPoints] of Object.entries(orbitsjs.constellationBoundaries))
     const lineGeom = new THREE.BufferGeometry().setFromPoints( points );
     const lineMaterial = new THREE.LineBasicMaterial( { color: 0x886666 } );
     const line = new THREE.Line( lineGeom, lineMaterial );
-    scene.add(line);
+    boundaryGroup.add(line);
 }
 
 // Create constellations.
 //console.log(orbitsjs.constellations);
+const constellationGroup = new THREE.Group();
+scene.add(constellationGroup);
 for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
 {
     //console.log(cName);
@@ -124,11 +160,13 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
         const lineGeom = new THREE.BufferGeometry().setFromPoints( points );
         const lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000ff } );
         const line = new THREE.Line( lineGeom, lineMaterial );
-        scene.add(line);   
+        constellationGroup.add(line);
     }
 }
 
 // Create stars.
+const starsGroup = new THREE.Group();
+scene.add(starsGroup);
 for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
 {
     const radius = 2.5 * Math.exp(-hipObj.mag/3.0);
@@ -148,7 +186,7 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     sphere.position.y = p[1];
     sphere.position.z = p[2];
     //console.log(hipObj);
-    scene.add( sphere );
+    starsGroup.add( sphere );
 }
 
 // Create planetary orbits.
@@ -233,6 +271,10 @@ function render(time)
         const planet = planets[indPlanet];
         orbits[planet].visible = guiControls[planet];
     }    
+    equator.visible = guiControls.equator;
+    constellationGroup.visible = guiControls.constellations;
+    boundaryGroup.visible = guiControls.constellationBnd;
+    starsGroup.visible = guiControls.stars;
 
     renderer.render(scene, camera);
     requestAnimationFrame(render);
