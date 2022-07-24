@@ -20,8 +20,4 @@ The library implements:
     * Keplerian propagation of orbits.
 
 Click below to execute an example of a simple application using most features of the library.
-[![Screenshot.](example/scrshot.png)](https://vsr83.github.io/orbits.js/example/index.html)
-
-The code used to construct the JSON files for VSOP87 and Hipparchus datasets can be found 
-from the [matlab_orbits](https://github.com/vsr83/matlab_orbits/tree/main/data) repository.
-
+[![Screenshot.](example/scrshot.png)](https://vsr83.github.io/orbits.js/example_gui/index.html)
