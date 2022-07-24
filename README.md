@@ -20,4 +20,4 @@ The library implements:
     * Keplerian propagation of orbits.
 
 Click below to execute an example of a simple application using most features of the library.
-[![Screenshot.](example/scrshot.png)](https://vsr83.github.io/orbits.js/example_gui/index.html)
+[![Screenshot.](example_gui/scrshot.png)](https://vsr83.github.io/orbits.js/example_gui/index.html)
