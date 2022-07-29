@@ -294,6 +294,7 @@
 
 			const spherical = new THREE.Spherical();
 			const sphericalDelta = new THREE.Spherical();
+			sphericalDelta.phi = Math.PI/2;
 			let scale = 1;
 			const panOffset = new THREE.Vector3();
 			let zoomChanged = false;

@@ -2,38 +2,56 @@
 // Create controls.
 const guiControls = new function()
 {
+    this.observerLon = 0.0;
+    this.observerLat = 0.0;
+
     this.equator = false;
+    this.ground = true;
     this.constellations = true;
     this.constellationBnd = true;
     this.stars = true;
     this.mercury = false;
     this.venus   = false;
     this.earth   = false;
-    this.mars    = false;
     this.jupiter = false;
+    this.mars    = false;
     this.saturn  = false;
     this.uranus  = false;
     this.neptune = false;
-};
+
+    this.setFromGps = function() {
+        console.log('GPS');
+        locationGps();        
+    }
+}; 
 
 const gui = new dat.GUI();
+
+const observerFolder = gui.addFolder('Observer');
+const observerControls = {};
+observerControls.observerLon = observerFolder.add(guiControls, 'observerLon', -180, 180, 0.01).name("Longitude");
+observerControls.observerLat = observerFolder.add(guiControls, 'observerLat', -90, 90, 0.01).name("Latitude");
+observerFolder.add(guiControls, 'setFromGps').name('Set from GPS');
+
+const visibilityFolder = gui.addFolder('Visibility');
 const coordControls = {};
-coordControls.equator = gui.add(guiControls, 'equator').name("Equator");
+coordControls.ground = visibilityFolder.add(guiControls, 'ground').name("Ground");
+coordControls.equator = visibilityFolder.add(guiControls, 'equator').name("Equator");
 
 const starControls = {};
-starControls.constellations = gui.add(guiControls, 'constellations').name("Constellations");
-starControls.constellationBnd = gui.add(guiControls, 'constellationBnd').name("Boundaries");
-starControls.stars = gui.add(guiControls, 'stars').name("Stars");
+starControls.constellations = visibilityFolder.add(guiControls, 'constellations').name("Constellations");
+starControls.constellationBnd = visibilityFolder.add(guiControls, 'constellationBnd').name("Boundaries");
+starControls.stars = visibilityFolder.add(guiControls, 'stars').name("Stars");
 
 const planetControls = {};
-planetControls.sun = gui.add(guiControls, 'earth').name('Sun');
-planetControls.mercury = gui.add(guiControls, 'mercury').name('Mercury');
-planetControls.venus = gui.add(guiControls, 'venus').name('Venus');
-planetControls.mars = gui.add(guiControls, 'mars').name('Mars');
-planetControls.jupiter = gui.add(guiControls, 'jupiter').name('Jupiter');
-planetControls.saturn = gui.add(guiControls, 'saturn').name('Saturn');
-planetControls.uranus = gui.add(guiControls, 'uranus').name('Uranus');
-planetControls.neptune = gui.add(guiControls, 'neptune').name('Neptune');
+planetControls.sun = visibilityFolder.add(guiControls, 'earth').name('Sun');
+planetControls.mercury = visibilityFolder.add(guiControls, 'mercury').name('Mercury');
+planetControls.venus = visibilityFolder.add(guiControls, 'venus').name('Venus');
+planetControls.mars = visibilityFolder.add(guiControls, 'mars').name('Mars');
+planetControls.jupiter = visibilityFolder.add(guiControls, 'jupiter').name('Jupiter');
+planetControls.saturn = visibilityFolder.add(guiControls, 'saturn').name('Saturn');
+planetControls.uranus = visibilityFolder.add(guiControls, 'uranus').name('Uranus');
+planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Neptune');
 
 const view = document.querySelector('#view');
 
@@ -49,7 +67,7 @@ let fov = 70;
 const near = 1;
 const far = 5000;
 const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera.position.z = 0.1;
+camera.position.z = 1;
 camera.up.x = 0;
 camera.up.y = 0;
 camera.up.z = 1;
@@ -163,6 +181,7 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
         constellationGroup.add(line);
     }
 }
+console.log(constellationGroup);
 
 // Create stars.
 const starsGroup = new THREE.Group();
@@ -189,7 +208,15 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     starsGroup.add( sphere );
 }
 
+const planeGeom = new THREE.PlaneGeometry(1000, 1000);
+const planeMaterial = new THREE.MeshBasicMaterial({color : 0x559955, opacity : 0.5, transparent : true});
+const planeMesh = new THREE.Mesh(planeGeom, planeMaterial);
+planeMesh.position.z = -2;
+scene.add(planeMesh);
+
 // Create planetary orbits.
+const orbitGroup = new THREE.Group();
+scene.add(orbitGroup);
 const JT0 = orbitsjs.dateJulianYmd(2022, 1, 1);
 
 const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
@@ -239,7 +266,7 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     }
 
     const line = new THREE.Line( lineGeom, lineMaterial );
-    scene.add(line);
+    orbitGroup.add(line);
     orbits[planet] = line;
 }
 
@@ -264,6 +291,74 @@ function onWindowResize()
 
 window.addEventListener('resize', onWindowResize, false);
 
+/**
+ * Limit angle to [-180, 180) range.
+ * 
+ * @param {*} deg 
+ *      Angle in degrees.
+ * @returns Limited angle.
+ */
+ function limitDeg180(deg)
+ {
+     if (deg > 180)
+     {
+         return deg - 360;
+     }
+ 
+     return deg;
+ }
+ 
+/**
+ * Update location forms from GPS.
+ */
+ function locationGps()
+ {
+     if (navigator.geolocation)
+     {
+         navigator.geolocation.getCurrentPosition(function(position) {
+            observerControls.observerLon.setValue(position.coords.longitude);
+            observerControls.observerLat.setValue(position.coords.latitude);
+         });
+     }                
+ }
+
+
+function createMatrix(JT)
+{
+    function createColumn(vec, JT)
+    {
+        const targetOsvJ2000 = {r: orbitsjs.vecMul(vec, 1e20), v : [0, 0, 0], JT};
+
+        const targetOsvMod = orbitsjs.coordJ2000Mod(targetOsvJ2000);
+        const targetOsvTod = orbitsjs.coordModTod(targetOsvMod);
+        const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
+        const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 
+            0, 
+            0);
+        const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
+            guiControls.observerLat, guiControls.observerLon, 0);
+
+        return targetOsvEnu.r;
+    }
+    
+    const col1 = orbitsjs.vecMul(createColumn([1, 0, 0], JT), 1e-20);
+    const col2 = orbitsjs.vecMul(createColumn([0, 1, 0], JT), 1e-20);
+    const col3 = orbitsjs.vecMul(createColumn([0, 0, 1], JT), 1e-20);
+
+    const matrix = new THREE.Matrix4();
+    matrix.set(
+        col1[0], col2[0], col3[0], 0,
+        col1[1], col2[1], col3[1], 0,
+        col1[2], col2[2], col3[2], 0,
+        0, 0, 0, 1
+    );
+
+    //console.log(matrix);
+    console.log(controls);
+
+    return matrix;
+}
+
 function render(time) 
 {
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
@@ -275,6 +370,34 @@ function render(time)
     constellationGroup.visible = guiControls.constellations;
     boundaryGroup.visible = guiControls.constellationBnd;
     starsGroup.visible = guiControls.stars;
+    planeMesh.visible = guiControls.ground;
+
+    //constellationGroup.rotation.z = time/10000;
+    //starsGroup.rotation.z = time/10000;
+    //boundaryGroup.rotation.z = time/10000;
+
+    const angle = time / 100;
+    /*const rotationMatrix = new THREE.Matrix4();
+    rotationMatrix.set(
+         orbitsjs.cosd(angle), orbitsjs.sind(angle), 0, 0, 
+        -orbitsjs.sind(angle), orbitsjs.cosd(angle), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );*/
+
+    const {JD, JT} = orbitsjs.timeJulianTs(new Date());
+    const rotationMatrix = createMatrix(JT);
+
+    constellationGroup.matrixAutoUpdate = false;
+    boundaryGroup.matrixAutoUpdate = false;
+    starsGroup.matrixAutoUpdate = false;
+    orbitGroup.matrixAutoUpdate = false;
+    equator.matrixAutoUpdate = false;
+    constellationGroup.matrix = rotationMatrix;
+    boundaryGroup.matrix = rotationMatrix;
+    starsGroup.matrix = rotationMatrix;
+    orbitGroup.matrix = rotationMatrix;
+    equator.matrix = rotationMatrix;
 
     renderer.render(scene, camera);
     requestAnimationFrame(render);
