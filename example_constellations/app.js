@@ -7,6 +7,7 @@ const guiControls = new function()
 
     this.equator = false;
     this.ground = true;
+    this.azElGrid = false;
     this.constellations = true;
     this.constellationBnd = true;
     this.stars = true;
@@ -44,6 +45,7 @@ const visibilityFolder = gui.addFolder('Visibility');
 const coordControls = {};
 coordControls.ground = visibilityFolder.add(guiControls, 'ground').name("Ground");
 coordControls.equator = visibilityFolder.add(guiControls, 'equator').name("Equator");
+coordControls.azElGrid = visibilityFolder.add(guiControls, 'azElGrid').name("Az/El Grid");
 
 const starControls = {};
 starControls.constellations = visibilityFolder.add(guiControls, 'constellations').name("Constellations");
@@ -127,7 +129,6 @@ let sphereGeometry = new THREE.SphereGeometry(50, 64, 64);
 const texture = new THREE.TextureLoader().load('imports/2k_earth_daymap.jpeg');
 let sphereMaterial = new THREE.MeshBasicMaterial({map : texture});
 let earthMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-earthMesh.position.z = -50.1;
 scene.add(earthMesh);
 
 // Create equatorial circle.
@@ -253,12 +254,56 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
 }
 
 // Create the horizontal plane.
+const planeGroup = new THREE.Group();
+scene.add(planeGroup);
 const planeGeom = new THREE.CircleGeometry(90, 50);
 const planeMaterial = new THREE.MeshBasicMaterial({color : 0x559955, opacity : 0.5, transparent : true});
 planeMaterial.side = THREE.DoubleSide;
 const planeMesh = new THREE.Mesh(planeGeom, planeMaterial);
-planeMesh.position.z = -2;
-scene.add(planeMesh);
+planeMesh.position.z = -1;
+planeGroup.add(planeMesh);
+
+// Create AzElGrid.
+const azElGroup = new THREE.Group();
+scene.add(azElGroup);
+
+const azTextGroup = new THREE.Group();
+azElGroup.add(azTextGroup);
+const elTextGroup = new THREE.Group();
+azElGroup.add(elTextGroup);
+
+for (let az = 0; az < 360; az += 15)
+{
+    const points = [];
+    for (let el = 0; el < 180; el+= 10)
+    {
+        const point = new THREE.Vector3(
+                   celestialSphereRadius * orbitsjs.cosd(el) * orbitsjs.sind(az), 
+                   celestialSphereRadius * orbitsjs.cosd(el) * orbitsjs.cosd(az), 
+                   celestialSphereRadius * orbitsjs.sind(el));
+        points.push(point);
+    }
+    const material = new THREE.LineBasicMaterial( { color: 0x555555 } );
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    azElGroup.add(line);
+}
+for (let el = 0; el < 90; el+= 15)
+{
+    const points = [];
+    for (let az = 0; az <= 360; az += 2.5)
+    {
+        const point = new THREE.Vector3(
+                   celestialSphereRadius * orbitsjs.cosd(el) * orbitsjs.sind(az), 
+                   celestialSphereRadius * orbitsjs.cosd(el) * orbitsjs.cosd(az), 
+                   celestialSphereRadius * orbitsjs.sind(el));
+        points.push(point);
+    }
+    const material = new THREE.LineBasicMaterial( { color: 0x555555 } );
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    azElGroup.add(line);
+}
 
 // Create planetary orbits.
 const orbitGroup = new THREE.Group();
@@ -365,14 +410,12 @@ function loadText()
         const font = response;
 
         materials = [
-            //new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front
-            //new THREE.MeshPhongMaterial( { color: 0xffffff } ) // side
             new THREE.MeshBasicMaterial({color : 0xaaaaaa}),
-            new THREE.MeshBasicMaterial({color : 0xaaaaaa})
+            new THREE.MeshBasicMaterial({color : 0x777777})
         ];
         const textopts = {
             font : font,
-            size : 24,
+            size : 4,
             height : 1,
             curveSegments: 4,
             bevelThickness: 2,
@@ -387,27 +430,73 @@ function loadText()
         const textMeshWest = new THREE.Mesh(textGeoWest, materials);
         const textGeoEast = new THREE.TextGeometry("E", textopts);
         const textMeshEast = new THREE.Mesh(textGeoEast, materials);
-        textMeshNorth.position.x = -12;
+
+        textMeshNorth.position.x = -2;
         textMeshNorth.position.y = 70;
-        textMeshNorth.position.z = -20;
-        textMeshSouth.position.x = -12;
-        textMeshSouth.position.y = -95;
-        textMeshSouth.position.z = -20;
-
+        textMeshNorth.position.z = -6;
+        textMeshSouth.position.x = -2;
+        textMeshSouth.position.y = -70;
+        textMeshSouth.position.z = -2;
         textMeshWest.position.x = -70;
-        textMeshWest.position.y = -12;
-        textMeshWest.position.z = -20;
+        textMeshWest.position.y = -2;
+        textMeshWest.position.z = -6;
         textMeshEast.position.x = 70;
-        textMeshEast.position.y = 12;
-        textMeshEast.position.z = -20;
-
+        textMeshEast.position.y = 2;
+        textMeshEast.position.z = -6;
+        textMeshNorth.rotation.x = Math.PI/2;
+        textMeshSouth.rotation.x = -Math.PI/2;
+        textMeshWest.rotation.y = Math.PI/2;
+        textMeshEast.rotation.y = -Math.PI/2;
         textMeshEast.rotation.z = -Math.PI/2;
         textMeshWest.rotation.z = Math.PI/2;
 
-        scene.add(textMeshNorth);
-        scene.add(textMeshSouth);
-        scene.add(textMeshWest);
-        scene.add(textMeshEast);
+        planeGroup.add(textMeshNorth);
+        planeGroup.add(textMeshSouth);
+        planeGroup.add(textMeshWest);
+        planeGroup.add(textMeshEast);
+
+        const textoptsGrid = {
+            font : font,
+            size : 50,
+            height : 5,
+            curveSegments: 4,
+            bevelThickness: 20,
+            bevelSize: 10,
+            bevelEnabled: false
+        };
+        for (let az = 0; az < 360; az+= 15)
+        {
+            const textGeo = new THREE.TextGeometry(az.toString() + "°", textoptsGrid);
+            const textMesh = new THREE.Mesh(textGeo, materials);
+
+            textMesh.position.x = celestialSphereRadius * orbitsjs.cosd(0.2) * orbitsjs.sind(az+0.2); 
+            textMesh.position.y = celestialSphereRadius * orbitsjs.cosd(0.2) * orbitsjs.cosd(az+0.2);
+            textMesh.position.z = celestialSphereRadius * orbitsjs.sind(0.2);
+            textMesh.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), orbitsjs.deg2Rad(-az));
+            textMesh.rotateOnWorldAxis(new THREE.Vector3(orbitsjs.cosd(az), -orbitsjs.sind(az), 0), Math.PI/2);
+
+            //textMesh.matrixAutoUpdate = false;
+    
+            azTextGroup.add(textMesh);
+        }
+
+        for (let el = 0; el < 90; el+= 15)
+        {
+            const textGeo = new THREE.TextGeometry(el.toString() + "°", textoptsGrid);
+            const textMesh = new THREE.Mesh(textGeo, materials);
+
+            textMesh.position.x = celestialSphereRadius * orbitsjs.cosd(el+0.3) * orbitsjs.sind(0.2); 
+            textMesh.position.y = celestialSphereRadius * orbitsjs.cosd(el+0.3) * orbitsjs.cosd(0.2);
+            textMesh.position.z = celestialSphereRadius * orbitsjs.sind(el+0.3);
+           // textMesh.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), orbitsjs.deg2Rad(-az));
+            textMesh.rotateOnWorldAxis(new THREE.Vector3(orbitsjs.cosd(0), -orbitsjs.sind(0), 0), Math.PI/2+orbitsjs.deg2Rad(el));
+
+            //textMesh.matrixAutoUpdate = false;
+    
+            elTextGroup.add(textMesh);
+        }
+
+        //azTextGroup
     } );
 }
 
@@ -543,7 +632,8 @@ function render(time)
     constellationGroup.visible = guiControls.constellations;
     boundaryGroup.visible = guiControls.constellationBnd;
     starsGroup.visible = guiControls.stars;
-    planeMesh.visible = guiControls.ground;
+    planeGroup.visible = guiControls.ground;
+    azElGroup.visible = guiControls.azElGrid;
 
     // Compute Julian time from current time.
     const {JD, JT} = orbitsjs.timeJulianTs(new Date());
@@ -567,6 +657,8 @@ function render(time)
     earthMesh.matrixAutoUpdate = false;
     earthMesh.matrix = createRotMatrix(guiControls.observerLon, guiControls.observerLat);
 
+    //elTextGroup.rotation.z = controls1.getAzimuthalAngle();
+
     // We do not render the camera helper and Earth mesh for the first view.
     cameraHelper.visible = false;
     earthMesh.visible = false;
@@ -585,4 +677,3 @@ function render(time)
 
 loadText();
 requestAnimationFrame(render);
-//renderer1.render(scene, camera1);
