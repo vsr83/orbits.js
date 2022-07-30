@@ -19,6 +19,8 @@ const guiControls = new function()
     this.uranus  = false;
     this.neptune = false;
 
+    this.showSplit = true;
+
     this.setFromGps = function() {
         console.log('GPS');
         locationGps();        
@@ -52,6 +54,12 @@ planetControls.jupiter = visibilityFolder.add(guiControls, 'jupiter').name('Jupi
 planetControls.saturn = visibilityFolder.add(guiControls, 'saturn').name('Saturn');
 planetControls.uranus = visibilityFolder.add(guiControls, 'uranus').name('Uranus');
 planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Neptune');
+
+gui.add(guiControls, 'showSplit').name('Split Camera').onChange(function() 
+{
+    console.log("Split");
+    onWindowResize();
+});
 
 const view1 = document.querySelector('#view1');
 const view2 = document.querySelector('#view2');
@@ -316,15 +324,28 @@ view1.addEventListener("wheel", function(event)
 
 function onWindowResize()
 {
-    const aspect = 0.5 * window.innerWidth / window.innerHeight;
-    camera1.aspect = aspect;
-    camera2.aspect = aspect;
-    camera1.updateProjectionMatrix();
-    camera2.updateProjectionMatrix();
 
-    renderer1.setSize(window.innerWidth / 2, window.innerHeight);
-    renderer2.setSize(window.innerWidth / 2, window.innerHeight);
-    view2.style.left= window.innerWidth/2 + 'px';
+    if (guiControls.showSplit)
+    {
+        renderer1.setSize(window.innerWidth / 2, window.innerHeight);
+        renderer2.setSize(window.innerWidth / 2, window.innerHeight);
+        view2.style.left= window.innerWidth/2 + 'px';    
+        view2.style.visibility = 'visible';
+        const aspect = 0.5 * window.innerWidth / window.innerHeight;
+
+        camera1.aspect = aspect;
+        camera2.aspect = aspect;
+        camera1.updateProjectionMatrix();
+        camera2.updateProjectionMatrix();
+    }
+    else 
+    {
+        renderer1.setSize(window.innerWidth, window.innerHeight);
+        view2.style.visibility = 'hidden';
+        const aspect = window.innerWidth / window.innerHeight;
+        camera1.aspect = aspect;
+        camera1.updateProjectionMatrix();
+        }
 }
 
 function loadFont() 
@@ -512,10 +533,14 @@ function render(time)
     cameraHelper.visible = false;
     earthMesh.visible = false;
     renderer1.render(scene, camera1);
-    cameraHelper.visible = true;
-    earthMesh.visible = true;
-    cameraHelper.update();
-    renderer2.render(scene, camera2);
+
+    if (guiControls.showSplit)
+    {
+        cameraHelper.visible = true;
+        earthMesh.visible = true;
+        cameraHelper.update();
+        renderer2.render(scene, camera2);
+    }
     requestAnimationFrame(render);
 }
 
