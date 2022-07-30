@@ -2,12 +2,17 @@
 <html>
     <head>
         <script src="imports/three.min.js"></script>
+        <script src="imports/FontLoader.js"></script>
         <script src="imports/OrbitControls.js"></script>
+        <script src="imports/TextGeometry.js"></script>
         <script src="../dist/orbits_js.js"></script>
         <script src="imports/dat.gui.min.js"></script>
         <link rel="stylesheet" href="app.css">
     <body>
-        <div id="view"></canvas>
+        <div class="split">
+            <div id="view1" tabindex="1"></canvas>
+            <div id="view2" tabindex="2"></canvas>
+        </div>
         <script src="app.js"></script>
     </body>
 </html>

@@ -53,33 +53,65 @@ planetControls.saturn = visibilityFolder.add(guiControls, 'saturn').name('Saturn
 planetControls.uranus = visibilityFolder.add(guiControls, 'uranus').name('Uranus');
 planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Neptune');
 
-const view = document.querySelector('#view');
+const view1 = document.querySelector('#view1');
+const view2 = document.querySelector('#view2');
+view1.style.left= '0px';
+view1.style.top= '0px';
+view2.style.left= window.innerWidth/2 + 'px';
+view2.style.top= '0px';
 
 // Configure renderer.
-const renderer = new THREE.WebGLRenderer({antialias: true});
-renderer.setPixelRatio( window.devicePixelRatio );
-renderer.setSize(window.innerWidth, window.innerHeight);
-view.appendChild( renderer.domElement );
+const renderer1 = new THREE.WebGLRenderer({antialias: true});
+renderer1.setPixelRatio( window.devicePixelRatio );
+renderer1.setSize(window.innerWidth / 2, window.innerHeight);
+view1.appendChild( renderer1.domElement );
+
+// Configure renderer.
+const renderer2 = new THREE.WebGLRenderer({antialias: true});
+renderer2.setPixelRatio( window.devicePixelRatio );
+renderer2.setSize(window.innerWidth / 2, window.innerHeight);
+view2.appendChild( renderer2.domElement );
 
 // Configure camera.
-const aspect = window.innerWidth / window.innerHeight;
+const aspect = 0.5 * window.innerWidth / window.innerHeight;
 let fov = 70;
 const near = 1;
-const far = 5000;
-const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera.position.z = 1;
-camera.up.x = 0;
-camera.up.y = 0;
-camera.up.z = 1;
+const far = 6000;
+
+const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
+camera1.position.z = 1;
+camera1.up.x = 0;
+camera1.up.y = 0;
+camera1.up.z = 1;
+
+const camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
+camera2.position.z = 200;
+camera2.position.y = -200;
+camera2.up.x = 0;
+camera2.up.y = 0;
+camera2.up.z = 1;
+camera2.lookAt(0, 0, 0);
 
 // Configure orbit controls. Instead of moving the camera when "zooming",
 // we change the FoV.
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableZoom = false;
-controls.enablePan = false;
+const controls1 = new THREE.OrbitControls(camera1, renderer1.domElement);
+controls1.enableZoom = false;
+controls1.enablePan = false;
+const controls2 = new THREE.OrbitControls(camera2, renderer2.domElement);
+controls2.enableZoom = false;
+controls2.enablePan = false;
 
 // Create the scene.
 const scene = new THREE.Scene();
+const cameraHelper = new THREE.CameraHelper(camera1);
+scene.add(cameraHelper);
+
+let sphereGeometry = new THREE.SphereGeometry(50, 64, 64);
+const texture = new THREE.TextureLoader().load('imports/2k_earth_daymap.jpeg');
+let sphereMaterial = new THREE.MeshBasicMaterial({map : texture});
+let earthMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+earthMesh.position.z = -50.1;
+scene.add(earthMesh);
 
 // Create equatorial circle.
 let equator = null;
@@ -109,7 +141,7 @@ for (let [cName, cPoints] of Object.entries(orbitsjs.constellationBoundaries))
     for (let indPoint = 0; indPoint < cPoints.length; indPoint++)
     {
         let point = cPoints[indPoint];
-        const R = 500;
+        const R = 5000;
         const RA = point[0];
         const DE = point[1];
         const pStart = [R * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
@@ -159,7 +191,7 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
         const DEstart = hipStart.DE;
         const DEend = hipEnd.DE;
 
-        const R = 500;
+        const R = 5000;
         const pStart = [R * orbitsjs.cosd(DEstart) * orbitsjs.cosd(RAstart), 
                         R * orbitsjs.cosd(DEstart) * orbitsjs.sind(RAstart), 
                         R * orbitsjs.sind(DEstart)];
@@ -188,7 +220,7 @@ const starsGroup = new THREE.Group();
 scene.add(starsGroup);
 for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
 {
-    const radius = 2.5 * Math.exp(-hipObj.mag/3.0);
+    const radius = 25 * Math.exp(-hipObj.mag/3.0);
     const sphGeometry = new THREE.SphereGeometry( radius, 5, 5 );
     const sphMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
     const sphere = new THREE.Mesh( sphGeometry, sphMaterial );
@@ -196,7 +228,7 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     const DE = hipObj.DE;
     const RA = hipObj.RA;
 
-    const R = 500;
+    const R = 5000;
     const p = [R * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
                R * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
                R * orbitsjs.sind(DE)];
@@ -208,8 +240,9 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     starsGroup.add( sphere );
 }
 
-const planeGeom = new THREE.PlaneGeometry(1000, 1000);
+const planeGeom = new THREE.PlaneGeometry(150, 150);
 const planeMaterial = new THREE.MeshBasicMaterial({color : 0x559955, opacity : 0.5, transparent : true});
+planeMaterial.side = THREE.DoubleSide;
 const planeMesh = new THREE.Mesh(planeGeom, planeMaterial);
 planeMesh.position.z = -2;
 scene.add(planeMesh);
@@ -249,7 +282,7 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
         const RA = orbitsjs.atan2d(osv.r[1], osv.r[0]);
         const DE = orbitsjs.asind(osv.r[2] / orbitsjs.norm(osv.r));
 
-        const R = 495;
+        const R = 4995;
         const p = [R * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
                 R * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
                 R * orbitsjs.sind(DE)];
@@ -271,22 +304,83 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 }
 
 // Change FoV with wheel.
-view.addEventListener("wheel", function(event) 
+view1.addEventListener("wheel", function(event) 
 {
     console.log(event.deltaY);
     fov += event.deltaY/25;
     if (fov < 1) fov = 1
     if (fov > 170) fov = 170;
-    camera.fov = fov;
-    camera.updateProjectionMatrix();
+    camera1.fov = fov;
+    camera1.updateProjectionMatrix();
 });
 
 function onWindowResize()
 {
-    const aspect = window.innerWidth / window.innerHeight;
-    camera.aspect = aspect;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    const aspect = 0.5 * window.innerWidth / window.innerHeight;
+    camera1.aspect = aspect;
+    camera2.aspect = aspect;
+    camera1.updateProjectionMatrix();
+    camera2.updateProjectionMatrix();
+
+    renderer1.setSize(window.innerWidth / 2, window.innerHeight);
+    renderer2.setSize(window.innerWidth / 2, window.innerHeight);
+    view2.style.left= window.innerWidth/2 + 'px';
+}
+
+function loadFont() 
+{
+    const loader = new THREE.FontLoader();
+    loader.load( 'imports/helvetiker_regular.typeface.json', function ( response ) {
+        const font = response;
+        //srefreshText();
+
+        console.log(font);
+
+        materials = [
+            //new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front
+            //new THREE.MeshPhongMaterial( { color: 0xffffff } ) // side
+            new THREE.MeshBasicMaterial({color : 0xaaaaaa}),
+            new THREE.MeshBasicMaterial({color : 0xaaaaaa})
+        ];
+        const textopts = {
+            font : font,
+            size : 24,
+            height : 1,
+            curveSegments: 4,
+            bevelThickness: 2,
+            bevelSize: 1.5,
+            bevelEnabled: false
+        };
+        const textGeoNorth = new THREE.TextGeometry("N", textopts);
+        const textMeshNorth = new THREE.Mesh(textGeoNorth, materials);
+        const textGeoSouth = new THREE.TextGeometry("S", textopts);
+        const textMeshSouth = new THREE.Mesh(textGeoSouth, materials);
+        const textGeoWest = new THREE.TextGeometry("W", textopts);
+        const textMeshWest = new THREE.Mesh(textGeoWest, materials);
+        const textGeoEast = new THREE.TextGeometry("E", textopts);
+        const textMeshEast = new THREE.Mesh(textGeoEast, materials);
+        textMeshNorth.position.x = -12;
+        textMeshNorth.position.y = 70;
+        textMeshNorth.position.z = -20;
+        textMeshSouth.position.x = -12;
+        textMeshSouth.position.y = -80;
+        textMeshSouth.position.z = -20;
+
+        textMeshWest.position.x = -70;
+        textMeshWest.position.y = -12;
+        textMeshWest.position.z = -20;
+        textMeshEast.position.x = 70;
+        textMeshEast.position.y = 12;
+        textMeshEast.position.z = -20;
+
+        textMeshEast.rotation.z = -Math.PI/2;
+        textMeshWest.rotation.z = Math.PI/2;
+
+        scene.add(textMeshNorth);
+        scene.add(textMeshSouth);
+        scene.add(textMeshWest);
+        scene.add(textMeshEast);
+    } );
 }
 
 window.addEventListener('resize', onWindowResize, false);
@@ -354,7 +448,31 @@ function createMatrix(JT)
     );
 
     //console.log(matrix);
-    console.log(controls);
+    //console.log(controls);
+
+    return matrix;
+}
+
+function createRotMatrix(lon, lat)
+{
+    const matrix = new THREE.Matrix4();
+
+    const T11 =-orbitsjs.sind(lon);
+    const T21 = orbitsjs.cosd(lon);
+    const T31 = 0;
+    const T12 = -orbitsjs.cosd(lon)*orbitsjs.sind(lat);
+    const T22 = -orbitsjs.sind(lon)*orbitsjs.sind(lat);
+    const T32 = orbitsjs.cosd(lat);
+    const T13 = orbitsjs.cosd(lon)*orbitsjs.cosd(lat);
+    const T23 = orbitsjs.sind(lon)*orbitsjs.cosd(lat);
+    const T33 = orbitsjs.sind(lat);
+
+    matrix.set(
+        T11, T31, -T21, 0,
+        T12, T32, -T22, 0,
+        T13, T33, -T23, -50, 
+        0, 0, 0, 1
+    );
 
     return matrix;
 }
@@ -372,18 +490,7 @@ function render(time)
     starsGroup.visible = guiControls.stars;
     planeMesh.visible = guiControls.ground;
 
-    //constellationGroup.rotation.z = time/10000;
-    //starsGroup.rotation.z = time/10000;
-    //boundaryGroup.rotation.z = time/10000;
-
     const angle = time / 100;
-    /*const rotationMatrix = new THREE.Matrix4();
-    rotationMatrix.set(
-         orbitsjs.cosd(angle), orbitsjs.sind(angle), 0, 0, 
-        -orbitsjs.sind(angle), orbitsjs.cosd(angle), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    );*/
 
     const {JD, JT} = orbitsjs.timeJulianTs(new Date());
     const rotationMatrix = createMatrix(JT);
@@ -399,12 +506,23 @@ function render(time)
     orbitGroup.matrix = rotationMatrix;
     equator.matrix = rotationMatrix;
 
-    renderer.render(scene, camera);
+    earthMesh.matrixAutoUpdate = false;
+    earthMesh.matrix = createRotMatrix(guiControls.observerLon, guiControls.observerLat);
+
+    cameraHelper.visible = false;
+    earthMesh.visible = false;
+    renderer1.render(scene, camera1);
+    cameraHelper.visible = true;
+    earthMesh.visible = true;
+    cameraHelper.update();
+    renderer2.render(scene, camera2);
     requestAnimationFrame(render);
 }
 
+loadFont();
+
 requestAnimationFrame(render);
 
-renderer.render(scene, camera);
+renderer1.render(scene, camera1);
 
 //console.log(renderer);
