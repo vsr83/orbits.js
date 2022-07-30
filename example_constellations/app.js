@@ -27,6 +27,11 @@ const guiControls = new function()
     }
 }; 
 
+// Radius of the artifician sphere with the stars. This simply has to be some 
+// large value that does not introduce artificial Diurnal parallax.
+const celestialSphereRadius = 5000;
+
+// Create Dat.GUI controls:
 const gui = new dat.GUI();
 
 const observerFolder = gui.addFolder('Observer');
@@ -57,10 +62,11 @@ planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Nept
 
 gui.add(guiControls, 'showSplit').name('Split Camera').onChange(function() 
 {
-    console.log("Split");
+    // Resize event handler sets visibility of the second view.
     onWindowResize();
 });
 
+// DOM elements:
 const view1 = document.querySelector('#view1');
 const view2 = document.querySelector('#view2');
 view1.style.left= '0px';
@@ -86,12 +92,14 @@ let fov = 70;
 const near = 1;
 const far = 6000;
 
+// Main view.
 const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera1.position.z = 1;
 camera1.up.x = 0;
 camera1.up.y = 0;
 camera1.up.z = 1;
 
+// External view with the globe.
 const camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera2.position.z = 200;
 camera2.position.y = -200;
@@ -114,6 +122,7 @@ const scene = new THREE.Scene();
 const cameraHelper = new THREE.CameraHelper(camera1);
 scene.add(cameraHelper);
 
+// Create the globe.
 let sphereGeometry = new THREE.SphereGeometry(50, 64, 64);
 const texture = new THREE.TextureLoader().load('imports/2k_earth_daymap.jpeg');
 let sphereMaterial = new THREE.MeshBasicMaterial({map : texture});
@@ -149,12 +158,11 @@ for (let [cName, cPoints] of Object.entries(orbitsjs.constellationBoundaries))
     for (let indPoint = 0; indPoint < cPoints.length; indPoint++)
     {
         let point = cPoints[indPoint];
-        const R = 5000;
         const RA = point[0];
         const DE = point[1];
-        const pStart = [R * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
-                        R * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
-                        R * orbitsjs.sind(DE)];
+        const pStart = [celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
+                        celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
+                        celestialSphereRadius * orbitsjs.sind(DE)];
         points.push(new THREE.Vector3(pStart[0], pStart[1], pStart[2]));
     }
     const lineGeom = new THREE.BufferGeometry().setFromPoints( points );
@@ -199,13 +207,12 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
         const DEstart = hipStart.DE;
         const DEend = hipEnd.DE;
 
-        const R = 5000;
-        const pStart = [R * orbitsjs.cosd(DEstart) * orbitsjs.cosd(RAstart), 
-                        R * orbitsjs.cosd(DEstart) * orbitsjs.sind(RAstart), 
-                        R * orbitsjs.sind(DEstart)];
-        const pEnd = [R * orbitsjs.cosd(DEend) * orbitsjs.cosd(RAend), 
-                      R * orbitsjs.cosd(DEend) * orbitsjs.sind(RAend), 
-                      R * orbitsjs.sind(DEend)];
+        const pStart = [celestialSphereRadius * orbitsjs.cosd(DEstart) * orbitsjs.cosd(RAstart), 
+                        celestialSphereRadius * orbitsjs.cosd(DEstart) * orbitsjs.sind(RAstart), 
+                        celestialSphereRadius * orbitsjs.sind(DEstart)];
+        const pEnd = [celestialSphereRadius * orbitsjs.cosd(DEend) * orbitsjs.cosd(RAend), 
+                      celestialSphereRadius * orbitsjs.cosd(DEend) * orbitsjs.sind(RAend), 
+                      celestialSphereRadius * orbitsjs.sind(DEend)];
 
         const vec = orbitsjs.vecDiff(pEnd, pStart);
         const vecU = orbitsjs.vecMul(vec, 1.0 / orbitsjs.norm(vec));
@@ -221,14 +228,12 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
         constellationGroup.add(line);
     }
 }
-console.log(constellationGroup);
-
 // Create stars.
 const starsGroup = new THREE.Group();
 scene.add(starsGroup);
 for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
 {
-    const radius = 25 * Math.exp(-hipObj.mag/3.0);
+    const radius = 0.005 * celestialSphereRadius * Math.exp(-hipObj.mag/3.0);
     const sphGeometry = new THREE.SphereGeometry( radius, 5, 5 );
     const sphMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
     const sphere = new THREE.Mesh( sphGeometry, sphMaterial );
@@ -236,10 +241,9 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     const DE = hipObj.DE;
     const RA = hipObj.RA;
 
-    const R = 5000;
-    const p = [R * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
-               R * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
-               R * orbitsjs.sind(DE)];
+    const p = [celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
+               celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
+               celestialSphereRadius * orbitsjs.sind(DE)];
 
     sphere.position.x = p[0];
     sphere.position.y = p[1];
@@ -248,7 +252,8 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     starsGroup.add( sphere );
 }
 
-const planeGeom = new THREE.PlaneGeometry(150, 150);
+// Create the horizontal plane.
+const planeGeom = new THREE.CircleGeometry(90, 50);
 const planeMaterial = new THREE.MeshBasicMaterial({color : 0x559955, opacity : 0.5, transparent : true});
 planeMaterial.side = THREE.DoubleSide;
 const planeMesh = new THREE.Mesh(planeGeom, planeMaterial);
@@ -314,7 +319,6 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 // Change FoV with wheel.
 view1.addEventListener("wheel", function(event) 
 {
-    console.log(event.deltaY);
     fov += event.deltaY/25;
     if (fov < 1) fov = 1
     if (fov > 170) fov = 170;
@@ -322,9 +326,12 @@ view1.addEventListener("wheel", function(event)
     camera1.updateProjectionMatrix();
 });
 
+/**
+ * Handler for resize events.
+ */
 function onWindowResize()
 {
-
+    // The resize is handled differently according to whether both views are enabled.
     if (guiControls.showSplit)
     {
         renderer1.setSize(window.innerWidth / 2, window.innerHeight);
@@ -345,17 +352,17 @@ function onWindowResize()
         const aspect = window.innerWidth / window.innerHeight;
         camera1.aspect = aspect;
         camera1.updateProjectionMatrix();
-        }
+    }
 }
 
-function loadFont() 
+/**
+ * Load fonts and create text meshes.
+ */
+function loadText() 
 {
     const loader = new THREE.FontLoader();
     loader.load( 'imports/helvetiker_regular.typeface.json', function ( response ) {
         const font = response;
-        //srefreshText();
-
-        console.log(font);
 
         materials = [
             //new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front
@@ -384,7 +391,7 @@ function loadFont()
         textMeshNorth.position.y = 70;
         textMeshNorth.position.z = -20;
         textMeshSouth.position.x = -12;
-        textMeshSouth.position.y = -80;
+        textMeshSouth.position.y = -95;
         textMeshSouth.position.z = -20;
 
         textMeshWest.position.x = -70;
@@ -437,9 +444,21 @@ window.addEventListener('resize', onWindowResize, false);
      }                
  }
 
-
+/**
+ * Create Three.js matrix for the rotation between J2000 and ENU frames.
+ * It is important to note that the matrix alone is not sufficient for objects
+ * with significant Diurnal parallax (w.r.t. location on Earth).
+ * 
+ * @param {*} JT 
+ *     Julian time.
+ * @returns The 4x4 Three.js matrix.
+ */
 function createMatrix(JT)
 {
+    // We construct rotation matrix by transforming basis vectors to the ENU frame.
+    // Since the EFI-ENU transformation involves translation and the rotation is used
+    // uniformly for all stars, the basis vectors are scaled to very large vector so
+    // that the translation becomes small enough.
     function createColumn(vec, JT)
     {
         const targetOsvJ2000 = {r: orbitsjs.vecMul(vec, 1e20), v : [0, 0, 0], JT};
@@ -447,19 +466,19 @@ function createMatrix(JT)
         const targetOsvMod = orbitsjs.coordJ2000Mod(targetOsvJ2000);
         const targetOsvTod = orbitsjs.coordModTod(targetOsvMod);
         const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
-        const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 
-            0, 
-            0);
+        const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
         const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
             guiControls.observerLat, guiControls.observerLon, 0);
 
         return targetOsvEnu.r;
     }
     
+    // Scale back to obtain columns of the rotation matrix.
     const col1 = orbitsjs.vecMul(createColumn([1, 0, 0], JT), 1e-20);
     const col2 = orbitsjs.vecMul(createColumn([0, 1, 0], JT), 1e-20);
     const col3 = orbitsjs.vecMul(createColumn([0, 0, 1], JT), 1e-20);
 
+    // Construct the rotation matrix.
     const matrix = new THREE.Matrix4();
     matrix.set(
         col1[0], col2[0], col3[0], 0,
@@ -468,16 +487,23 @@ function createMatrix(JT)
         0, 0, 0, 1
     );
 
-    //console.log(matrix);
-    //console.log(controls);
-
     return matrix;
 }
 
+/**
+ * Create rotation-translation matrix for the Earth mesh.
+ * 
+ * @param {*} lon 
+ *     Observer longitude.
+ * @param {*} lat 
+ *     Observer latitude.
+ * @returns The rotation matrix.
+ */
 function createRotMatrix(lon, lat)
 {
     const matrix = new THREE.Matrix4();
 
+    // EFI-ENU rotation matrix.
     const T11 =-orbitsjs.sind(lon);
     const T21 = orbitsjs.cosd(lon);
     const T31 = 0;
@@ -488,6 +514,8 @@ function createRotMatrix(lon, lat)
     const T23 = orbitsjs.sind(lon)*orbitsjs.cosd(lat);
     const T33 = orbitsjs.sind(lat);
 
+    // Rotate w.r.t. x by 90 degrees to handle the texture and build the rotation
+    // matrix.
     matrix.set(
         T11, T31, -T21, 0,
         T12, T32, -T22, 0,
@@ -498,8 +526,14 @@ function createRotMatrix(lon, lat)
     return matrix;
 }
 
+/**
+ * Render a frame.
+ * 
+ * @param {*} time 
+ */
 function render(time) 
 {
+    // Set visibility according dat.gui controls.
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     {
         const planet = planets[indPlanet];
@@ -511,29 +545,34 @@ function render(time)
     starsGroup.visible = guiControls.stars;
     planeMesh.visible = guiControls.ground;
 
-    const angle = time / 100;
-
+    // Compute Julian time from current time.
     const {JD, JT} = orbitsjs.timeJulianTs(new Date());
-    const rotationMatrix = createMatrix(JT);
 
+    // We wish to override the matrices determined by position and rotation of the meshes.
     constellationGroup.matrixAutoUpdate = false;
     boundaryGroup.matrixAutoUpdate = false;
     starsGroup.matrixAutoUpdate = false;
     orbitGroup.matrixAutoUpdate = false;
     equator.matrixAutoUpdate = false;
+
+    // Set J2000-ENU rotation matrix for targets without significant Diurnal parallax.
+    const rotationMatrix = createMatrix(JT);
     constellationGroup.matrix = rotationMatrix;
     boundaryGroup.matrix = rotationMatrix;
     starsGroup.matrix = rotationMatrix;
     orbitGroup.matrix = rotationMatrix;
     equator.matrix = rotationMatrix;
 
+    // Set EFI-ENU rotation matrix
     earthMesh.matrixAutoUpdate = false;
     earthMesh.matrix = createRotMatrix(guiControls.observerLon, guiControls.observerLat);
 
+    // We do not render the camera helper and Earth mesh for the first view.
     cameraHelper.visible = false;
     earthMesh.visible = false;
     renderer1.render(scene, camera1);
 
+    // Render second view, if enabled.
     if (guiControls.showSplit)
     {
         cameraHelper.visible = true;
@@ -544,10 +583,6 @@ function render(time)
     requestAnimationFrame(render);
 }
 
-loadFont();
-
+loadText();
 requestAnimationFrame(render);
-
-renderer1.render(scene, camera1);
-
-//console.log(renderer);
+//renderer1.render(scene, camera1);
