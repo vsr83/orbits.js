@@ -13,7 +13,7 @@ const guiControls = new function()
     this.stars = true;
     this.mercury = false;
     this.venus   = false;
-    this.earth   = false;
+    this.earth   = true;
     this.jupiter = false;
     this.mars    = false;
     this.saturn  = false;
@@ -306,14 +306,32 @@ for (let el = 0; el < 90; el+= 15)
 }
 
 // Create planetary orbits.
+const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+const planetCoeff = [0.003, 0.005, 0.03, 0.005, 0.005, 0.005, 0.002, 0.002];
+const planetColors = [0xff0000, 0xffff00, 0xffffff, 0xff0000, 0xffff00, 0xffff99, 0x4444aa, 0x333388];
+const planetMeshes = [];
+const planetTextMeshes = [];
+const planetMeshGroup = new THREE.Group();
+scene.add(planetMeshGroup);
+for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
+{
+    const planet = planets[indPlanet];
+
+    const radius = planetCoeff[indPlanet] * celestialSphereRadius;
+    const sphGeometry = new THREE.SphereGeometry( radius, 10, 10 );
+    const sphMaterial = new THREE.MeshBasicMaterial( { color: planetColors[indPlanet] } );
+    const sphere = new THREE.Mesh( sphGeometry, sphMaterial );
+
+    planetMeshes[planet] = sphere;
+    planetMeshGroup.add(sphere);
+}
+
+const periods = [88, 225, 367, 687, 12*365.25, 29*365.25, 84*365.25, 165*365.25, 0];
+const orbits = [];
+
 const orbitGroup = new THREE.Group();
 scene.add(orbitGroup);
 const JT0 = orbitsjs.dateJulianYmd(2022, 1, 1);
-
-const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
-const periods = [88, 225, 365, 687, 12*365.25, 29*365.25, 84*365.25, 165*365.25, 0];
-const orbits = [];
-
 for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 {
     const planet = planets[indPlanet];
@@ -475,8 +493,6 @@ function loadText()
             textMesh.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), orbitsjs.deg2Rad(-az));
             textMesh.rotateOnWorldAxis(new THREE.Vector3(orbitsjs.cosd(az), -orbitsjs.sind(az), 0), Math.PI/2);
 
-            //textMesh.matrixAutoUpdate = false;
-    
             azTextGroup.add(textMesh);
         }
 
@@ -488,18 +504,27 @@ function loadText()
             textMesh.position.x = celestialSphereRadius * orbitsjs.cosd(el+0.3) * orbitsjs.sind(0.2); 
             textMesh.position.y = celestialSphereRadius * orbitsjs.cosd(el+0.3) * orbitsjs.cosd(0.2);
             textMesh.position.z = celestialSphereRadius * orbitsjs.sind(el+0.3);
-           // textMesh.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), orbitsjs.deg2Rad(-az));
             textMesh.rotateOnWorldAxis(new THREE.Vector3(orbitsjs.cosd(0), -orbitsjs.sind(0), 0), Math.PI/2+orbitsjs.deg2Rad(el));
-
-            //textMesh.matrixAutoUpdate = false;
-    
             elTextGroup.add(textMesh);
         }
 
-        //azTextGroup
-    } );
-}
+        for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
+        {
+            const planet = planets[indPlanet];
+            let planetCaption = "  " + planet.charAt(0).toUpperCase() + planet.slice(1);
+            if (planet === "earth")
+            {
+                planetCaption = "         Sun";
+            }
 
+            const textGeo = new THREE.TextGeometry(planetCaption, textoptsGrid);
+            const textMesh = new THREE.Mesh(textGeo, materials);
+            planetTextMeshes[planet] = textMesh;
+            planetMeshGroup.add(textMesh);
+        }
+    } );
+    
+}
 window.addEventListener('resize', onWindowResize, false);
 
 /**
@@ -622,11 +647,55 @@ function createRotMatrix(lon, lat)
  */
 function render(time) 
 {
+    // Compute Julian time from current time.
+    const {JD, JT} = orbitsjs.timeJulianTs(new Date());
+
     // Set visibility according dat.gui controls.
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     {
         const planet = planets[indPlanet];
         orbits[planet].visible = guiControls[planet];
+        
+        const planetMesh = planetMeshes[planet];
+        let posVelEarth = orbitsjs.vsop87('earth', JT);
+        let posVelInitial = orbitsjs.vsop87(planet, JT);
+
+        if (planet === 'earth')
+        {
+            //postVelInitial = posVelEarth;
+            posVelInitial = {r : [0, 0, 0], v : [0, 0, 0], JT : JT};
+        }
+
+        const diffPosInitial = orbitsjs.vecDiff(posVelInitial.r, posVelEarth.r);
+        const diffVelInitial = orbitsjs.vecDiff(posVelInitial.v, posVelEarth.v);
+
+        const osv = orbitsjs.coordEclEq({r: diffPosInitial, v: diffVelInitial, JT : JT});
+        const targetOsvMod = orbitsjs.coordJ2000Mod(osv);
+        const targetOsvTod = orbitsjs.coordModTod(targetOsvMod);
+        const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
+        const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
+        const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
+            guiControls.observerLat, guiControls.observerLon, 0);
+
+        let r = targetOsvEnu.r;
+        r = orbitsjs.vecMul(r, celestialSphereRadius/orbitsjs.norm(r));
+        planetMesh.position.x = r[0];
+        planetMesh.position.y = r[1];
+        planetMesh.position.z = r[2];
+
+        //console.log(planet);
+        if (!(planetTextMeshes[planet] === undefined))
+        {
+            const textMesh = planetTextMeshes[planet];
+            textMesh.position.x = r[0];
+            textMesh.position.y = r[1];
+            textMesh.position.z = r[2];
+
+            const az = orbitsjs.atan2d(r[0], r[1]);
+            //textMesh.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), orbitsjs.deg2Rad(-az));
+            //textMesh.rotateOnWorldAxis(new THREE.Vector3(orbitsjs.cosd(az), -orbitsjs.sind(az), 0), Math.PI/2);
+            textMesh.quaternion.copy( camera1.quaternion );
+        }
     }    
     equator.visible = guiControls.equator;
     constellationGroup.visible = guiControls.constellations;
@@ -634,9 +703,6 @@ function render(time)
     starsGroup.visible = guiControls.stars;
     planeGroup.visible = guiControls.ground;
     azElGroup.visible = guiControls.azElGrid;
-
-    // Compute Julian time from current time.
-    const {JD, JT} = orbitsjs.timeJulianTs(new Date());
 
     // We wish to override the matrices determined by position and rotation of the meshes.
     constellationGroup.matrixAutoUpdate = false;
