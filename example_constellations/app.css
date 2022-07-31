@@ -10,3 +10,37 @@
     top : 0px;
     left : 0px;
 }
+#dateContainer
+{
+    width: 300px;
+    color: #fff;
+    position : absolute;
+    bottom : 10px;
+    left : 10px;
+    z-index : 11;
+    background-color: #303030;
+    opacity: 0.5;
+    font-size: 15px;
+    font-family : monospace;
+    z-index : 6;
+}
+#dateText
+{
+    color: #fff;
+    position : absolute;
+    bottom : 10px;
+    left : 10px;
+    z-index : 11;
+    background-color: #303030;
+    opacity: 1;
+    font-size: 12px;
+    font-family : monospace;
+    padding-left : 20px;
+    padding-right : 20px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

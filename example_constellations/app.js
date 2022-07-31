@@ -1,3 +1,6 @@
+let warpDelta = 0.0;
+let warpAccumulation = 0.0;
+let warpRefTime = null;
 
 // Create controls.
 const guiControls = new function()
@@ -10,6 +13,7 @@ const guiControls = new function()
     this.azElGrid = false;
     this.constellations = true;
     this.constellationBnd = true;
+    this.planets = true;
     this.stars = true;
     this.mercury = false;
     this.venus   = false;
@@ -20,7 +24,23 @@ const guiControls = new function()
     this.uranus  = false;
     this.neptune = false;
 
+    this.warpFactor = 3;
+    this.timeWarp = false;
+    this.deltaDays = 0;
+    this.deltaHours = 0;
+    this.deltaMins = 0;
+    this.deltaSecs = 0;
+
     this.showSplit = true;
+
+    this.resetTime = function() {
+        warpDelta = 0;
+        warpAccumulation = 0;
+        warpRefTime = new Date();
+    };
+    this.GitHub = function() {
+        window.open("https://github.com/vsr83/orbits.js", "_blank").focus();
+    };
 
     this.setFromGps = function() {
         console.log('GPS');
@@ -53,6 +73,7 @@ starControls.constellationBnd = visibilityFolder.add(guiControls, 'constellation
 starControls.stars = visibilityFolder.add(guiControls, 'stars').name("Stars");
 
 const planetControls = {};
+planetControls.planets = visibilityFolder.add(guiControls, 'planets').name('Planets');
 planetControls.sun = visibilityFolder.add(guiControls, 'earth').name('Sun');
 planetControls.mercury = visibilityFolder.add(guiControls, 'mercury').name('Mercury');
 planetControls.venus = visibilityFolder.add(guiControls, 'venus').name('Venus');
@@ -62,11 +83,21 @@ planetControls.saturn = visibilityFolder.add(guiControls, 'saturn').name('Saturn
 planetControls.uranus = visibilityFolder.add(guiControls, 'uranus').name('Uranus');
 planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Neptune');
 
+const timeFolder = gui.addFolder('Time');
+const timeControls = {};
+timeControls.timeWarp = timeFolder.add(guiControls, 'timeWarp').name('Time Warp').onChange(function() {toggleWarp()});
+timeControls.warpFactor = timeFolder.add(guiControls, 'warpFactor', -10, 10, 0.1).name('Warp Factor').onChange(function() {changeWarpFactor()});
+timeControls.deltaDayControl = timeFolder.add(guiControls, 'deltaDays', -185, 185, 1).name('Delta Days');
+timeControls.deltaHourControl = timeFolder.add(guiControls, 'deltaHours', -12, 12, 1).name('Delta Hours');
+timeControls.deltaMinuteControl = timeFolder.add(guiControls, 'deltaMins', -30, 30, 1).name('Delta Minutes');
+timeControls.deltaSecControl = timeFolder.add(guiControls, 'deltaSecs', -30, 30, 1).name('Delta Seconds');
+timeControls.reset = timeFolder.add(guiControls, 'resetTime').name('Reset Time');
 gui.add(guiControls, 'showSplit').name('Split Camera').onChange(function() 
 {
     // Resize event handler sets visibility of the second view.
     onWindowResize();
 });
+gui.add(guiControls, 'GitHub').name("GitHub");
 
 // DOM elements:
 const view1 = document.querySelector('#view1');
@@ -74,8 +105,8 @@ const view2 = document.querySelector('#view2');
 view1.style.left= '0px';
 view1.style.top= '0px';
 view2.style.left= window.innerWidth/2 + 'px';
-view2.style.top= '0px';
 
+view2.style.top= '0px';
 // Configure renderer.
 const renderer1 = new THREE.WebGLRenderer({antialias: true});
 renderer1.setPixelRatio( window.devicePixelRatio );
@@ -96,7 +127,7 @@ const far = 6000;
 
 // Main view.
 const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera1.position.z = 1;
+camera1.position.z = 0.1;
 camera1.up.x = 0;
 camera1.up.y = 0;
 camera1.up.z = 1;
@@ -647,8 +678,48 @@ function createRotMatrix(lon, lat)
  */
 function render(time) 
 {
+    const dateNow = new Date();
+
+    let warpDeltaNew = warpAccumulation;
+    if (guiControls.timeWarp)
+    {
+        let expFactor = 1.0;
+
+        if (guiControls.warpFactor > 0)
+        {
+            expFactor = Math.exp(guiControls.warpFactor);
+        }
+        if (guiControls.warpFactor < 0)
+        {
+            expFactor = -Math.exp(-guiControls.warpFactor);
+        }
+
+        warpDeltaNew += (dateNow.getTime() - warpRefTime.getTime()) * expFactor;
+    }
+    warpDelta = warpDeltaNew;
+    
+    // Value of dateNow is set from controls above.
+    today = new Date(dateNow.getTime()
+        + 24 * 3600 * 1000 * guiControls.deltaDays
+        + 3600 * 1000 * guiControls.deltaHours
+        + 60 * 1000 * guiControls.deltaMins
+        + 1000 * guiControls.deltaSecs
+        + warpDelta);
+
     // Compute Julian time from current time.
-    const {JD, JT} = orbitsjs.timeJulianTs(new Date());
+    const {JD, JT} = orbitsjs.timeJulianTs(today);
+    const dateText = document.getElementById('dateText');
+
+    const intFixed = function(num) {return ("00" + num).slice(-2)};
+    const dateString = today.getUTCFullYear() + "-" 
+                     + intFixed(today.getUTCMonth() + 1) + "-"
+                     + intFixed(today.getUTCDate()) + "T"
+                     + intFixed(today.getUTCHours()) + ":"
+                     + intFixed(today.getUTCMinutes()) + ":"
+                     + intFixed(today.getUTCSeconds()) + "Z (UTC)\n" 
+                     + JT.toFixed(6) + " Julian";
+    dateText.innerText = dateString;
+
 
     // Set visibility according dat.gui controls.
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
@@ -703,6 +774,7 @@ function render(time)
     starsGroup.visible = guiControls.stars;
     planeGroup.visible = guiControls.ground;
     azElGroup.visible = guiControls.azElGrid;
+    planetMeshGroup.visible = guiControls.planets;
 
     // We wish to override the matrices determined by position and rotation of the meshes.
     constellationGroup.matrixAutoUpdate = false;
@@ -739,6 +811,26 @@ function render(time)
         renderer2.render(scene, camera2);
     }
     requestAnimationFrame(render);
+}
+
+function toggleWarp()
+{
+    if (guiControls.timeWarp)
+    {
+        warpRefTime = new Date();
+    }
+    else
+    {
+        warpAccumulation = warpDelta;
+        warpDelta = 0;
+    }
+}
+
+function changeWarpFactor()
+{
+    warpRefTime = new Date();
+    warpAccumulation = warpDelta;
+    warpDelta = 0;
 }
 
 loadText();
