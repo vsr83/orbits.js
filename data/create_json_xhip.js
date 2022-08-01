@@ -13,7 +13,6 @@ const constStarList = [];
 
 for (const [abbr, value] of Object.entries(constellations))
 {
-
     const lines = value.hip;
     for (let indLine = 0; indLine < lines.length; indLine++)
     {
@@ -70,7 +69,7 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
         name = 'XHIP_' + idData;
     }
 
-    if (HPmag <= magLimit || constStarList.includes[parseInt(idData)])
+    if (HPmag <= magLimit || constStarList.includes(parseInt(idData)))
     {
         const data = {
             id : parseInt(idData),
@@ -84,5 +83,4 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
         output[name] = data;
     }
 }
-
 console.log(JSON.stringify(output));

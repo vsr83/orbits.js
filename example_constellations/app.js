@@ -229,9 +229,14 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
         const hipStart = orbitsjs.hipparchusData[nameStart];
         const hipEnd = orbitsjs.hipparchusData[nameEnd];
        
-        if (hipStart === undefined || hipEnd === undefined)
-        {
-            console.log("MISSING");
+        if (hipStart === undefined)
+        {            
+            console.log("MISSING-start " + starStart + " " + nameStart);
+            continue;
+        }
+        if (hipEnd === undefined)
+        {            
+            console.log("MISSING-end " + starEnd + " " + nameEnd);
             continue;
         }
 
