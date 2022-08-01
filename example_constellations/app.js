@@ -1,3 +1,4 @@
+// Time warp state.
 let warpDelta = 0.0;
 let warpAccumulation = 0.0;
 let warpRefTime = null;
@@ -31,7 +32,7 @@ const guiControls = new function()
     this.deltaMins = 0;
     this.deltaSecs = 0;
 
-    this.showSplit = true;
+    this.showSplit = false;
 
     this.resetTime = function() {
         warpDelta = 0;
@@ -92,7 +93,7 @@ timeControls.deltaHourControl = timeFolder.add(guiControls, 'deltaHours', -12, 1
 timeControls.deltaMinuteControl = timeFolder.add(guiControls, 'deltaMins', -30, 30, 1).name('Delta Minutes');
 timeControls.deltaSecControl = timeFolder.add(guiControls, 'deltaSecs', -30, 30, 1).name('Delta Seconds');
 timeControls.reset = timeFolder.add(guiControls, 'resetTime').name('Reset Time');
-gui.add(guiControls, 'showSplit').name('Split Camera').onChange(function() 
+gui.add(guiControls, 'showSplit').name('Observer Split').onChange(function() 
 {
     // Resize event handler sets visibility of the second view.
     onWindowResize();
@@ -110,7 +111,7 @@ view2.style.top= '0px';
 // Configure renderer.
 const renderer1 = new THREE.WebGLRenderer({antialias: true});
 renderer1.setPixelRatio( window.devicePixelRatio );
-renderer1.setSize(window.innerWidth / 2, window.innerHeight);
+renderer1.setSize(window.innerWidth, window.innerHeight);
 view1.appendChild( renderer1.domElement );
 
 // Configure renderer.
@@ -118,16 +119,17 @@ const renderer2 = new THREE.WebGLRenderer({antialias: true});
 renderer2.setPixelRatio( window.devicePixelRatio );
 renderer2.setSize(window.innerWidth / 2, window.innerHeight);
 view2.appendChild( renderer2.domElement );
+view2.style.visibility = 'hidden';
 
 // Configure camera.
-const aspect = 0.5 * window.innerWidth / window.innerHeight;
+const aspect = window.innerWidth / window.innerHeight;
 let fov = 70;
 const near = 1;
 const far = 6000;
 
 // Main view.
 const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera1.position.z = 0.1;
+camera1.position.z = 1;
 camera1.up.x = 0;
 camera1.up.y = 0;
 camera1.up.z = 1;
