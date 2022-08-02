@@ -820,7 +820,10 @@ function render(time)
     requestAnimationFrame(render);
 }
 
-function toggleWarp()
+/**
+ * Handle toggling of the time warp.
+ */
+ function toggleWarp()
 {
     if (guiControls.timeWarp)
     {
@@ -833,9 +836,13 @@ function toggleWarp()
     }
 }
 
+/**
+ * Handle change in the time warp factor.
+ */
 function changeWarpFactor()
 {
     warpRefTime = new Date();
+    // Move accumulated warp time from delta.
     warpAccumulation = warpDelta;
     warpDelta = 0;
 }
