@@ -113,11 +113,25 @@ export function angleArcDeg(deg, arcMin, arcSec)
  * 
  * @param {*} degIn 
  *      The angle in degrees.
+ * @param {*} limit360
+ *      Limit to range [0, 360).
  * @returns An object with deg, arcMin and arcSec fields.
  */
-export function angleDegArc(degIn) 
+export function angleDegArc(degIn, limit360) 
 {
-    let angle = limitAngleDeg180(degIn);
+    let angle = 0;
+    if (limit360 === undefined)
+    {
+        limit360 = false;
+    }
+    if (limit360)
+    {
+        angle = limitAngleDeg(degIn);
+    }
+    else 
+    {
+        angle = limitAngleDeg180(degIn);
+    }
 
     const angleSign = Math.sign(angle);
     const angleSize = Math.abs(angle);
