@@ -2,6 +2,7 @@
 let warpDelta = 0.0;
 let warpAccumulation = 0.0;
 let warpRefTime = null;
+let targetName = "";
 
 // Create controls.
 const guiControls = new function()
@@ -157,6 +158,17 @@ const scene = new THREE.Scene();
 const cameraHelper = new THREE.CameraHelper(camera1);
 scene.add(cameraHelper);
 
+// Intersection scene.
+const sceneIntersect = new THREE.Scene();
+let sphereInGeometry = new THREE.SphereGeometry(500, 128, 128);
+let sphereInMaterial = new THREE.MeshBasicMaterial({color: 0x123456});
+sphereInMaterial.side = THREE.DoubleSide;
+let inMesh = new THREE.Mesh(sphereInGeometry, sphereInMaterial);
+sceneIntersect.add(inMesh);
+
+// Selection scene.
+const sceneSelect = new THREE.Scene();
+
 // Create the globe.
 let sphereGeometry = new THREE.SphereGeometry(50, 64, 64);
 const texture = new THREE.TextureLoader().load('imports/2k_earth_daymap.jpeg');
@@ -183,9 +195,22 @@ let equator = null;
     scene.add(equator);
 }
 
+// Create selection ring.
+const ringGeometry = new THREE.RingGeometry( 60, 100, 32 );
+const ringMaterial = new THREE.MeshBasicMaterial({color: 0xcc0000, side: THREE.DoubleSide,
+    opacity : 0.5, transparent : true});
+const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+ringMesh.visible = true;
+//ringMesh.position.x = celestialSphereRadius/2;
+//ringMesh.position.y = celestialSphereRadius;
+//ringMesh.position.z = celestialSphereRadius/2;
+
+scene.add(ringMesh);
+
 // Create constellation boundaries.
 const boundaryGroup = new THREE.Group();
 scene.add(boundaryGroup);
+let ind  = 0;
 for (let [cName, cPoints] of Object.entries(orbitsjs.constellationBoundaries))
 {
     const points = [];
@@ -269,13 +294,23 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
 }
 // Create stars.
 const starsGroup = new THREE.Group();
+const starsSelectGroup = new THREE.Group();
 scene.add(starsGroup);
+sceneSelect.add(starsSelectGroup);
+
 for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
 {
     const radius = 0.005 * celestialSphereRadius * Math.exp(-hipObj.mag/3.0);
+
     const sphGeometry = new THREE.SphereGeometry( radius, 5, 5 );
     const sphMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
     const sphere = new THREE.Mesh( sphGeometry, sphMaterial );
+
+    // Select spheres.
+    const selectGeometry = new THREE.SphereGeometry(radius*5, 5, 5 );
+    const selectMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+    selectMaterial.side = THREE.DoubleSide;
+    const selectSphere = new THREE.Mesh(selectGeometry, selectMaterial);
 
     const DE = hipObj.DE;
     const RA = hipObj.RA;
@@ -287,8 +322,14 @@ for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
     sphere.position.x = p[0];
     sphere.position.y = p[1];
     sphere.position.z = p[2];
+    selectSphere.position.x = p[0];
+    selectSphere.position.y = p[1];
+    selectSphere.position.z = p[2];
+    selectSphere.hipName = hipName;
+
     //console.log(hipObj);
-    starsGroup.add( sphere );
+    starsGroup.add(sphere);
+    starsSelectGroup.add(selectSphere);
 }
 
 // Create the horizontal plane.
@@ -437,7 +478,7 @@ function onWindowResize()
     {
         renderer1.setSize(window.innerWidth / 2, window.innerHeight);
         renderer2.setSize(window.innerWidth / 2, window.innerHeight);
-        view2.style.left= window.innerWidth/2 + 'px';    
+        view2.style.left= window.innerWidth / 2 + 'px';    
         view2.style.visibility = 'visible';
         const aspect = 0.5 * window.innerWidth / window.innerHeight;
 
@@ -572,15 +613,33 @@ window.addEventListener('resize', onWindowResize, false);
  *      Angle in degrees.
  * @returns Limited angle.
  */
- function limitDeg180(deg)
+function limitDeg180(deg)
+{
+    if (deg > 180)
+    {
+        return deg - 360;
+    }
+
+    return deg;
+}
+
+/**
+ * Limit angle to [0, 360) range.
+ * 
+ * @param {*} deg 
+ *      Angle in degrees.
+ * @returns Limited angle.
+ */
+ function limitDeg360(deg)
  {
-     if (deg > 180)
+     if (deg < 0)
      {
-         return deg - 360;
+         return deg + 360;
      }
  
      return deg;
  }
+ 
  
 /**
  * Update location forms from GPS.
@@ -687,6 +746,32 @@ function render(time)
 {
     const dateNow = new Date();
 
+    const elemCoord = document.getElementById('coordText');
+   
+    const azArc = orbitsjs.angleDegArc(limitDeg360(mouseCoord.az), true);
+    const elArc = orbitsjs.angleDegArc(limitDeg360(mouseCoord.el));
+
+    const intFixed = function(num) {return ("00" + num).slice(-2)};
+    const fixedW = function(num, len) 
+    {
+        let str = parseFloat(num).toString();
+
+        while (str.length < len)
+        {
+            str = '&nbsp;' + str;
+        }
+        return str;
+    }
+
+    coordText.innerHTML = 'Az: ' + fixedW(azArc.deg, 3) + '\xB0 ' 
+                        + fixedW(azArc.arcMin, 2) + '\u2032 ' 
+                        + fixedW(azArc.arcSec.toFixed(1), 4) + '\u2033' 
+                        + ' (' + mouseCoord.az.toFixed(4) + '\xB0)' + '<br>'
+                        + 'El: ' + fixedW(elArc.deg, 3) + '\xB0 ' 
+                        + fixedW(elArc.arcMin, 2) + '\u2032 ' 
+                        + fixedW(elArc.arcSec.toFixed(1), 4) + '\u2033' 
+                        + ' (' + mouseCoord.el.toFixed(4) + '\xB0)' + '\n';
+
     let warpDeltaNew = warpAccumulation;
     if (guiControls.timeWarp)
     {
@@ -717,7 +802,6 @@ function render(time)
     const {JD, JT} = orbitsjs.timeJulianTs(today);
     const dateText = document.getElementById('dateText');
 
-    const intFixed = function(num) {return ("00" + num).slice(-2)};
     const dateString = today.getUTCFullYear() + "-" 
                      + intFixed(today.getUTCMonth() + 1) + "-"
                      + intFixed(today.getUTCDate()) + "T"
@@ -726,7 +810,6 @@ function render(time)
                      + intFixed(today.getUTCSeconds()) + "Z (UTC)\n" 
                      + JT.toFixed(6) + " Julian";
     dateText.innerText = dateString;
-
 
     // Set visibility according dat.gui controls.
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
@@ -775,6 +858,7 @@ function render(time)
             textMesh.quaternion.copy( camera1.quaternion );
         }
     }    
+
     equator.visible = guiControls.equator;
     constellationGroup.visible = guiControls.constellations;
     boundaryGroup.visible = guiControls.constellationBnd;
@@ -787,6 +871,7 @@ function render(time)
     constellationGroup.matrixAutoUpdate = false;
     boundaryGroup.matrixAutoUpdate = false;
     starsGroup.matrixAutoUpdate = false;
+    starsSelectGroup.matrixAutoUpdate = false;
     orbitGroup.matrixAutoUpdate = false;
     equator.matrixAutoUpdate = false;
 
@@ -795,8 +880,26 @@ function render(time)
     constellationGroup.matrix = rotationMatrix;
     boundaryGroup.matrix = rotationMatrix;
     starsGroup.matrix = rotationMatrix;
-    orbitGroup.matrix = rotationMatrix;
+    starsSelectGroup.matrix = rotationMatrix;
+    orbitGroup.matrix = rotationMatrix;    
     equator.matrix = rotationMatrix;
+
+    ringMesh.quaternion.copy( camera1.quaternion );
+    if (targetName.length > 1)
+    {
+        const hipData = orbitsjs.hipparchusData[targetName];
+        const DE = hipData.DE;
+        const RA = hipData.RA;
+        const p = [celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
+            celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
+            celestialSphereRadius * orbitsjs.sind(DE)];
+        const pVector = new THREE.Vector3(p[0], p[1], p[2]);
+        pVector.applyMatrix4(rotationMatrix);
+        ringMesh.position.x = pVector.x;
+        ringMesh.position.y = pVector.y;
+        ringMesh.position.z = pVector.z;
+        ringMesh.visible = true;
+    }
 
     // Set EFI-ENU rotation matrix
     earthMesh.matrixAutoUpdate = false;
@@ -821,9 +924,9 @@ function render(time)
 }
 
 /**
- * Handle toggling of the time warp.
+ * Handle toggling of the time 
  */
- function toggleWarp()
+function toggleWarp()
 {
     if (guiControls.timeWarp)
     {
@@ -846,6 +949,105 @@ function changeWarpFactor()
     warpAccumulation = warpDelta;
     warpDelta = 0;
 }
+
+const pointer = new THREE.Vector2();
+const rayCaster = new THREE.Raycaster();
+let mouseCoord = {
+    az : 0,
+    el : 0
+};
+
+/**
+ * Update location angles of where the mouse cursor is pointing.
+ * 
+ * @param {*} event
+ *      mousemove event. 
+ */
+function onMouseMove(event)
+{
+    if (mouseDown)
+    {
+        mouseDrag = true;
+    }
+
+    pointer.x = ( event.clientX / view1.clientWidth ) * 2 - 1;
+	pointer.y = - ( event.clientY / view1.clientHeight ) * 2 + 1;
+    //console.log(pointer);
+    rayCaster.setFromCamera( pointer, camera1 );
+    const intersects = rayCaster.intersectObjects(sceneIntersect.children);
+
+    if (intersects.length == 1)
+    {
+        const coord = intersects[0].point;
+        const coordCart = [coord.x, coord.y, coord.z];
+        mouseCoord.az = orbitsjs.atan2d(coordCart[0], coordCart[1]);
+        mouseCoord.el = orbitsjs.asind(coordCart[2] / orbitsjs.norm(coordCart));
+    }
+}
+
+/**
+ * onclick event handler. 
+ * 
+ * @param {*} event 
+ */
+function onClick(event)
+{
+    pointer.x = ( event.clientX / view1.clientWidth ) * 2 - 1;
+	pointer.y = - ( event.clientY / view1.clientHeight ) * 2 + 1;
+
+    console.log(mouseDrag);
+
+    if (mouseDrag)
+    {
+        return;
+    }
+
+    sceneSelect.updateWorldMatrix(false, true);
+
+    console.log(event);
+    rayCaster.setFromCamera( pointer, camera1 );
+    const intersects = rayCaster.intersectObjects(sceneSelect.children);
+    console.log(intersects);
+
+    if (intersects.length > 0)
+    {
+        const object = intersects[0].object;
+        setTarget(object.hipName);
+    }
+    else
+    {
+        ringMesh.visible = false;
+        setTarget("");
+    }
+}
+
+/**
+ * Set target name label.
+ * 
+ * @param {*} targetNameNew 
+ */
+function setTarget(targetNameNew)
+{
+    targetName = targetNameNew;
+    const targetLabel = document.getElementById('targetText');
+    targetLabel.innerText = targetName;
+}
+
+/**
+ * Handle mousedown events.
+ */
+function onMouseDown()
+{
+    mouseDown = true;
+    mouseDrag = false;
+}
+
+let mouseDown = false;
+let mouseDrag = false;
+
+view1.addEventListener('mousemove', onMouseMove);
+view1.addEventListener('mousedown', onMouseDown);
+view1.addEventListener('mouseup', onClick);
 
 loadText();
 requestAnimationFrame(render);
