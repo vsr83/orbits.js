@@ -389,9 +389,14 @@ const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uran
 const planetCoeff = [0.003, 0.005, 0.03, 0.005, 0.005, 0.005, 0.002, 0.002];
 const planetColors = [0xff0000, 0xffff00, 0xffffff, 0xff0000, 0xffff00, 0xffff99, 0x4444aa, 0x333388];
 const planetMeshes = [];
+const planetSelectMeshes = [];
 const planetTextMeshes = [];
+
 const planetMeshGroup = new THREE.Group();
 scene.add(planetMeshGroup);
+const selectPlanetMeshGroup = new THREE.Group();
+sceneSelect.add(selectPlanetMeshGroup);
+
 for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 {
     const planet = planets[indPlanet];
@@ -402,7 +407,14 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     const sphere = new THREE.Mesh( sphGeometry, sphMaterial );
 
     planetMeshes[planet] = sphere;
-    planetMeshGroup.add(sphere);
+    planetMeshGroup.add(sphere);    
+
+    const sphSelectGeometry = new THREE.SphereGeometry(50, 10, 10);
+    const sphSelectMaterial = new THREE.MeshBasicMaterial( { color: planetColors[indPlanet] } );
+    const sphereSelect = new THREE.Mesh( sphSelectGeometry, sphSelectMaterial );
+    planetSelectMeshes[planet] = sphereSelect;
+    sphereSelect.planet = planet;
+    selectPlanetMeshGroup.add(sphereSelect);
 }
 
 const periods = [88, 225, 367, 687, 12*365.25, 29*365.25, 84*365.25, 165*365.25, 0];
@@ -410,6 +422,7 @@ const orbits = [];
 
 const orbitGroup = new THREE.Group();
 scene.add(orbitGroup);
+
 const JT0 = orbitsjs.dateJulianYmd(2022, 1, 1);
 for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 {
@@ -738,20 +751,18 @@ function createRotMatrix(lon, lat)
 }
 
 /**
- * Render a frame.
+ * Set location label based on horizontal topocentric coordinates.
  * 
- * @param {*} time 
+ * @param {*} az 
+ *      The azimuth in degrees.
+ * @param {*} el 
+ *      The elevation in degrees.
  */
-function render(time) 
+function setLocation(az, el)
 {
-    const dateNow = new Date();
+    const azArc = orbitsjs.angleDegArc(limitDeg360(az), true);
+    const elArc = orbitsjs.angleDegArc(limitDeg360(el));
 
-    const elemCoord = document.getElementById('coordText');
-   
-    const azArc = orbitsjs.angleDegArc(limitDeg360(mouseCoord.az), true);
-    const elArc = orbitsjs.angleDegArc(limitDeg360(mouseCoord.el));
-
-    const intFixed = function(num) {return ("00" + num).slice(-2)};
     const fixedW = function(num, len) 
     {
         let str = parseFloat(num).toString();
@@ -763,15 +774,29 @@ function render(time)
         return str;
     }
 
-    coordText.innerHTML = 'Az: ' + fixedW(azArc.deg, 3) + '\xB0 ' 
+    const elemCoord = document.getElementById('coordText');
+    elemCoord.innerHTML = 'Az: ' + fixedW(azArc.deg, 3) + '\xB0 ' 
                         + fixedW(azArc.arcMin, 2) + '\u2032 ' 
                         + fixedW(azArc.arcSec.toFixed(1), 4) + '\u2033' 
-                        + ' (' + mouseCoord.az.toFixed(4) + '\xB0)' + '<br>'
+                        + ' (' + az.toFixed(4) + '\xB0)' + '<br>'
                         + 'El: ' + fixedW(elArc.deg, 3) + '\xB0 ' 
                         + fixedW(elArc.arcMin, 2) + '\u2032 ' 
                         + fixedW(elArc.arcSec.toFixed(1), 4) + '\u2033' 
-                        + ' (' + mouseCoord.el.toFixed(4) + '\xB0)' + '\n';
+                        + ' (' + el.toFixed(4) + '\xB0)' + '\n';
+}
 
+/**
+ * Render a frame.
+ * 
+ * @param {*} time 
+ */
+function render(time) 
+{
+    const dateNow = new Date();
+
+    const elemCoord = document.getElementById('coordText');
+    const intFixed = function(num) {return ("00" + num).slice(-2)};
+  
     let warpDeltaNew = warpAccumulation;
     if (guiControls.timeWarp)
     {
@@ -818,6 +843,8 @@ function render(time)
         orbits[planet].visible = guiControls[planet];
         
         const planetMesh = planetMeshes[planet];
+        const selectMesh = planetSelectMeshes[planet];
+
         let posVelEarth = orbitsjs.vsop87('earth', JT);
         let posVelInitial = orbitsjs.vsop87(planet, JT);
 
@@ -843,6 +870,9 @@ function render(time)
         planetMesh.position.x = r[0];
         planetMesh.position.y = r[1];
         planetMesh.position.z = r[2];
+        selectMesh.position.x = r[0];
+        selectMesh.position.y = r[1];
+        selectMesh.position.z = r[2];
 
         //console.log(planet);
         if (!(planetTextMeshes[planet] === undefined))
@@ -866,7 +896,7 @@ function render(time)
     planeGroup.visible = guiControls.ground;
     azElGroup.visible = guiControls.azElGrid;
     planetMeshGroup.visible = guiControls.planets;
-
+    
     // We wish to override the matrices determined by position and rotation of the meshes.
     constellationGroup.matrixAutoUpdate = false;
     boundaryGroup.matrixAutoUpdate = false;
@@ -888,17 +918,38 @@ function render(time)
     if (targetName.length > 1)
     {
         const hipData = orbitsjs.hipparchusData[targetName];
-        const DE = hipData.DE;
-        const RA = hipData.RA;
-        const p = [celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
-            celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
-            celestialSphereRadius * orbitsjs.sind(DE)];
-        const pVector = new THREE.Vector3(p[0], p[1], p[2]);
-        pVector.applyMatrix4(rotationMatrix);
-        ringMesh.position.x = pVector.x;
-        ringMesh.position.y = pVector.y;
-        ringMesh.position.z = pVector.z;
-        ringMesh.visible = true;
+
+        if (hipData === undefined)
+        {
+            const pVector = planetMeshes[targetName].position;
+            const az = orbitsjs.atan2d(pVector.x, pVector.y);
+            const el = orbitsjs.asind(pVector.z / orbitsjs.norm([pVector.x, pVector.y, pVector.z]));
+
+            setLocation(az, el);
+        }
+        else 
+        {
+            const DE = hipData.DE;
+            const RA = hipData.RA;
+            const p = [celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.cosd(RA), 
+                celestialSphereRadius * orbitsjs.cosd(DE) * orbitsjs.sind(RA), 
+                celestialSphereRadius * orbitsjs.sind(DE)];
+            const pVector = new THREE.Vector3(p[0], p[1], p[2]);
+            pVector.applyMatrix4(rotationMatrix);
+            ringMesh.position.x = pVector.x;
+            ringMesh.position.y = pVector.y;
+            ringMesh.position.z = pVector.z;
+            ringMesh.visible = true;
+
+            const az = orbitsjs.atan2d(pVector.x, pVector.y);
+            const el = orbitsjs.asind(pVector.z / orbitsjs.norm([pVector.x, pVector.y, pVector.z]));
+
+            setLocation(az, el);
+        }
+    }
+    else 
+    {
+        setLocation(mouseCoord.az, mouseCoord.el);
     }
 
     // Set EFI-ENU rotation matrix
@@ -972,7 +1023,6 @@ function onMouseMove(event)
 
     pointer.x = ( event.clientX / view1.clientWidth ) * 2 - 1;
 	pointer.y = - ( event.clientY / view1.clientHeight ) * 2 + 1;
-    //console.log(pointer);
     rayCaster.setFromCamera( pointer, camera1 );
     const intersects = rayCaster.intersectObjects(sceneIntersect.children);
 
@@ -995,8 +1045,6 @@ function onClick(event)
     pointer.x = ( event.clientX / view1.clientWidth ) * 2 - 1;
 	pointer.y = - ( event.clientY / view1.clientHeight ) * 2 + 1;
 
-    console.log(mouseDrag);
-
     if (mouseDrag)
     {
         return;
@@ -1004,15 +1052,21 @@ function onClick(event)
 
     sceneSelect.updateWorldMatrix(false, true);
 
-    console.log(event);
     rayCaster.setFromCamera( pointer, camera1 );
     const intersects = rayCaster.intersectObjects(sceneSelect.children);
-    console.log(intersects);
 
     if (intersects.length > 0)
     {
         const object = intersects[0].object;
-        setTarget(object.hipName);
+
+        if (object.planet === undefined)
+        {
+            setTarget(object.hipName);
+        }
+        else
+        {
+            setTarget(object.planet);
+        }
     }
     else
     {
