@@ -922,9 +922,13 @@ function render(time)
         if (hipData === undefined)
         {
             const pVector = planetMeshes[targetName].position;
+
+            ringMesh.position.x = pVector.x;
+            ringMesh.position.y = pVector.y;
+            ringMesh.position.z = pVector.z;
+            ringMesh.visible = true;
             const az = orbitsjs.atan2d(pVector.x, pVector.y);
             const el = orbitsjs.asind(pVector.z / orbitsjs.norm([pVector.x, pVector.y, pVector.z]));
-
             setLocation(az, el);
         }
         else 
