@@ -110,12 +110,25 @@ function sphIneCart(R, DE, RA)
             r * orbitsjs.sind(el)];
 }
  
-
+/**
+ * Convert from Cartesian to spherical coordinates in ENU frame.
+ * 
+ * @param {*} vec 
+ *     THREE.Vector3 with voordinates.
+ * @returns Object with az and el.
+ */
 function cartEnuSph(vec)
 {
     return orbitsjs.coordEnuAzEl({r : [vec.x, vec.y, vec.z], v : [0, 0, 0], JT : 0});
 }
 
+/**
+ * Convert from Cartesian to spherical coordinates in an inertial frame.
+ * 
+ * @param {*} p 
+ *      3d array with coordinates.
+ * @returns Object with r, RA and DE.
+ */
 function cartIneSph(p)
 {
     const r = orbitsjs.norm(p);
@@ -218,10 +231,6 @@ function createRotMatrix(lon, lat)
  */
 function computePlanetPos(JT, planet)
 {
-    orbits[planet].visible = guiControls[planet];
-    const planetMesh = planetMeshes[planet];
-    const selectMesh = planetSelectMeshes[planet];
-
     let posVelEarth = orbitsjs.vsop87('earth', JT);
     let posVelInitial = orbitsjs.vsop87(planet, JT);
 

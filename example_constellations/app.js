@@ -265,6 +265,16 @@ for (let el = 0; el < 90; el+= 15)
 
 // Create planetary orbits.
 const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+const planetNames = {
+    'mercury' : 'Mercury',
+    'venus' : 'Venus',
+    'earth' : 'Sun',
+    'mars' : 'Mars', 
+    'jupiter' : 'Jupiter',
+    'saturn' : 'Saturn',
+    'uranus' : 'Uranus',
+    'neptune' : 'Neptune'
+};
 const planetCoeff = [0.003, 0.005, 0.03, 0.005, 0.005, 0.005, 0.002, 0.002];
 const planetColors = [0xff0000, 0xffff00, 0xffffff, 0xff0000, 0xffff00, 0xffff99, 0x4444aa, 0x333388];
 const planetMeshes = [];
@@ -447,7 +457,7 @@ function loadText()
             bevelSize: 10,
             bevelEnabled: false
         };
-        
+
         for (let az = 0; az < 360; az+= 15)
         {
             const textGeo = new THREE.TextGeometry(az.toString() + "°", textoptsGrid);
@@ -558,12 +568,12 @@ function render(time)
                      + JT.toFixed(6) + " Julian";
     dateText.innerText = dateString;
 
-    // Set visibility according dat.gui controls.
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     {
         const planet = planets[indPlanet];
         const planetMesh = planetMeshes[planet];
         const selectMesh = planetSelectMeshes[planet];
+        orbits[planet].visible = guiControls[planet];
     
         let r = computePlanetPos(JT, planet);
         r = orbitsjs.vecMul(r, celestialSphereRadius/orbitsjs.norm(r));
@@ -578,6 +588,7 @@ function render(time)
         }
     }    
 
+    // Set visibility according dat.gui controls.
     updateVisibility();
     
     // We wish to override the matrices determined by position and rotation of the meshes.
