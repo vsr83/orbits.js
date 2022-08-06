@@ -583,6 +583,9 @@ function render(time)
                      + JT.toFixed(6) + " Julian";
     dateText.innerText = dateString;
 
+    const T = (JT - 2451545.0) / 36525.0;
+    const nutTerms = orbitsjs.nutationTerms(T);
+
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     {
         const planet = planets[indPlanet];
@@ -590,7 +593,7 @@ function render(time)
         const selectMesh = planetSelectMeshes[planet];
         orbits[planet].visible = guiControls[planet];
     
-        let r = computePlanetPos(JT, planet);
+        let r = computePlanetPos(JT, planet, nutTerms);
         r = orbitsjs.vecMul(r, celestialSphereRadius/orbitsjs.norm(r));
         setVec3Array(planetMesh.position, r);
         setVec3Array(selectMesh.position, r);
@@ -615,7 +618,7 @@ function render(time)
     equator.matrixAutoUpdate = false;
 
     // Set J2000-ENU rotation matrix for targets without significant Diurnal parallax.
-    const rotationMatrix = createMatrix(JT);
+    const rotationMatrix = createMatrix(JT, nutTerms);
     constellationGroup.matrix = rotationMatrix;
     boundaryGroup.matrix = rotationMatrix;
     starsGroup.matrix = rotationMatrix;

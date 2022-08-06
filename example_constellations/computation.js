@@ -145,20 +145,22 @@ function cartIneSph(p)
  * 
  * @param {*} JT 
  *     Julian time.
+ * @params {*} nutParams
+ *     Nutation parameters.
  * @returns The 4x4 Three.js matrix.
  */
-function createMatrix(JT)
+function createMatrix(JT, nutTerms)
 {
     // We construct rotation matrix by transforming basis vectors to the ENU frame.
     // Since the EFI-ENU transformation involves translation and the rotation is used
     // uniformly for all stars, the basis vectors are scaled to very large vector so
     // that the translation becomes small enough.
-    function createColumn(vec, JT)
+    function createColumn(vec, JT, nutTerms)
     {
         const targetOsvJ2000 = {r: orbitsjs.vecMul(vec, 1e20), v : [0, 0, 0], JT};
 
         const targetOsvMod = orbitsjs.coordJ2000Mod(targetOsvJ2000);
-        const targetOsvTod = orbitsjs.coordModTod(targetOsvMod);
+        const targetOsvTod = orbitsjs.coordModTod(targetOsvMod, nutTerms);
         const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
         const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
         const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
@@ -168,9 +170,9 @@ function createMatrix(JT)
     }
     
     // Scale back to obtain columns of the rotation matrix.
-    const col1 = orbitsjs.vecMul(createColumn([1, 0, 0], JT), 1e-20);
-    const col2 = orbitsjs.vecMul(createColumn([0, 1, 0], JT), 1e-20);
-    const col3 = orbitsjs.vecMul(createColumn([0, 0, 1], JT), 1e-20);
+    const col1 = orbitsjs.vecMul(createColumn([1, 0, 0], JT, nutTerms), 1e-20);
+    const col2 = orbitsjs.vecMul(createColumn([0, 1, 0], JT, nutTerms), 1e-20);
+    const col3 = orbitsjs.vecMul(createColumn([0, 0, 1], JT, nutTerms), 1e-20);
 
     // Construct the rotation matrix.
     const matrix = new THREE.Matrix4();
@@ -227,9 +229,11 @@ function createRotMatrix(lon, lat)
  *      Julian time.
  * @param {*} planet
  *      Planet. 
+ * @param {*} nutTerms
+ *      Nutation parameters,
  * @returns Position vector in ENU frame.
  */
-function computePlanetPos(JT, planet)
+function computePlanetPos(JT, planet, nutTerms)
 {
     let posVelEarth = orbitsjs.vsop87('earth', JT);
     let posVelInitial = orbitsjs.vsop87(planet, JT);
@@ -245,7 +249,7 @@ function computePlanetPos(JT, planet)
 
     const osv = orbitsjs.coordEclEq({r: diffPosInitial, v: diffVelInitial, JT : JT});
     const targetOsvMod = orbitsjs.coordJ2000Mod(osv);
-    const targetOsvTod = orbitsjs.coordModTod(targetOsvMod);
+    const targetOsvTod = orbitsjs.coordModTod(targetOsvMod, nutTerms);
     const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
     const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
     const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
