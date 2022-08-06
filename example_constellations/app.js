@@ -511,6 +511,21 @@ function setLocation(az, el)
     const azArc = orbitsjs.angleDegArc(limitDeg360(az), true);
     const elArc = orbitsjs.angleDegArc(limitDeg360(el));
 
+    if (targetName.length > 0)
+    {
+        const azDelta = orbitsjs.deg2Rad(az) + controls1.getAzimuthalAngle();
+        const elDelta = (orbitsjs.deg2Rad(el) + Math.PI/2) - controls1.getPolarAngle();
+
+        if (guiControls.lockAzi)
+        {
+            controls1.setAzimuthDeltaAngle(-azDelta);
+        }
+        if (guiControls.lockEle)
+        {
+            controls1.setPolarDeltaAngle(elDelta);
+        }
+    }
+
     const fixedW = function(num, len) 
     {
         let str = parseFloat(num).toString();

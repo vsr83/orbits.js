@@ -111,6 +111,18 @@
 
 			};
 
+			this.setPolarDeltaAngle = function(phi) {
+				sphericalDelta.phi = phi;
+				this.update();
+
+			}
+
+			this.setAzimuthDeltaAngle = function(az) {
+				sphericalDelta.theta = az;
+				this.update();
+
+			}
+
 			this.getDistance = function () {
 
 				return this.object.position.distanceTo( this.target );
@@ -325,13 +337,11 @@
 			function rotateLeft( angle ) {
 
 				sphericalDelta.theta -= angle;
-
 			}
 
 			function rotateUp( angle ) {
 
 				sphericalDelta.phi -= angle;
-
 			}
 
 			const panLeft = function () {

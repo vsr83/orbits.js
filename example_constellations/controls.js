@@ -28,6 +28,8 @@ const guiControls = new function()
     this.deltaSecs = 0;
 
     this.showSplit = false;
+    this.lockAzi = true;
+    this.lockEle = true;
 
     this.resetTime = function() {
         warpDelta = 0;
@@ -82,7 +84,7 @@ planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Nept
 const timeFolder = gui.addFolder('Time');
 const timeControls = {};
 timeControls.timeWarp = timeFolder.add(guiControls, 'timeWarp').name('Time Warp').onChange(function() {toggleWarp()});
-timeControls.warpFactor = timeFolder.add(guiControls, 'warpFactor', -10, 10, 0.1).name('Warp Factor').onChange(function() {changeWarpFactor()});
+timeControls.warpFactor = timeFolder.add(guiControls, 'warpFactor', -12, 12, 0.1).name('Warp Factor').onChange(function() {changeWarpFactor()});
 timeControls.deltaDayControl = timeFolder.add(guiControls, 'deltaDays', -185, 185, 1).name('Delta Days');
 timeControls.deltaHourControl = timeFolder.add(guiControls, 'deltaHours', -12, 12, 1).name('Delta Hours');
 timeControls.deltaMinuteControl = timeFolder.add(guiControls, 'deltaMins', -30, 30, 1).name('Delta Minutes');
@@ -93,6 +95,8 @@ gui.add(guiControls, 'showSplit').name('Observer Split').onChange(function()
     // Resize event handler sets visibility of the second view.
     onWindowResize();
 });
+gui.add(guiControls, 'lockAzi').name('Lock Azimuth');
+gui.add(guiControls, 'lockEle').name('Lock Elevation');
 gui.add(guiControls, 'GitHub').name("GitHub");
 
 /**
