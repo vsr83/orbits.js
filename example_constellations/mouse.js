@@ -49,7 +49,11 @@ function onClick(event)
     {
         const object = intersects[0].object;
 
-        if (object.planet === undefined)
+        if (object.isMoon === true)
+        {
+            setTarget("Moon");
+        }
+        else if (object.planet === undefined)
         {
             setTarget(object.hipName);
         }

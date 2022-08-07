@@ -275,6 +275,21 @@ const planetNames = {
     'uranus' : 'Uranus',
     'neptune' : 'Neptune'
 };
+
+// Add the Moon:
+const moonGeometry = new THREE.SphereGeometry(150, 10, 10 );
+const moonMaterial = new THREE.MeshBasicMaterial( { color: 0x999999 } );
+const moonMesh= new THREE.Mesh(moonGeometry, moonMaterial);
+let moonLabel = null;
+moonMesh.position.x = celestialSphereRadius;
+scene.add(moonMesh);
+const moonSelectGeometry = new THREE.SphereGeometry(50, 10, 10);
+const moonSelectMaterial = new THREE.MeshBasicMaterial( { color: 0x999999 } );
+const moonSelect = new THREE.Mesh(moonSelectGeometry, moonSelectMaterial);
+moonSelect.isMoon = true;
+sceneSelect.add(moonSelect);
+
+// Add planets.
 const planetCoeff = [0.003, 0.005, 0.03, 0.005, 0.005, 0.005, 0.002, 0.002];
 const planetColors = [0xff0000, 0xffff00, 0xffffff, 0xff0000, 0xffff00, 0xffff99, 0x4444aa, 0x333388];
 const planetMeshes = [];
@@ -494,6 +509,10 @@ function loadText()
             planetTextMeshes[planet] = textMesh;
             planetMeshGroup.add(textMesh);
         }
+
+        const moonTextGeo = new THREE.TextGeometry("          Moon", textoptsGrid);
+        moonLabel = new THREE.Mesh(moonTextGeo, materials);
+        scene.add(moonLabel);
     } );
 }
 window.addEventListener('resize', onWindowResize, false);
@@ -604,8 +623,16 @@ function render(time)
             setVec3Array(textMesh.position, r);
             textMesh.quaternion.copy( camera1.quaternion );
         }
-    }    
-
+    }
+    let moonPosEnu = computeMoonPosEnu(JT, nutTerms);
+    moonPosEnu = orbitsjs.vecMul(moonPosEnu, celestialSphereRadius/orbitsjs.norm(moonPosEnu));
+    setVec3Array(moonMesh.position, moonPosEnu);
+    setVec3Array(moonSelect.position, moonPosEnu);
+    if (moonLabel != null)
+    {
+        setVec3Array(moonLabel.position, moonPosEnu);
+        moonLabel.quaternion.copy( camera1.quaternion );
+    }
     // Set visibility according dat.gui controls.
     updateVisibility();
     
@@ -631,7 +658,15 @@ function render(time)
     {
         const hipData = orbitsjs.hipparchusData[targetName];
 
-        if (hipData === undefined)
+        if (targetName === "Moon")
+        {
+            const pVector = moonMesh.position;
+            setVec3Vec(ringMesh.position, pVector);
+            const {az, el} = cartEnuSph(pVector);            
+            setLocation(az, el);
+            ringMesh.visible = true;
+        }
+        else if (hipData === undefined)
         {
             const pVector = planetMeshes[targetName].position;
             setVec3Vec(ringMesh.position, pVector);

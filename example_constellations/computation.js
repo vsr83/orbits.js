@@ -257,3 +257,22 @@ function computePlanetPos(JT, planet, nutTerms)
 
     return targetOsvEnu.r;
 }
+
+/**
+ * Compute position of the Moon in ENU frame.
+ * 
+ * @param {*} JT 
+ *      Julian time.
+ * @param {*} nutTerms
+ *      Nutation terms. 
+ * @returns Position in ENU frame.
+ */
+function computeMoonPosEnu(JT, nutTerms)
+{
+    const moonPosTod = orbitsjs.moonPositionTod(JT, nutTerms);
+    const targetOsvPef = orbitsjs.coordTodPef({r : moonPosTod, v : [0, 0, 0], JT : JT});
+    const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
+    const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
+        guiControls.observerLat, guiControls.observerLon, 0);
+    return targetOsvEnu.r;
+}
