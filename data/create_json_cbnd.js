@@ -27,7 +27,7 @@ for (let indLine = 0; indLine < content.length - 1; indLine++)
 
     const hRaJ2000 = parseFloat(line.substring(0, 10));
     const declJ2000 = line.substring(11, 22);
-    const cAbbr = line.substring(23, 26);
+    const cAbbr = line.substring(23, 27);
     //console.log(line);
     //console.log(hRaJ2000 + "|" + declJ2000 + "|" + cAbbr + "|");
 
