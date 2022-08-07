@@ -551,22 +551,25 @@ function setLocation(az, el)
     const fixedW = function(num, len) 
     {
         let str = parseFloat(num).toString();
+        let lenNew = str.length;
 
-        while (str.length < len)
+        while (lenNew < len)
         {
             str = '&nbsp;' + str;
+            lenNew++;
         }
+
         return str;
     }
 
     const elemCoord = document.getElementById('coordText');
     elemCoord.innerHTML = 'Az: ' + fixedW(azArc.deg, 3) + '\xB0 ' 
-                        + fixedW(azArc.arcMin, 2) + '\u2032 ' 
-                        + fixedW(azArc.arcSec.toFixed(1), 4) + '\u2033' 
+                        + fixedW(azArc.arcMin, 3) + '\u2032 ' 
+                        + fixedW(azArc.arcSec.toFixed(1), 5) + '\u2033' 
                         + ' (' + az.toFixed(4) + '\xB0)' + '<br>'
                         + 'El: ' + fixedW(elArc.deg, 3) + '\xB0 ' 
-                        + fixedW(elArc.arcMin, 2) + '\u2032 ' 
-                        + fixedW(elArc.arcSec.toFixed(1), 4) + '\u2033' 
+                        + fixedW(elArc.arcMin, 3) + '\u2032 ' 
+                        + fixedW(elArc.arcSec.toFixed(1), 5) + '\u2033' 
                         + ' (' + el.toFixed(4) + '\xB0)' + '\n';
 }
 
