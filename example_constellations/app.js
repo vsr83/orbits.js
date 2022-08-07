@@ -372,6 +372,55 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     orbits[planet] = line;
 }
 
+// Initialize autocomplete:
+targetList = Object.keys(orbitsjs.hipparchusData);
+targetType = [];
+targetList.forEach(function(target) {
+    targetType[target] = "star";
+});
+// Add planets to the target list.
+const solarSystemTargets = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'sun'];
+solarSystemTargets.forEach(function(target) {
+    targetType[target] = 'solar_system'
+    targetList.push(target);
+});
+// Add Moon to the target list.
+targetList.push('Moon');
+targetType['Moon'] = 'moon';
+
+// Initialize autocomplete.
+const autoCompleteJS = new autoComplete({
+    placeHolder: "Search for a target",
+    data: {
+        src: targetList, 
+        cache: true,
+    },
+    resultItem: {
+        highlight: true
+    },
+    resultsList:{
+        tabSelect: true,
+        noResults: true
+    },
+    events: {
+        input: {
+            selection: (event) => {
+                const selection = event.detail.selection.value;
+                autoCompleteJS.input.value = selection;
+                if (selection === 'sun')
+                {
+                    setTarget('earth');
+                }
+                else 
+                {
+                    setTarget(selection);
+                }
+            }
+        }
+    }
+});
+
+
 // Change FoV with wheel.
 view1.addEventListener("wheel", function(event) 
 {

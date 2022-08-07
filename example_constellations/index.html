@@ -7,8 +7,10 @@
         <script src="imports/TextGeometry.js"></script>
         <script src="../dist/orbits_js.js"></script>
         <script src="imports/dat.gui.min.js"></script>
+        <script src="imports/autoComplete.min.js"></script>
         <link rel="stylesheet" href="app.css">
-    <body>
+        <link rel="stylesheet" href="imports/autoComplete.02.min.css">
+        <body>
         <div class="split">
             <div id="view1" tabindex="1"></canvas>
             <div id="view2" tabindex="2"></canvas>
@@ -16,6 +18,11 @@
         <div id="targetContainer"><div id="targetText"></div></div>
         <div id="dateContainer"><div id="dateText"><p>LOADING</p></div></div>
         <div id="coordContainer"><div id="coordText"><p>LOADING</p></div></div>
+        <div id="autoCompleteContainer">
+            <div class="autoComplete_wrapper">
+                <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="on" autocapitalize="off">
+            </div>
+        </div>
         <script src="controls.js"></script>
         <script src="computation.js"></script>
         <script src="mouse.js"></script>

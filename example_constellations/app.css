@@ -49,7 +49,7 @@
     width: 300px;
     color: #fff;
     position : absolute;
-    top : 10px;
+    top : 35px;
     left : 10px;
     z-index : 11;
     background-color: #303030;
@@ -130,4 +130,24 @@
     margin-left: auto; 
     margin-right: auto; 
     width: 100%;
+}
+
+#autoCompleteContainer
+{
+    z-index : 11;
+    opacity: 1.0;
+    padding-top : 0px;
+    position: absolute; 
+    left: 20px; 
+    top: 20px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    width: 320px;
+}
+#autoComplete
+{
+    background-color: #111;
+    opacity: 1.0;
+    font-size: 15px;
+    font-family : monospace;
 }
