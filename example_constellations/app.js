@@ -321,20 +321,23 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     selectPlanetMeshGroup.add(sphereSelect);
 }
 
-const periods = [88, 225, 367, 687, 12*365.25, 29*365.25, 84*365.25, 165*365.25, 0];
+const periods = [365, 365, 367, 715, 12*365.25, 29*365.25, 84*365.25, 165*365.25, 0];
 const orbits = [];
 
 const orbitGroup = new THREE.Group();
 scene.add(orbitGroup);
 
-const JT0 = orbitsjs.dateJulianYmd(2022, 1, 1);
+const dateNow = new Date();
+const JT0 = orbitsjs.dateJulianYmd(dateNow.getUTCFullYear(),
+                                   dateNow.getUTCMonth() + 1,
+                                   dateNow.getUTCDate());
 for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 {
     const planet = planets[indPlanet];
     // console.log(periods[indPlanet]);
 
     const points = [];
-    for (let deltaJT = 0; deltaJT < periods[indPlanet]; deltaJT+= periods[indPlanet]/365)
+    for (let deltaJT = -periods[indPlanet]/2; deltaJT < periods[indPlanet]/2; deltaJT+= periods[indPlanet]/365)
     {
         const JT = JT0 + deltaJT;
         let posVelEarth = orbitsjs.vsop87('earth', JT);

@@ -19,6 +19,7 @@ const guiControls = new function()
     this.saturn  = false;
     this.uranus  = false;
     this.neptune = false;
+    this.moon = true;
 
     this.warpFactor = 3;
     this.timeWarp = false;
@@ -76,15 +77,16 @@ starControls.constellationBnd = visibilityFolder.add(guiControls, 'constellation
 starControls.stars = visibilityFolder.add(guiControls, 'stars').name("Stars");
 
 const planetControls = {};
+planetControls.moon = visibilityFolder.add(guiControls, 'moon').name('Moon');
 planetControls.planets = visibilityFolder.add(guiControls, 'planets').name('Planets');
-planetControls.sun = visibilityFolder.add(guiControls, 'earth').name('Sun');
-planetControls.mercury = visibilityFolder.add(guiControls, 'mercury').name('Mercury');
-planetControls.venus = visibilityFolder.add(guiControls, 'venus').name('Venus');
-planetControls.mars = visibilityFolder.add(guiControls, 'mars').name('Mars');
-planetControls.jupiter = visibilityFolder.add(guiControls, 'jupiter').name('Jupiter');
-planetControls.saturn = visibilityFolder.add(guiControls, 'saturn').name('Saturn');
-planetControls.uranus = visibilityFolder.add(guiControls, 'uranus').name('Uranus');
-planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Neptune');
+planetControls.sun = visibilityFolder.add(guiControls, 'earth').name('Ecliptic');
+planetControls.mercury = visibilityFolder.add(guiControls, 'mercury').name('Mercury Orbit');
+planetControls.venus = visibilityFolder.add(guiControls, 'venus').name('Venus Orbit');
+planetControls.mars = visibilityFolder.add(guiControls, 'mars').name('Mars Orbit');
+planetControls.jupiter = visibilityFolder.add(guiControls, 'jupiter').name('Jupiter Orbit');
+planetControls.saturn = visibilityFolder.add(guiControls, 'saturn').name('Saturn Orbit');
+planetControls.uranus = visibilityFolder.add(guiControls, 'uranus').name('Uranus Orbit');
+planetControls.neptune = visibilityFolder.add(guiControls, 'neptune').name('Neptune Orbit');
 
 const timeFolder = gui.addFolder('Time');
 const timeControls = {};
@@ -184,4 +186,9 @@ function updateVisibility()
     planeGroup.visible = guiControls.ground;
     azElGroup.visible = guiControls.azElGrid;
     planetMeshGroup.visible = guiControls.planets;
+    moonMesh.visible = guiControls.moon;
+    if (moonLabel != null)
+    {
+        moonLabel.visible = guiControls.moon;
+    }
 }
