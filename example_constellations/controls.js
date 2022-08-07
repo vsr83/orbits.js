@@ -35,6 +35,11 @@ const guiControls = new function()
         warpDelta = 0;
         warpAccumulation = 0;
         warpRefTime = new Date();
+        timeControls.timeWarp.setValue(false);
+        timeControls.deltaSecControl.setValue(0);
+        timeControls.deltaMinuteControl.setValue(0);
+        timeControls.deltaHourControl.setValue(0);
+        timeControls.deltaDayControl.setValue(0);
     };
     this.GitHub = function() {
         window.open("https://github.com/vsr83/orbits.js", "_blank").focus();
