@@ -372,6 +372,11 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     orbits[planet] = line;
 }
 
+// Create empty group for satellites:
+const satelliteMeshGroup = new THREE.Group();
+const satelliteMeshList = {};
+scene.add(satelliteMeshGroup);
+
 // Initialize autocomplete:
 targetList = Object.keys(orbitsjs.hipparchusData);
 targetType = [];
@@ -679,6 +684,36 @@ function render(time)
             textMesh.quaternion.copy( camera1.quaternion );
         }
     }
+
+    for (let satIndex = 0; satIndex < satelliteNames.length; satIndex++)
+    {
+        //console.log(satelliteNames[satIndex]); 
+        let indElem = satNameToIndex[satelliteNames[satIndex]];
+        let satrec = satellites[indElem];
+        let satMesh = satelliteMeshList[indElem];
+    
+        const positionAndVelocity = satellite.propagate(satrec, today);
+        // The position_velocity result is a key-value pair of ECI coordinates.
+        // These are the base results from which all other coordinates are derived.
+        const positionEci = positionAndVelocity.position;
+        const velocityEci = positionAndVelocity.velocity;
+    
+        const rJ2000 = [positionEci.x * 1000, positionEci.y * 1000, positionEci.z * 1000];
+        const vJ2000 = [velocityEci.x * 1000, velocityEci.y * 1000, velocityEci.z * 1000];
+
+        const targetOsvJ2000 = {JT : JT, r : rJ2000, v : vJ2000};
+        const targetOsvMod = orbitsjs.coordJ2000Mod(targetOsvJ2000);
+        const targetOsvTod = orbitsjs.coordModTod(targetOsvMod, nutTerms);
+        const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
+        const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0,  0);
+        const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
+            guiControls.observerLat, guiControls.observerLon, 0);
+
+        let satPosEnu = targetOsvEnu.r;
+        satPosEnu = orbitsjs.vecMul(satPosEnu, celestialSphereRadius/orbitsjs.norm(satPosEnu));
+        setVec3Array(satMesh.position, satPosEnu);
+    }
+
     let moonPosEnu = computeMoonPosEnu(JT, nutTerms);
     moonPosEnu = orbitsjs.vecMul(moonPosEnu, celestialSphereRadius/orbitsjs.norm(moonPosEnu));
     setVec3Array(moonMesh.position, moonPosEnu);
@@ -713,9 +748,19 @@ function render(time)
     {
         const hipData = orbitsjs.hipparchusData[targetName];
 
+        //console.log(targetName);
         if (targetName === "Moon")
         {
             const pVector = moonMesh.position;
+            setVec3Vec(ringMesh.position, pVector);
+            const {az, el} = cartEnuSph(pVector);            
+            setLocation(az, el);
+            ringMesh.visible = true;
+        }
+        else if (!(satNameToIndex[targetName] === undefined))
+        {
+            let indElem = satNameToIndex[targetName];
+            const pVector = satelliteMeshList[indElem].position;  
             setVec3Vec(ringMesh.position, pVector);
             const {az, el} = cartEnuSph(pVector);            
             setLocation(az, el);

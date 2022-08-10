@@ -151,3 +151,18 @@
     font-size: 15px;
     font-family : monospace;
 }
+#TLEListcontainer
+{
+    background-color: #999;
+    z-index : 11;
+    opacity: 0.8;
+    padding-top : 10px;
+    position: absolute; 
+    left: 0; 
+    right: 0; 
+    margin-left: auto; 
+    margin-right: auto; 
+    width: 575px;
+    top: 20%;
+    visibility:  hidden;
+}

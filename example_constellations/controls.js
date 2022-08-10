@@ -50,6 +50,13 @@ const guiControls = new function()
         console.log('GPS');
         locationGps();        
     }
+
+    this.addTLEs = function() {
+        const listContainer = document.getElementById('TLEListcontainer');
+        listContainer.style.visibility = "visible";
+        const TLEinput = document.getElementById('TLEListinput');
+        TLEinput.focus()
+    }
 }; 
 
 // Radius of the artifician sphere with the stars. This simply has to be some 
@@ -104,6 +111,7 @@ gui.add(guiControls, 'showSplit').name('Observer Split').onChange(function()
 });
 gui.add(guiControls, 'lockAzi').name('Lock Azimuth');
 gui.add(guiControls, 'lockEle').name('Lock Elevation');
+gui.add(guiControls, 'addTLEs').name("Add Satellites");
 gui.add(guiControls, 'GitHub').name("GitHub");
 
 /**

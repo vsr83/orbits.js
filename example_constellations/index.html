@@ -8,6 +8,7 @@
         <script src="../dist/orbits_js.js"></script>
         <script src="imports/dat.gui.min.js"></script>
         <script src="imports/autoComplete.min.js"></script>
+        <script src="imports/satellite.min.js"></script>
         <link rel="stylesheet" href="app.css">
         <link rel="stylesheet" href="imports/autoComplete.02.min.css">
         <body>
@@ -23,9 +24,17 @@
                 <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="on" autocapitalize="off">
             </div>
         </div>
+        <div id="TLEListcontainer">
+            <label for="TLEListinput">Paste a list of 3-line TLEs below:</label><br>
+            <a href="https://celestrak.com/NORAD/elements/" target="_blank"> See CelesTrak for available TLEs.</a>
+            <textarea id="TLEListinput" rows="10" cols="69"></textarea>
+            <button id="TLEListEnter">Enter</button>
+            <button id="TLEListCancel">Cancel</button>
+        </div>
         <script src="controls.js"></script>
         <script src="computation.js"></script>
         <script src="mouse.js"></script>
+        <script src="TLEdialog.js"></script>
         <script src="app.js"></script>
     </body>
 </html>
