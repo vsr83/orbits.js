@@ -259,6 +259,44 @@ function computePlanetPos(JT, planet, nutTerms)
 }
 
 /**
+ * Compute satellite position.
+ * 
+ * @param {*} satrec 
+ *      Satellite record created from the TLE.
+ * @param {*} timeStamp 
+ *      Timestamp.
+ * @param {*} JT
+ *      Julian time.
+ * @param {*} nutTerms
+ *      Nutation terms.
+ * @returns Satellite position.
+ */
+function computeSatPos(satrec, timeStamp, JT, nutTerms)
+{
+    const positionAndVelocity = satellite.propagate(satrec, timeStamp);
+    // The position_velocity result is a key-value pair of ECI coordinates.
+    // These are the base results from which all other coordinates are derived.
+    const positionEci = positionAndVelocity.position;
+    const velocityEci = positionAndVelocity.velocity;
+
+    const rJ2000 = [positionEci.x * 1000, positionEci.y * 1000, positionEci.z * 1000];
+    const vJ2000 = [velocityEci.x * 1000, velocityEci.y * 1000, velocityEci.z * 1000];
+
+    const targetOsvJ2000 = {JT : JT, r : rJ2000, v : vJ2000};
+    const targetOsvMod = orbitsjs.coordJ2000Mod(targetOsvJ2000);
+    const targetOsvTod = orbitsjs.coordModTod(targetOsvMod, nutTerms);
+    const targetOsvPef = orbitsjs.coordTodPef(targetOsvTod);
+    const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0,  0);
+    const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
+        guiControls.observerLat, guiControls.observerLon, 0);
+
+    let satPosEnu = targetOsvEnu.r;
+    satPosEnu = orbitsjs.vecMul(satPosEnu, celestialSphereRadius/orbitsjs.norm(satPosEnu));
+
+    return satPosEnu;
+}
+
+/**
  * Compute position of the Moon in ENU frame.
  * 
  * @param {*} JT 

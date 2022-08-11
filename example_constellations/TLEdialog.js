@@ -16,9 +16,28 @@ ListEnter.onclick = function()
     const lines = tleIn.split('\n');
     const numElem = (lines.length + 1) / 3;
 
+    for (let satIndex = 0; satIndex < satelliteNames.length; satIndex++)
+    {
+        let indElem = satNameToIndex[satelliteNames[satIndex]];
+        let satMesh = satelliteMeshList[indElem];
+        let satMeshSelect = satelliteSelectMeshList[indElem];
+
+        satMesh.geometry.dispose();
+        satMesh.material.dispose();
+        satMeshSelect.geometry.dispose();
+        satMeshSelect.material.dispose();
+        satelliteMeshGroup.remove(satMesh);
+        satelliteSelectGroup.remove(satMeshSelect);
+    }
+
     satellites = [];
     satelliteNames = [];
     satNameToIndex = [];
+
+    satelliteMeshList = {};
+    satelliteSelectMeshList = {};
+
+
     let innerHTML = "";
 
     for (let indElem = 0; indElem < Math.floor(numElem); indElem++)
