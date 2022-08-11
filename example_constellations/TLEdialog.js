@@ -23,7 +23,13 @@ ListEnter.onclick = function()
 
     for (let indElem = 0; indElem < Math.floor(numElem); indElem++)
     {
-        const title = lines[indElem * 3].trim();
+        let title = lines[indElem * 3].trim();
+
+        if (targetList.includes(title))
+        {
+            title = title + "_" + indElem;
+        }
+
         const tleLine1 = lines[indElem * 3 + 1];
         const tleLine2 = lines[indElem * 3 + 2];
         const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
@@ -38,6 +44,14 @@ ListEnter.onclick = function()
         const satSphere = new THREE.Mesh( satGeometry, satMaterial ); 
         satelliteMeshGroup.add(satSphere);
         satelliteMeshList[indElem] = satSphere;
+
+        const satSelectGeometry = new THREE.SphereGeometry( 80, 10, 10 );
+        const satSelectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+        satSelectMaterial.side = THREE.DoubleSide;
+        const satSelectSphere = new THREE.Mesh( satSelectGeometry, satSelectMaterial ); 
+        satelliteSelectGroup.add(satSelectSphere);
+        satelliteSelectMeshList[indElem] = satSelectSphere;
+        satSelectSphere.satelliteName = title;
 
         targetList.push(title);
     }

@@ -45,6 +45,8 @@ function onClick(event)
     rayCaster.setFromCamera( pointer, camera1 );
     const intersects = rayCaster.intersectObjects(sceneSelect.children);
 
+    // console.log(intersects);
+
     if (intersects.length > 0)
     {
         const object = intersects[0].object;
@@ -52,6 +54,10 @@ function onClick(event)
         if (object.isMoon === true)
         {
             setTarget("Moon");
+        }
+        else if (!(object.satelliteName === undefined))
+        {
+            setTarget(object.satelliteName);
         }
         else if (object.planet === undefined)
         {

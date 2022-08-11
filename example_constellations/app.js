@@ -375,7 +375,10 @@ for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
 // Create empty group for satellites:
 const satelliteMeshGroup = new THREE.Group();
 const satelliteMeshList = {};
+const satelliteSelectGroup = new THREE.Group();
+const satelliteSelectMeshList = {};
 scene.add(satelliteMeshGroup);
+sceneSelect.add(satelliteSelectGroup);
 
 // Initialize autocomplete:
 targetList = Object.keys(orbitsjs.hipparchusData);
@@ -690,7 +693,6 @@ function render(time)
         //console.log(satelliteNames[satIndex]); 
         let indElem = satNameToIndex[satelliteNames[satIndex]];
         let satrec = satellites[indElem];
-        let satMesh = satelliteMeshList[indElem];
     
         const positionAndVelocity = satellite.propagate(satrec, today);
         // The position_velocity result is a key-value pair of ECI coordinates.
@@ -711,7 +713,11 @@ function render(time)
 
         let satPosEnu = targetOsvEnu.r;
         satPosEnu = orbitsjs.vecMul(satPosEnu, celestialSphereRadius/orbitsjs.norm(satPosEnu));
+
+        let satMesh = satelliteMeshList[indElem];
+        let satMeshSelect = satelliteSelectMeshList[indElem];
         setVec3Array(satMesh.position, satPosEnu);
+        setVec3Array(satMeshSelect.position, satPosEnu);
     }
 
     let moonPosEnu = computeMoonPosEnu(JT, nutTerms);
