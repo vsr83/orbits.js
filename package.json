@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --recursive --require @babel/register",
+    "test": "mocha --recursive --timeout 60000 --require @babel/register",
     "build": "webpack",
     "vsop87a": "cd data && node download_vsop87a.js && node create_json_vsop87a.js > vsop87a.json & cd ..",
     "xhip": "cd data && node download_xhip.js && node create_json_xhip.js > hipparchus_reduced.json & cd ..",

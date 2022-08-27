@@ -12,6 +12,8 @@ import {vsop87, vsop87AData} from './Vsop87A.js';
 import {aberrationStellarSph, aberrationStellarCart} from './Aberration.js';
 import {moonEquitorial, moonPositionTod} from './Moon.js';
 import {constellations, constellationBoundaries} from './Constellations.js';
+import {integrateRk4, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM} from './Integration.js';
+
 
 export {sind, cosd, tand, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
     atan2d, atand};
@@ -27,3 +29,4 @@ export {vsop87, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
 export {moonEquitorial, moonPositionTod};
 export {constellations, constellationBoundaries};
+export {integrateRk4, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM};

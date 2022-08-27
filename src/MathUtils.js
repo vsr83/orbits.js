@@ -59,10 +59,36 @@ export function norm(u)
  *      The second vector.
  * @returns The sum.
  */
- export function vecSum(u, v)
- {
-     return [u[0]+v[0], u[1]+v[1], u[2]+v[2]];
- }
+export function vecSum(u, v)
+{
+    return [u[0]+v[0], u[1]+v[1], u[2]+v[2]];
+}
+
+/**
+ * Compute linear combination of vectors.
+ * 
+ * @param {*} k
+ *      Array of coefficients. 
+ * @param {*} x 
+ *      Array of vectors.
+ * @returns The linear combination.
+ */
+export function linComb(k, x)
+{
+    const dim = x[0].length;
+    let y = new Array(dim).fill(0);
+
+    for (let indTerm = 0; indTerm < k.length; indTerm++)
+    {
+        const xTerm = x[indTerm];
+        for (let indElem = 0; indElem < dim; indElem++)
+        {
+            y[indElem] += k[indTerm] * xTerm[indElem];
+        }
+    }
+
+    return y;
+}
 
 /**
  * Compute difference of two 3d vectors.
