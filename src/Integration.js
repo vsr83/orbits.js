@@ -36,6 +36,75 @@ export function integrateRk4(y, h, t, g)
 }
 
 /**
+ * Integrate with eighth order explicit Runge-Kutta.
+ * The method solves single time step of y'(t) = g(t, y), where y = y(t)
+ * is vector-valued.
+ * 
+ * @param {*} y 
+ *      State y(t).
+ * @param {*} h 
+ *      Time step size.
+ * @param {*} t 
+ *      Time t.
+ * @param {*} g
+ *      Method g(t, y) for the evaluation of the RHS.
+ */
+export function integrateRk8(y, h, t, g)
+{
+    const t2 = t + h * (4.0/27.0);
+    const t3 = t + h * (2.0/9.0);
+    const t4 = t + h * (1.0/3.0);
+    const t5 = t + h * (1.0/2.0);
+    const t6 = t + h * (2.0/3.0);
+    const t7 = t + h * (1.0/6.0);
+    const t8 = t + h;
+    const t9 = t + h * (5.0/6.0);
+    const t10= t + h;
+
+    const k1 = g(t, y);
+    const y2 = linComb([1.0, h/27.0], [y, linComb([4], [k1])]);
+    const k2 = g(t2, y2);
+    const y3 = linComb([1.0, h/18.0], [y, linComb([1, 3], [k1, k2])]);
+    const k3 = g(t3, y3);
+    const y4 = linComb([1.0, h/12.0], [y, linComb([1, 3], [k1, k3])]);
+    const k4 = g(t4, y4);
+
+    const y5 = linComb([1.0, h/8.0], [y, linComb([1, 3], [k1, k4])]);
+    const k5 = g(t5, y5);
+
+    const y6 = linComb([1.0, h/54.0], 
+        [y, linComb([13, -27, 42, 8], 
+                    [k1,  k3, k4, k5])]);
+    const k6 = g(t6, y6);
+
+    const y7 = linComb([1.0, h/4320.0], 
+        [y, linComb([389, -54, 966, -824, 243], 
+                    [ k1,  k3,  k4,   k5,  k6])]);
+    const k7 = g(t7, y7);
+
+    const y8 = linComb([1.0, h/20.0], 
+        [y, linComb([-234, 81, -1164, 656, -122, 800], 
+                    [  k1, k3,    k4,  k5,   k6,  k7])]);
+    const k8 = g(t8, y8);
+
+    const y9 = linComb([1.0, h/288.0], 
+        [y, linComb([-127, 18, -678, 456, -9, 576, 4], 
+                    [  k1, k3,   k4,  k5, k6, k7, k8])]);
+    const k9 = g(t9, y9);
+
+    const y10 = linComb([1.0, h/820.0], 
+        [y, linComb([1481, -81, 7104, -3376, 72, -5040, -60, 720], 
+                    [  k1,  k3,   k4,    k5, k6,   k7,   k8,  k9])]);
+    const k10 = g(t10, y10);
+
+    const yNext = linComb([1.0, h/840.0], 
+        [y, linComb([41, 27, 272, 27, 216, 216, 41], 
+                    [k1, k4,  k5, k6,  k7, k9, k10])]);
+
+    return yNext;
+}
+ 
+/**
  * Perform time stepping integration for the system y'(t) = g(t, y)
  * between two moments in time.
  * 
