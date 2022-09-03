@@ -1,5 +1,5 @@
 import {AssertionError, strict as assert} from 'assert';
-import {norm, atan2d, asind, linComb, vecDiff} from "../src/MathUtils.js";
+import {norm, vecMul, vecSum, atan2d, asind, linComb, vecDiff} from "../src/MathUtils.js";
 import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHmsDeg} from "../src/Angles.js";
 import {nutationTerms} from "../src/Nutation.js";
 import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from '../src/Time.js';
@@ -9,7 +9,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
 import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPropagate} from "../src/Kepler.js";
 
 import {hipparchusFind, hipparchusGet} from "../src/Hipparchus.js";
-import {vsop87} from "../src/Vsop87A.js";
+import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 import { moonPositionTod } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
@@ -1020,14 +1020,22 @@ describe('Integration', function() {
                 console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
                 if (osv.name != 'Sun')
                 {
-                let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 + 69/86400);
-                console.log(' rVSOP: ' + r);
+                    let osvSun = osvExpected[0];
+                    let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 + 69/86400);
+
+                    r = vecSum(r, osvSun.r);
+                    console.log(' rVSOP: ' + r);
+                }
+                else 
+                {
+                    const r = vecMul(vsop87ABary(2460182.500000000 + 69/86400), -1);
+                    console.log(' rVSOP: ' + r);
                 }
                 console.log(' v    : ' + osv.v);
                 console.log(' vExp : ' + osvExp.v + ' (error: ' + vError + ')');           
                 
 
-                //checkFloatArray(osv.r, osvExp.r, norm(osv.r)/100.0);
+                checkFloatArray(osv.r, osvExp.r, norm(osv.r)/100.0);
             }
         });
     });

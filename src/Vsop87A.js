@@ -1,8 +1,10 @@
 import vsop87AData from '../data/vsop87a.json'  assert {type: "json"};
-import {vecMul} from './MathUtils.js';
+import {vecMul, vecSum} from './MathUtils.js';
 
 /**
  * Compute position and velocity of a planet with VSOP87A in the J2000 frame.
+ * Important: The frame is heliocentric centered in the barycenter of the Sun.
+ * Frame fixed to the barycenter of the solar system is different.
  * 
  * @param {*} target 
  *      Name of the target planet (mercury, venus, earth, mars, jupiter, saturn,
@@ -43,6 +45,34 @@ export function vsop87(target, JT)
     const vFactor = 4.740470463533349;
 
     return {r : vecMul(pos, auMeters), v: vecMul(vel, vFactor)};
+}
+
+/**
+ * Compute position of the barycenter of the solar system in a frame fixed to the Sun.
+ * Note that this does not contain the contribution from comets, meteors, moons or 
+ * satellites.
+ * 
+ * @param {*} JT 
+ *     Julian time.
+ * @returns The location of the Barycenter.
+ */
+export function vsop87ABary(JT)
+{
+    const massList = [3.285e23, 4.867e24, 5.972e24, 6.39e23, 1.898e27, 5.683e26, 8.681e25, 1.024e26];
+    const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+
+    let massTotal = 1.989e30;
+    let r = [0, 0, 0];
+
+    for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
+    {
+        const massPlanet = massList[indPlanet];
+        massTotal += massPlanet;
+        const rPlanet = vsop87(planets[indPlanet], JT).r;
+        r = vecSum(r, vecMul(rPlanet, massPlanet));
+    }
+
+    return vecMul(r, 1.0 / massTotal);
 }
 
 export {vsop87AData};
