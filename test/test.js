@@ -546,6 +546,50 @@ describe('Hipparchus', function() {
             checkFloat(vega.DE, DEexp, 1e-5);
             checkFloat(vega.mag, 0.086800, 1e-20);
         });
+
+        it('SingleMatch', function() {
+            const vega = hipparchusGet("3 Alpha Lyrae (Vega)");
+            const RAexp = 279.2347344323626;
+            const DEexp = 38.783688589075688;
+
+            checkFloat(vega.RA, RAexp, 1e-5);
+            checkFloat(vega.DE, DEexp, 1e-5);
+            checkFloat(vega.mag, 0.086800, 1e-20);
+        });
+
+        it('ProperMotion', function() {
+            // HIP 91262 
+            // GAIA retrieval https://gea.esac.esa.int/archive/.
+            //SELECT ARRAY_ELEMENT(
+            //    (EPOCH_PROP(ra,de,plx,pmra,pmde,0,1991.25,2020))
+            //    ,1) AS RA
+            //FROM public.hipparcos
+            //WHERE hip=91262
+            //SELECT ARRAY_ELEMENT(
+            //    (EPOCH_PROP(ra,de,plx,pmra,pmde,0,1991.25,2020))
+            //    ,2) AS DE
+            //FROM public.hipparcos
+            //WHERE hip=91262
+
+            const RA1980Exp = 279.2333024696844; 
+            const RA2000Exp = 279.2347351065055; 
+            const RA2020Exp = 279.2361667535478; 
+            const DE1980Exp = 38.782094794759736;
+            const DE2000Exp = 38.78369179580521;
+            const DE2020Exp = 38.78528877935731;
+
+            const JT_1980 = timeJulianYmdhms(1980, 1, 1, 0, 0, 0);
+            const JT_2000 = timeJulianYmdhms(2000, 1, 1, 0, 0, 0);
+            const JT_2020 = timeJulianYmdhms(2020, 1, 1, 0, 0, 0);
+            const vega_1980 = hipparchusGet("3 Alpha Lyrae (Vega)", JT_1980.JT);
+            const vega_2000 = hipparchusGet("3 Alpha Lyrae (Vega)", JT_2000.JT);
+            const vega_2020 = hipparchusGet("3 Alpha Lyrae (Vega)", JT_2020.JT);
+
+            checkFloat(vega_1980.RA, RA1980Exp, 1.0/(3600.0 * 500));
+            checkFloat(vega_2000.RA, RA2000Exp, 1.0/(3600.0 * 500));
+            checkFloat(vega_2020.RA, RA2020Exp, 1.0/(3600.0 * 500));
+        });
+
     });
 });
 
@@ -1018,17 +1062,18 @@ describe('Integration', function() {
                 console.log(osv.name);
                 console.log(' r    : ' + osv.r);
                 console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
+                const rBary = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
                 if (osv.name != 'Sun')
                 {
                     let osvSun = osvExpected[0];
-                    let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 + 69/86400);
+                    let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 - 69/86400);
 
-                    r = vecSum(r, osvSun.r);
+                    r = vecSum(r, rBary);
                     console.log(' rVSOP: ' + r);
                 }
                 else 
                 {
-                    const r = vecMul(vsop87ABary(2460182.500000000 + 69/86400), -1);
+                    const r = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
                     console.log(' rVSOP: ' + r);
                 }
                 console.log(' v    : ' + osv.v);
