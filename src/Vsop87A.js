@@ -63,16 +63,18 @@ export function vsop87ABary(JT)
 
     let massTotal = 1.989e30;
     let r = [0, 0, 0];
+    let v = [0, 0, 0];
 
     for (let indPlanet = 0; indPlanet < planets.length; indPlanet++)
     {
         const massPlanet = massList[indPlanet];
         massTotal += massPlanet;
-        const rPlanet = vsop87(planets[indPlanet], JT).r;
-        r = vecSum(r, vecMul(rPlanet, massPlanet));
+        const osvPlanet = vsop87(planets[indPlanet], JT);
+        r = vecSum(r, vecMul(osvPlanet.r, massPlanet));
+        v = vecSum(v, vecMul(osvPlanet.v, massPlanet));
     }
 
-    return vecMul(r, 1.0 / massTotal);
+    return {r : vecMul(r, 1.0 / massTotal), v : vecMul(v, 1.0 / massTotal)};
 }
 
 export {vsop87AData};

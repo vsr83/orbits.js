@@ -25,7 +25,7 @@ export {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer, coordEfiWgs84, coordWgs84Efi};
 export {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerPlanets};
 export {hipparchusFind, hipparchusGet, hipparchusData, hipparchusIndToName};
-export {vsop87, vsop87Bary, vsop87AData};
+export {vsop87, vsop87ABary, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
 export {moonEquitorial, moonPositionTod};
 export {constellations, constellationBoundaries};
