@@ -118,9 +118,13 @@ export function coordModJ2000(osv)
  * @param {*} nutTerms 
  *      Nutation terms object with fields eps, deps and dpsi. If empty, nutation 
  *      is computed.
+ * @param {*} dPsi1980
+ *      Correction term for Psi to the IAU 1980 nutation model.
+ * @param {*} dEps1980
+ *      Correction term for Eps to the IAU 1980 nutation model.
  * @returns Object r, v, JT fields for position, velocity and Julian date.
  */
-export function coordModTod(osv, nutTerms)
+export function coordModTod(osv, nutTerms, dPsi1980, dEps1980)
 {
     // Julian centuries after J2000.0 epoch.
     const T = (osv.JT - 2451545.0) / 36525.0;
@@ -130,10 +134,23 @@ export function coordModTod(osv, nutTerms)
         nutTerms = nutationTerms(T);
     }
 
-    const rTod = rotateCart1d(rotateCart3d(rotateCart1d(osv.r, nutTerms.eps), -nutTerms.dpsi), 
-        - nutTerms.eps - nutTerms.deps);
-    const vTod = rotateCart1d(rotateCart3d(rotateCart1d(osv.v, nutTerms.eps), -nutTerms.dpsi),
-        - nutTerms.eps - nutTerms.deps);
+    if (dPsi1980 === undefined) 
+    {
+        dPsi1980 = 0.0;
+    }
+    if (dEps1980 === undefined)
+    {
+        dEps1980 = 0.0;
+    }
+
+    const rTod = rotateCart1d(rotateCart3d(rotateCart1d(
+        osv.r, nutTerms.eps + dEps1980), 
+        -nutTerms.dpsi - dPsi1980), 
+        - nutTerms.eps - dEps1980 - nutTerms.deps);
+    const vTod = rotateCart1d(rotateCart3d(rotateCart1d(
+        osv.v, nutTerms.eps + dEps1980), 
+        -nutTerms.dpsi - dPsi1980),
+        - nutTerms.eps - dEps1980 - nutTerms.deps);
 
     return {r : rTod, v : vTod, JT : osv.JT};
 }
