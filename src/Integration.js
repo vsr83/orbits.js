@@ -51,6 +51,9 @@ export function integrateRk4(y, h, t, g)
  */
 export function integrateRk8(y, h, t, g)
 {
+    // Goddard Trajectory Determination System (GTDS) - Mathematical Theory 
+    // Revision 1, 1989 - Table 6-1. 
+
     const t2 = t + h * (4.0/27.0);
     const t3 = t + h * (2.0/9.0);
     const t4 = t + h * (1.0/3.0);
