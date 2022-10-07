@@ -57,6 +57,7 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
     const constellation = elemsBiblio[2].trim();
     const RAdeg_1991 = parseFloat(elemsMain[4]);
     const DEdeg_1991 = parseFloat(elemsMain[5]);
+    const Plx_1991   = parseFloat(elemsMain[6]);
     const RAdeg_proper = parseFloat(elemsMain[7]);
     const DEdeg_proper = parseFloat(elemsMain[8]);
     const dist = parseFloat(elemsMain[18]);
@@ -75,6 +76,7 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
             id : parseInt(idData),
             RA : RAdeg_1991,
             DE : DEdeg_1991,
+            Plx : Plx_1991,
             RA_delta : RAdeg_proper,
             DE_delta : DEdeg_proper,
             mag : HPmag, 
