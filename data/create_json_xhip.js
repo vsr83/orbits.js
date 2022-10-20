@@ -3,7 +3,7 @@
 // The script should be executed only after download_xhip.js.
 
 import {readFileSync} from 'fs';
-import constellations from './constellations.json'  assert {type: "json"};
+import constellations from './constellations.json' assert {type: "json"};
 
 const magLimit = 6;
 
@@ -53,15 +53,25 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
     const elemsPhoto  = contentPhoto[indLine].split('|');   
     const elemsMain   = contentMain[indLine].split('|');   
 
+    // Hipparcos identifier (Integer)
     const idData = elemsMain[0].trim();
+    // Constellation abbreviation.
     const constellation = elemsBiblio[2].trim();
+    // Right ascension (degrees, ICRS, Epoch=J1991.25)
     const RAdeg_1991 = parseFloat(elemsMain[4]);
+    // Declination (degrees, ICRS, Epoch=1991.25)
     const DEdeg_1991 = parseFloat(elemsMain[5]);
+    // Trigonometric parallax (mas, Epoch=1991.25)
     const Plx_1991   = parseFloat(elemsMain[6]);
-    const RAdeg_proper = parseFloat(elemsMain[7]);
-    const DEdeg_proper = parseFloat(elemsMain[8]);
-    const dist = parseFloat(elemsMain[18]);
-
+    // Proper motion in RA*cos(DEdeg) (mas/yr, Epoch=1991.25)
+    const RAmas_proper = parseFloat(elemsMain[7]);
+    // Proper motion in Declination (mas/yr, Epoch=1991.25)
+    const DEmas_proper = parseFloat(elemsMain[8]);
+    // Heliocentric distance (parseks)
+    const distPar = parseFloat(elemsMain[18]);
+    // Radial velocity (km/s, Epoch=1991.25)
+    const radVel = parseFloat(elemsMain[30]);
+    
     const HPmag = parseFloat(elemsPhoto[1]);
     let name = elemsBiblio[5].trim();
 
@@ -77,10 +87,12 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
             RA : RAdeg_1991,
             DE : DEdeg_1991,
             Plx : Plx_1991,
-            RA_delta : RAdeg_proper,
-            DE_delta : DEdeg_proper,
+            RA_delta : RAmas_proper,
+            DE_delta : DEmas_proper,
             mag : HPmag, 
-            constellation : constellation.toUpperCase()
+            distPar : distPar, 
+            constellation : constellation.toUpperCase(),
+            radVel : radVel
         };
         output[name] = data;
     }
