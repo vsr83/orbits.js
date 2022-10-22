@@ -39,6 +39,20 @@ export function cross(u, v)
 }
 
 /**
+ * Compute dot product between two vectors.
+ * 
+ * @param {*} u 
+ *      The first 3d vector.
+ * @param {*} v 
+ *      The second 3d vector.
+ * @returns The dot product.
+ */
+export function dot(u, v) 
+{
+    return u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+}
+
+/**
  * Compute norm with a vector.
  * 
  * @param {*} u 

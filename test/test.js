@@ -8,7 +8,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
 import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPropagate} from "../src/Kepler.js";
 
-import {hipparchusFind, hipparchusGet} from "../src/Hipparchus.js";
+import {hipparchusFind, hipparchusGet, properMotion} from "../src/Hipparchus.js";
 import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 import { moonPositionTod } from '../src/Moon.js';
@@ -536,6 +536,60 @@ describe('Hipparchus', function() {
             assert.equal(resultsVega[0], "3 Alpha Lyrae (Vega)");
         });
     });
+
+    describe('properMotion', function() {
+        it ('Alpha Centauri', function() {
+            // Alpha Centauri (Proksima Kentavra)
+            const starData = {
+                "id":71681,
+                "RA":219.91412833,
+                "DE":-60.83947139,
+                "Plx":742.12,
+                "RA_delta":-3600.35,
+                "DE_delta":952.11,
+                "mag":1.2429,
+                "distPar":1.35,
+                "constellation":"CEN",
+                "radVel":-18.6
+            };
+
+            // 2020 GAIA vs ESA reference implementation
+            // http://cdsarc.u-strasbg.fr/ftp/cats/aliases/H/Hipparcos/version_cd/src/pos_prop.c
+            // RA      219.85510906931927  219.8551090709
+            // DE      -60.83185171038954   60.8318517103
+            // Plx     742.4212155860748   742.4212204729
+            // pmra  -3602.41482765023   -3602.4147299442
+            // pmde    956.1237813365689   956.1237958262
+
+            // id: 71681,
+            // RA: 219.85510907092015,
+            // DE: -60.8318517102732,
+            // Plx: 742.4212204728574,
+            // RA_delta: -3602.414729944163,
+            // DE_delta: 956.1237958262054,
+            // mag: 1.2429,
+            // constellation: 'CEN',
+            // radVel: -18.58764420704424
+
+            //console.log(starData);
+            // console.log(properMotion(starData, 2458849.50000 + 0.5));
+            //console.log(hipparchusGet("Alpha Centauri (Proksima Kentavra)", 2458849.50000));
+            const starData2020 = properMotion(starData, 2458849.50000 + 0.5);
+            // C Reference implementation:
+            checkFloat(starData2020.RA, 219.8551090709, 1e-10);
+            checkFloat(starData2020.DE, -60.8318517103, 1e-10);
+            checkFloat(starData2020.Plx, 742.4212204729, 1e-10);
+            checkFloat(starData2020.RA_delta, -3602.4147299442, 1e-10);
+            checkFloat(starData2020.DE_delta, 956.1237958262, 1e-10);
+            // GAIA: 
+            checkFloat(starData2020.RA, 219.85510906931927, 1e-8);
+            checkFloat(starData2020.DE, -60.83185171038954, 1e-8);
+            checkFloat(starData2020.Plx, 742.4212155860748, 1e-5);
+            checkFloat(starData2020.RA_delta, -3602.41482765023, 1e-4);
+            checkFloat(starData2020.DE_delta, 956.1237813365689, 1e-4);
+        });
+    });
+
     describe('hipparchusGet', function() {
         it('SingleMatch', function() {
             const vega = hipparchusGet("3 Alpha Lyrae (Vega)");
@@ -1059,9 +1113,9 @@ describe('Integration', function() {
                 let vError = norm(vecDiff(osv.v, osvExp.v)) / norm(osv.v);
 
                 
-                console.log(osv.name);
-                console.log(' r    : ' + osv.r);
-                console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
+                //console.log(osv.name);
+                //console.log(' r    : ' + osv.r);
+                //console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
                 const rBary = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
                 if (osv.name != 'Sun')
                 {
@@ -1069,15 +1123,15 @@ describe('Integration', function() {
                     let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 - 69/86400);
 
                     r = vecSum(r, rBary);
-                    console.log(' rVSOP: ' + r);
+                    //console.log(' rVSOP: ' + r);
                 }
                 else 
                 {
                     const r = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
-                    console.log(' rVSOP: ' + r);
+                    //console.log(' rVSOP: ' + r);
                 }
-                console.log(' v    : ' + osv.v);
-                console.log(' vExp : ' + osvExp.v + ' (error: ' + vError + ')');           
+                //console.log(' v    : ' + osv.v);
+                //console.log(' vExp : ' + osvExp.v + ' (error: ' + vError + ')');           
                 
 
                 checkFloatArray(osv.r, osvExp.r, norm(osv.r)/100.0);

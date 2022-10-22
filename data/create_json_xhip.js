@@ -67,8 +67,6 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
     const RAmas_proper = parseFloat(elemsMain[7]);
     // Proper motion in Declination (mas/yr, Epoch=1991.25)
     const DEmas_proper = parseFloat(elemsMain[8]);
-    // Heliocentric distance (parseks)
-    const distPar = parseFloat(elemsMain[18]);
     // Radial velocity (km/s, Epoch=1991.25)
     const radVel = parseFloat(elemsMain[30]);
     
@@ -90,7 +88,6 @@ for (let indLine = 0; indLine < numLines-1; indLine++)
             RA_delta : RAmas_proper,
             DE_delta : DEmas_proper,
             mag : HPmag, 
-            distPar : distPar, 
             constellation : constellation.toUpperCase(),
             radVel : radVel
         };

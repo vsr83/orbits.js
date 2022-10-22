@@ -1,4 +1,4 @@
-import {sind, cosd, tand, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
+import {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
 atan2d, atand} from './MathUtils.js';
 import {limitAngleDeg, angleDiff, angleArcDeg, angleDegArc, angleDegHms, angleHmsDeg} from './Angles.js';
 import {nutationTerms} from './Nutation.js'
@@ -15,7 +15,7 @@ import {constellations, constellationBoundaries} from './Constellations.js';
 import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM} from './Integration.js';
 
 
-export {sind, cosd, tand, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
+export {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
     atan2d, atand};
 export {limitAngleDeg, angleDiff, angleArcDeg, angleDegArc, angleDegHms, angleHmsDeg};
 export {nutationTerms};
