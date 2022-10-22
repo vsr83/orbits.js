@@ -10,7 +10,7 @@ The library implements:
     * True-of-Date (ToD)
     * Pseudo-Earth-Fixed (PEF)
     * Earth-Fixed (EFI)
-* Extended Hipparchos Compliation (XHIP) stars with magnitudes below 6.
+* Extended Hipparcos Compliation (XHIP) stars with magnitudes below 6.
 * VSOP87A for the computation of positions of planets.
 * Accurate computation of the position of the Moon.
 * Computation of Stellar aberration.

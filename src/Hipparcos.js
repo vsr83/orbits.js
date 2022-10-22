@@ -1,4 +1,4 @@
-import hipparchusData from '../data/hipparchus_reduced.json'  assert {type: "json"};
+import hipparcosData from '../data/hipparcos_reduced.json'  assert {type: "json"};
 import { dateJulianYmd } from './Time.js';
 import { sind, cosd, linComb, deg2Rad, rad2Deg, dot, cross } from './MathUtils.js';
 
@@ -6,14 +6,14 @@ import { sind, cosd, linComb, deg2Rad, rad2Deg, dot, cross } from './MathUtils.j
  * Find objects from the reduced Hipparcos catalog.
  * 
  * @param {*} searchKey 
- *      Key used in matching the Hipparchus designation.
+ *      Key used in matching the Hipparcos designation.
  * @returns List of matching stars. 
  */
-export function hipparchusFind(searchKey)
+export function hipparcosFind(searchKey)
 {
     const results = [];
 
-    Object.keys(hipparchusData).forEach(function(starName){
+    Object.keys(hipparcosData).forEach(function(starName){
         if (starName.includes(searchKey))
         {
             //console.log(starName);
@@ -33,7 +33,7 @@ export function hipparchusFind(searchKey)
  *      Julian time.
  * @returns JSON object with fields RA, DE and mag.
  */
-export function hipparchusGet(designation, JT)
+export function hipparcosGet(designation, JT)
 {
     // In case of missing JT, use the J2000.0 epoch.
     if (JT === undefined)
@@ -48,15 +48,15 @@ export function hipparchusGet(designation, JT)
     // Julian days after the epoch.
     const deltaJT = JT - epochJ1991_25;
 
-    const starData = properMotion(hipparchusData[designation], JT);
+    const starData = properMotion(hipparcosData[designation], JT);
 
     return {RA : starData.RA, DE : starData.DE, mag : starData.mag};
 }
 
-const hipparchusIndToName = [];
-for (const [key, value] of Object.entries(hipparchusData))
+const hipparcosIndToName = [];
+for (const [key, value] of Object.entries(hipparcosData))
 {
-    hipparchusIndToName[value.id] = key; 
+    hipparcosIndToName[value.id] = key; 
 }
 
 /**
@@ -185,4 +185,4 @@ export function properMotion(starDataJ1991, JT)
     };
 }
 
-export {hipparchusData, hipparchusIndToName};
+export {hipparcosData, hipparcosIndToName};

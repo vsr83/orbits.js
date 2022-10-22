@@ -8,7 +8,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
 import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPropagate} from "../src/Kepler.js";
 
-import {hipparchusFind, hipparchusGet, properMotion} from "../src/Hipparchus.js";
+import {hipparcosFind, hipparcosGet, properMotion} from "../src/Hipparcos.js";
 import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 import { moonPositionTod } from '../src/Moon.js';
@@ -528,10 +528,10 @@ describe('Frames', function() {
     });
 });
 
-describe('Hipparchus', function() {
-    describe('hipparchusFind', function() {
+describe('Hipparcos', function() {
+    describe('hipparcosFind', function() {
         it('SingleMatch', function() {
-            const resultsVega = hipparchusFind('Vega');
+            const resultsVega = hipparcosFind('Vega');
             assert.equal(resultsVega.length, 1);
             assert.equal(resultsVega[0], "3 Alpha Lyrae (Vega)");
         });
@@ -573,7 +573,7 @@ describe('Hipparchus', function() {
 
             //console.log(starData);
             // console.log(properMotion(starData, 2458849.50000 + 0.5));
-            //console.log(hipparchusGet("Alpha Centauri (Proksima Kentavra)", 2458849.50000));
+            //console.log(hipparcosGet("Alpha Centauri (Proksima Kentavra)", 2458849.50000));
             const starData2020 = properMotion(starData, 2458849.50000 + 0.5);
             // C Reference implementation:
             checkFloat(starData2020.RA, 219.8551090709, 1e-10);
@@ -590,9 +590,9 @@ describe('Hipparchus', function() {
         });
     });
 
-    describe('hipparchusGet', function() {
+    describe('hipparcosGet', function() {
         it('SingleMatch', function() {
-            const vega = hipparchusGet("3 Alpha Lyrae (Vega)");
+            const vega = hipparcosGet("3 Alpha Lyrae (Vega)");
             const RAexp = 279.2347344323626;
             const DEexp = 38.783688589075688;
 
@@ -602,7 +602,7 @@ describe('Hipparchus', function() {
         });
 
         it('SingleMatch', function() {
-            const vega = hipparchusGet("3 Alpha Lyrae (Vega)");
+            const vega = hipparcosGet("3 Alpha Lyrae (Vega)");
             const RAexp = 279.2347344323626;
             const DEexp = 38.783688589075688;
 
@@ -635,9 +635,9 @@ describe('Hipparchus', function() {
             const JT_1980 = timeJulianYmdhms(1980, 1, 1, 0, 0, 0);
             const JT_2000 = timeJulianYmdhms(2000, 1, 1, 0, 0, 0);
             const JT_2020 = timeJulianYmdhms(2020, 1, 1, 0, 0, 0);
-            const vega_1980 = hipparchusGet("3 Alpha Lyrae (Vega)", JT_1980.JT);
-            const vega_2000 = hipparchusGet("3 Alpha Lyrae (Vega)", JT_2000.JT);
-            const vega_2020 = hipparchusGet("3 Alpha Lyrae (Vega)", JT_2020.JT);
+            const vega_1980 = hipparcosGet("3 Alpha Lyrae (Vega)", JT_1980.JT);
+            const vega_2000 = hipparcosGet("3 Alpha Lyrae (Vega)", JT_2000.JT);
+            const vega_2020 = hipparcosGet("3 Alpha Lyrae (Vega)", JT_2020.JT);
 
             checkFloat(vega_1980.RA, RA1980Exp, 1.0/(3600.0 * 500));
             checkFloat(vega_2000.RA, RA2000Exp, 1.0/(3600.0 * 500));

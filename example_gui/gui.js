@@ -491,8 +491,8 @@ myLayout.registerComponent( 'Configuration', function( container, componentState
         // Initialize Julian according to time stamps above.
         updateJulian();
 
-        // Initialize target list from Hipparchus catalog.
-        targetList = Object.keys(orbitsjs.hipparchusData);
+        // Initialize target list from Hipparcos catalog.
+        targetList = Object.keys(orbitsjs.hipparcosData);
         targetType = [];
         targetList.forEach(function(target) {
             targetType[target] = "star";
@@ -537,8 +537,8 @@ myLayout.registerComponent( 'Configuration', function( container, componentState
     });
 });
 
-// Initialize target list from Hipparchus catalog.
-let targetList = Object.keys(orbitsjs.hipparchusData);
+// Initialize target list from Hipparcos catalog.
+let targetList = Object.keys(orbitsjs.hipparcosData);
 let targetType = [];
 
 myLayout.init();

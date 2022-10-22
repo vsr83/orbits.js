@@ -7,7 +7,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer} from './Frames.js';
 import {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerPlanets} from './Kepler.js';
-import {hipparchusFind, hipparchusGet, hipparchusData, hipparchusIndToName} from './Hipparchus.js';
+import {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName} from './Hipparcos.js';
 import {vsop87, vsop87ABary, vsop87AData} from './Vsop87A.js';
 import {aberrationStellarSph, aberrationStellarCart} from './Aberration.js';
 import {moonEquitorial, moonPositionTod} from './Moon.js';
@@ -24,7 +24,7 @@ export {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiEnu, coordEnuEfi, 
     coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer, coordEfiWgs84, coordWgs84Efi};
 export {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerPlanets};
-export {hipparchusFind, hipparchusGet, hipparchusData, hipparchusIndToName};
+export {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName};
 export {vsop87, vsop87ABary, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
 export {moonEquitorial, moonPositionTod};

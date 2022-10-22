@@ -143,12 +143,12 @@ for (let [cName, cValue] of Object.entries(orbitsjs.constellations))
 
         const starStart = lineStars[0];
         const starEnd = lineStars[1];
-        const nameStart = orbitsjs.hipparchusIndToName[starStart];
-        const nameEnd = orbitsjs.hipparchusIndToName[starEnd];
+        const nameStart = orbitsjs.hipparcosIndToName[starStart];
+        const nameEnd = orbitsjs.hipparcosIndToName[starEnd];
 
         //console.log(nameStart + "->" + nameEnd);
-        const hipStart = orbitsjs.hipparchusData[nameStart];
-        const hipEnd = orbitsjs.hipparchusData[nameEnd];
+        const hipStart = orbitsjs.hipparcosData[nameStart];
+        const hipEnd = orbitsjs.hipparcosData[nameEnd];
        
         if (hipStart === undefined)
         {            
@@ -190,7 +190,7 @@ const starsSelectGroup = new THREE.Group();
 scene.add(starsGroup);
 sceneSelect.add(starsSelectGroup);
 
-for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparchusData))
+for (let [hipName, hipObj] of Object.entries(orbitsjs.hipparcosData))
 {
     const radius = 0.005 * celestialSphereRadius * Math.exp(-hipObj.mag/3.0);
 
@@ -381,7 +381,7 @@ scene.add(satelliteMeshGroup);
 sceneSelect.add(satelliteSelectGroup);
 
 // Initialize autocomplete:
-targetList = Object.keys(orbitsjs.hipparchusData);
+targetList = Object.keys(orbitsjs.hipparcosData);
 targetType = [];
 targetList.forEach(function(target) {
     targetType[target] = "star";
@@ -733,7 +733,7 @@ function render(time)
     ringMesh.quaternion.copy( camera1.quaternion );
     if (targetName.length > 1)
     {
-        const hipData = orbitsjs.hipparchusData[targetName];
+        const hipData = orbitsjs.hipparcosData[targetName];
 
         //console.log(targetName);
         if (targetName === "Moon")

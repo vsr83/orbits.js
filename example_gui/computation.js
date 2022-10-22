@@ -212,11 +212,11 @@ function processPlanet(configuration, timeStamp)
      let hipData = null;
      if (configuration.corrections.properMotion)
      {
-         hipData = orbitsjs.hipparchusGet(configuration.target, JT);
+         hipData = orbitsjs.hipparcosGet(configuration.target, JT);
      }
      else 
      {
-         hipData = orbitsjs.hipparchusGet(configuration.target);
+         hipData = orbitsjs.hipparcosGet(configuration.target);
      }
      //console.log(hipData);
  

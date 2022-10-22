@@ -1,4 +1,4 @@
-// This script generates the hipparchus JSON from the downloaded XHIP
+// This script generates the hipparcos JSON from the downloaded XHIP
 // data files.
 // The script should be executed only after download_xhip.js.
 
