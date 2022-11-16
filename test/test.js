@@ -2,7 +2,7 @@ import {AssertionError, strict as assert} from 'assert';
 import {norm, vecMul, vecSum, atan2d, asind, linComb, vecDiff} from "../src/MathUtils.js";
 import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHmsDeg} from "../src/Angles.js";
 import {nutationTerms} from "../src/Nutation.js";
-import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd } from '../src/Time.js';
+import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd, timeGregorian } from '../src/Time.js';
 import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod,
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer } from '../src/Frames.js';
@@ -11,7 +11,7 @@ import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPro
 import {hipparcosFind, hipparcosGet, properMotion} from "../src/Hipparcos.js";
 import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
-import { moonPositionTod } from '../src/Moon.js';
+import { moonPositionTod, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
 
 /**
@@ -196,6 +196,45 @@ describe('Time', function() {
             checkFloat(dateJulianYmd(2000, 4, 15), 2451649.5, 1e-9);
             checkFloat(dateJulianYmd(2000, 5, 1),  2451665.5, 1e-9);
             checkFloat(dateJulianYmd(2000, 5, 15), 2451679.5, 1e-9);
+        });
+    });
+
+    describe('timeGregorian', function() {
+        it('2022-05-15 23:53:20', function() {
+            const {JD, JT} = timeJulianYmdhms(2022, 5, 15, 23, 53, 20);
+            const tGreg = timeGregorian(JT);
+            const tGregJD = timeGregorian(JD);
+            checkFloat(tGreg.year, 2022, 1e-5);
+            checkFloat(tGreg.month, 5, 1e-5);
+            checkFloat(tGreg.mday, 15, 1e-5);
+            checkFloat(tGreg.hour, 23, 1e-5);
+            checkFloat(tGreg.minute, 53, 1e-5);
+            checkFloat(tGreg.second, 20, 1e-4);
+
+            checkFloat(tGregJD.year, 2022, 1e-5);
+            checkFloat(tGregJD.month, 5, 1e-5);
+            checkFloat(tGregJD.mday, 15, 1e-5);
+            checkFloat(tGregJD.hour, 0, 1e-5);
+            checkFloat(tGregJD.minute, 0, 1e-5);
+            checkFloat(tGregJD.second, 0, 1e-4);
+        });
+        it('2022-05-15 00:00:00', function() {
+            const {JD, JT} = timeJulianYmdhms(2022, 5, 15, 0, 0, 0);
+            const tGreg = timeGregorian(JT);
+            const tGregJD = timeGregorian(JD);
+            checkFloat(tGreg.year, 2022, 1e-5);
+            checkFloat(tGreg.month, 5, 1e-5);
+            checkFloat(tGreg.mday, 15, 1e-5);
+            checkFloat(tGreg.hour, 0, 1e-5);
+            checkFloat(tGreg.minute, 0, 1e-5);
+            checkFloat(tGreg.second, 0, 1e-4);
+
+            checkFloat(tGregJD.year, 2022, 1e-5);
+            checkFloat(tGregJD.month, 5, 1e-5);
+            checkFloat(tGregJD.mday, 15, 1e-5);
+            checkFloat(tGregJD.hour, 0, 1e-5);
+            checkFloat(tGregJD.minute, 0, 1e-5);
+            checkFloat(tGregJD.second, 0, 1e-4);
         });
     });
 
@@ -956,6 +995,61 @@ describe('Moon', function() {
             const rTod = moonPositionTod(JT, nutTerms);
             const rTodExp = [3.042115315818079e8, -1.878671124143496e8, -1.190937748596068e8];
             checkFloatArray(rTod, rTodExp, 1);
+        });
+    });
+    describe('moonNodePassage', function() {
+        it ('Meeus', function() {
+            checkFloat(moonNodePassage(-170.0), 2446938.76803, 1e-5);
+        });
+    });
+    describe('moonNodePassages', function() {
+        it ('range', function() {
+            const nodePassages = moonNodePassages(2010, 2020);
+
+            for (let JT of nodePassages)
+            {
+                const T = (JT - 2451545.0)/36525.0;
+                const nutTerms = nutationTerms(T);
+                const rTod = moonPositionTod(JT, nutTerms);
+                const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
+                const osvJ2000 = coordModJ2000(osvMod, nutTerms);
+                const osvEcl = coordEqEcl(osvJ2000);
+
+                const latMoon = asind(osvEcl.r[2] / norm(osvEcl.r));
+                //console.log(latMoon + " " + osvEcl.r[2]);
+                checkFloat(osvEcl.r[2], 0.0, 25000);
+                //console.log(timeGregorian(JT));
+            }
+        });
+    });
+
+    describe('newMoonList', function() {
+        it ('range', function() {
+            const newMoons = moonNewList(2010, 2020);
+
+            for (const JT of newMoons)
+            {
+                const T = (JT - 2451545.0)/36525.0;
+                const nutTerms = nutationTerms(T);
+                const rTod = moonPositionTod(JT, nutTerms);
+                const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
+                const osvJ2000 = coordModJ2000(osvMod, nutTerms);
+                const osvEcl = coordEqEcl(osvJ2000);
+                //console.log(timeGregorian(JT));
+
+                console.log(JT);
+                let {r, v} = vsop87('earth', JT);
+                console.log(r);
+                const rSun = vecMul(r, -1);
+                const vSun = vecMul(v, -1);
+
+                const eclLonSun = limitAngleDeg(atan2d(rSun[1], rSun[0]));
+                const eclLonMoon= limitAngleDeg(atan2d(osvEcl.r[1], osvEcl.r[0]));
+
+                const lonDiff = Math.abs(eclLonSun - eclLonMoon);
+                const maxAngle = 360 / (27 * 24 * 60);
+                checkFloat(lonDiff, 0.0, maxAngle); 
+            }
         });
     });
 });

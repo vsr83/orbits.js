@@ -142,3 +142,49 @@ export function timeJulianTs(d)
 
     return timeJulianYmdhms(year, month, mday, hour, minute, second);
 }
+
+/**
+ * Compute Gregorian date and time from Julian time.
+ */
+export function timeGregorian(JT)
+{
+    // Meeus - Astronomical Algorithms - Chapter 7.
+    const Z = Math.floor(JT + 0.5);
+    const F = JT + 0.5 - Z;
+    let A = Z;
+    if (Z >= 2299161) 
+    {
+        let alpha = Math.floor((Z - 1867216.25) / 36524.25);
+        A = Z + 1 + alpha - Math.floor(alpha / 4.0);
+    }
+    const B = A + 1524;
+    const C = Math.floor((B - 122.1) / 365.25);
+    const D = Math.floor(365.25 * C);
+    const E = Math.floor((B - D)/30.6001);
+
+    const mday = Math.floor(B - D - Math.floor(30.6001 * E) + F);
+    let month = E - 1;
+    if (E >= 14)
+    {
+        month = E - 13;
+    }
+    let year = C - 4716;
+    if (month < 3)
+    {
+        year = C - 4715;
+    }
+
+    let JTfrac = F;
+    if (JTfrac < 0)
+    {
+        JTfrac += 1;
+    }
+    const hour = Math.floor(JTfrac * 24.0);
+    JTfrac -= hour / 24.0;
+    const minute = Math.floor(JTfrac * (24.0 * 60.0));
+    JTfrac -= minute / (24.0 * 60.0);
+    const second = JTfrac * (24.0 * 60.0 * 60.0);
+
+    return {year : year, month : month, mday : mday, 
+        hour : hour, minute : minute, second : second};
+}
