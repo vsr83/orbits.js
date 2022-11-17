@@ -1,5 +1,5 @@
 import {AssertionError, strict as assert} from 'assert';
-import {norm, vecMul, vecSum, atan2d, asind, linComb, vecDiff} from "../src/MathUtils.js";
+import {norm, vecMul, vecSum, atand, atan2d, asind, linComb, vecDiff, tand} from "../src/MathUtils.js";
 import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHmsDeg} from "../src/Angles.js";
 import {nutationTerms} from "../src/Nutation.js";
 import {timeGast, timeGmst, timeJulianTs, timeJulianYmdhms, dateJulianYmd, timeGregorian } from '../src/Time.js';
@@ -11,7 +11,7 @@ import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPro
 import {hipparcosFind, hipparcosGet, properMotion} from "../src/Hipparcos.js";
 import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
-import { moonPositionTod, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
+import { moonPositionTod, moonPositionEcl, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
 
 /**
@@ -1017,7 +1017,8 @@ describe('Moon', function() {
 
                 const latMoon = asind(osvEcl.r[2] / norm(osvEcl.r));
                 //console.log(latMoon + " " + osvEcl.r[2]);
-                checkFloat(osvEcl.r[2], 0.0, 25000);
+                // 1m accuracy:
+                checkFloat(osvEcl.r[2], 0.0, 1);
                 //console.log(timeGregorian(JT));
             }
         });
@@ -1037,17 +1038,16 @@ describe('Moon', function() {
                 const osvEcl = coordEqEcl(osvJ2000);
                 //console.log(timeGregorian(JT));
 
-                console.log(JT);
                 let {r, v} = vsop87('earth', JT);
-                console.log(r);
                 const rSun = vecMul(r, -1);
                 const vSun = vecMul(v, -1);
 
                 const eclLonSun = limitAngleDeg(atan2d(rSun[1], rSun[0]));
                 const eclLonMoon= limitAngleDeg(atan2d(osvEcl.r[1], osvEcl.r[0]));
 
-                const lonDiff = Math.abs(eclLonSun - eclLonMoon);
-                const maxAngle = 360 / (27 * 24 * 60);
+                const lonDiff = angleDiff(eclLonSun, eclLonMoon);
+                const maxAngle = 1 / 3600; //360 / (27 * 24 * 60);
+                //console.log(lonDiff);
                 checkFloat(lonDiff, 0.0, maxAngle); 
             }
         });
@@ -1229,6 +1229,117 @@ describe('Integration', function() {
                 
 
                 checkFloatArray(osv.r, osvExp.r, norm(osv.r)/100.0);
+            }
+        });
+    });
+});
+
+describe('Eclipses', function() {
+    describe('test', function() {
+        it('Scalar', function() {
+            const nodePassages = moonNodePassages(1960, 2020);
+            const newMoons = moonNewList(1960, 2020);
+            const nodeInclinations = [];
+            const nodeLonRates = [];
+
+            let findClosests = function(arrayIn, JT)
+            {
+                let distMax = 1e10;
+                let value = undefined;
+
+                for (let indItem = 0; indItem < arrayIn.length; indItem++)
+                {
+                    const item = arrayIn[indItem];
+                    const distNew = Math.abs(item - JT);
+
+                    if (distNew < distMax)
+                    {
+                        value = indItem;
+                        distMax = distNew;
+                    }
+                }
+
+                return value;
+            }
+
+            for (let JT of nodePassages)
+            {
+                const T = (JT - 2451545.0)/36525.0;
+                const nutTerms = nutationTerms(T);
+
+                const posEcl = moonPositionEcl(JT, nutTerms);
+                const posEcl2 = moonPositionEcl(JT + 1/(24*60), nutTerms);
+
+                const rDiff = vecDiff(posEcl2, posEcl);
+                nodeInclinations.push(asind(rDiff[2] / norm(rDiff)));
+                const lonRate = (atan2d(posEcl2[1], posEcl2[0]) -
+                                 atan2d(posEcl[1], posEcl[0])) / 60.0;
+                nodeLonRates.push(lonRate);
+            }
+
+            for (let JT of newMoons)
+            {
+                const T = (JT - 2451545.0)/36525.0;
+                const nutTerms = nutationTerms(T);
+                const indClosest = findClosests(nodePassages, JT);
+                const JTclosests = nodePassages[indClosest];
+
+                const posEcl = moonPositionEcl(JT, nutTerms);
+
+
+                const beta_m = asind(posEcl[2] / norm(posEcl))
+                const incl = nodeInclinations[indClosest];
+                const lonRate = nodeLonRates[indClosest];
+                const lonRateSun = 360 / (365.256 * 86400.0);
+                const lambda = lonRate / lonRateSun;
+
+                const sigma = beta_m * (lambda - 1) 
+                            / Math.sqrt(Math.pow(lambda - 1, 2) + lambda * lambda * tand(incl) * tand(incl));
+
+                const timeGreg = timeGregorian(JT);
+
+                const osvEarth = vsop87('earth', JT);
+
+                const semiMoon = atand(1737400.0 / norm(posEcl));
+                const semiSun  = atand(696340000 / norm(osvEarth.r));
+                const horiMoon = atand(6371000 / norm(posEcl));
+                const horiSun  = atand(6371000 / norm(osvEarth.r));
+
+                const partialLimit = semiSun + semiMoon + horiMoon - horiSun;
+                const totalLimit   = semiSun - semiMoon + horiMoon - horiSun;
+
+                let toFixed = function(num)
+                {
+                    if (num < 10) {
+                        return "0" + num;
+                    }
+                    else 
+                    {
+                        return num;
+                    }
+                }
+
+                if (Math.abs(sigma) < partialLimit)
+                {
+                    let eclipseType = "Partial";
+                    if (Math.abs(sigma) < totalLimit)
+                    {
+                        if (semiSun < semiMoon)
+                        {
+                            eclipseType = "Total";
+                        }
+                        else 
+                        {
+                            eclipseType = "Annular";
+                        }
+                    }
+
+                    console.log(timeGreg.year + "-" + toFixed(timeGreg.month) + "-" + toFixed(timeGreg.mday) + 
+                                "T" + toFixed(timeGreg.hour) + ":" + toFixed(timeGreg.minute) + " " + eclipseType);
+                    //console.log(semiMoon + " " + semiSun + " " + horiMoon + " " + horiSun);
+                }
+                // console.log(JT + " " + JTclosests + " " + Math.abs(JT - JTclosests) + " " + sigma);
+                // console.log(asind(osvEcl.r[2] / norm(osvEcl.r)));
             }
         });
     });

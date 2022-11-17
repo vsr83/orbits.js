@@ -1,5 +1,8 @@
 import { nutationTerms } from "./Nutation.js";
-import {cosd, sind, tand, atan2d, asind} from "./MathUtils.js";
+import {cosd, sind, tand, atan2d, asind, vecDiff, vecMul} from "./MathUtils.js";
+import {coordTodMod, coordModJ2000, coordEqEcl} from "./Frames.js";
+import {vsop87} from "./Vsop87A.js";
+import {angleDiff} from "./Angles.js";
 import { list } from "mocha/lib/reporters/index.js";
 
 // Periodic terms for the longitude and distance of the Moon.
@@ -317,6 +320,31 @@ function moonSigmaTerms(D, Ms, Mm, F, T)
 }  
 
 /**
+ * Compute position of the Moon in the J2000 Ecliptic frame.
+ * 
+ * @param {*} JT 
+ *     Julian time.
+ * @param {*} nutTerms
+ *     Nutation terms. If parameter is missing, terms are computed.
+ * @returns The position.
+ */
+ export function moonPositionEcl(JT, nutTerms)
+{
+    if (nutTerms === undefined)
+    {
+        const T = (JT - 2451545.0)/36525.0;
+        nutTerms = nutationTerms(T);
+    }
+
+    const rTod = moonPositionTod(JT, nutTerms);
+    const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
+    const osvJ2000 = coordModJ2000(osvMod, nutTerms);
+    const osvEcl = coordEqEcl(osvJ2000);
+
+    return osvEcl.r;
+}
+
+/**
  * Compute a list of time for passage of the Moon through the Ecliptic 
  * Plane.
  * 
@@ -344,6 +372,23 @@ export function moonNodePassages(yearStart, yearEnd)
         listJT.push(moonNodePassage(k + 0.5));
     }
 
+    // Fine tune positions assuming constant velocity of the Moon:
+    for (let indList = 0; indList < listJT.length; indList++)
+    {
+        const JTinitial = listJT[indList];
+        const JTminute  = listJT[indList] + 1/(24*60);
+
+        const posMoonInitial = moonPositionEcl(JTinitial);
+        const posMoonMinute  = moonPositionEcl(JTminute);
+        const diffZ = posMoonMinute[2] - posMoonInitial[2];
+
+        // posMoonInitial[2] + numMinutes * diffZ = 0;
+        const numMinutes = -posMoonInitial[2] / diffZ;
+        listJT[indList] = JTinitial + numMinutes / (24 * 60);
+        // const posMoonNew = moonPositionEcl(listJT[indList]);
+        // console.log(posMoonInitial[2] + " " + posMoonNew[2]);
+    }
+
     return listJT;
 }
 
@@ -354,7 +399,7 @@ export function moonNodePassages(yearStart, yearEnd)
  *      Start year.
  * @param {*} yearEnd
  *      End year. 
- * @returns List of Julian times for new Moons.
+ * @returns List of Julian times (TDT) for new Moons.
  */
 export function moonNewList(yearStart, yearEnd)
 {
@@ -364,7 +409,41 @@ export function moonNewList(yearStart, yearEnd)
 
     for (let k = kStart; k < kEnd; k++)
     {
-        listJT.push(moonNew(k));
+        const JTinitial = moonNew(k);
+
+        // Update initial estimate assuming linear increase in longitude
+        // of the Sun and the Moon until the more accurate New Moon:
+        const JTminute = JTinitial + 1/(24*60);
+
+        const posStart  = moonPositionEcl(JTinitial);
+        const posMinute = moonPositionEcl(JTminute);
+        const osvStart = vsop87("earth", JTinitial);
+        const osvMinute = vsop87("earth", JTminute);
+        const sunStart = vecMul(osvStart.r, -1);
+        const sunMinute = vecMul(osvMinute.r, -1);
+
+        const lonSunStart = atan2d(sunStart[1], sunStart[0]);
+        const lonSunMinute = atan2d(sunMinute[1], sunMinute[0]);
+        const lonMoonStart = atan2d(posStart[1], posStart[0]);
+        const lonMoonMinute = atan2d(posMinute[1], posMinute[0]);
+
+        const diffSun = angleDiff(lonSunMinute, lonSunStart);
+        const diffMoon = angleDiff(lonMoonMinute, lonMoonStart);
+
+        // sunStart + diffSun * numMin = moonStart + diffMoon * numMin
+        // => sunStart - moonStart = numMin * (diffMoon - diffSun)
+        
+        const numMin = angleDiff(lonSunStart, lonMoonStart) / (diffMoon - diffSun);
+
+        const JTnew = JTinitial + numMin / (24*60);
+        //const posNew  = moonPositionEcl(JTnew);
+        //const osvNew = vsop87("earth", JTnew);
+        //const sunNew = vecMul(osvNew.r, -1);
+        //const lonSunNew = atan2d(sunNew[1], sunNew[0]);
+        //const lonMoonNew = atan2d(posNew[1], posNew[0]);
+        //console.log(lonSunNew + " " + lonMoonNew);
+
+        listJT.push(JTnew);
     }
 
     return listJT;
@@ -375,7 +454,7 @@ export function moonNewList(yearStart, yearEnd)
  * 
  * @param {*} k 
  *      Integer k as defined in Chapter 49 of Meeus.
- * @returns Julian time of the new Moon.
+ * @returns Julian time (TDT) of the new Moon.
  */
 export function moonNew(k)
 {
@@ -463,6 +542,13 @@ export function moonNew(k)
     return JDE;
 }
 
+/**
+ * Compute time of passage of the Moon through the node.
+ * 
+ * @param {*} k 
+ *      Variable k in Meeus - Astronomical Algorithms Ch. 51
+ * @returns Julian time TDT of the passage of the Moon through the node.
+ */
 export function moonNodePassage(k) 
 {
     const T = k / 1342.23;
