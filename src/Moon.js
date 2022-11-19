@@ -3,7 +3,6 @@ import {cosd, sind, tand, atan2d, asind, vecDiff, vecMul} from "./MathUtils.js";
 import {coordTodMod, coordModJ2000, coordEqEcl} from "./Frames.js";
 import {vsop87} from "./Vsop87A.js";
 import {angleDiff} from "./Angles.js";
-import { list } from "mocha/lib/reporters/index.js";
 
 // Periodic terms for the longitude and distance of the Moon.
 // The unit is 0.000 001 degree for longitude and 0.001 kilometer for distance.
@@ -359,7 +358,7 @@ export function moonNodePassages(yearStart, yearEnd)
     // List of Julian times.
     const listJT = [];
     // The algorithm follows Meeus - Astronomical Algorithms Ch. 51
-    // for each individual value of k.
+    // to obtain the initial position for each individual value of k.
 
     const kStart = Math.floor((yearStart - 2000.05) * 13.4223);
     const kEnd   = Math.ceil((yearEnd - 2000.05) * 13.4223);
@@ -407,6 +406,9 @@ export function moonNewList(yearStart, yearEnd)
     const kEnd = Math.ceil((yearEnd - 2000) * 12.3685);
     const listJT = [];
 
+    // Approximate light travel time from the Sun to the Earth.
+    const lightTimeJT = 1.495978707e9 / (3e6 * 86400.0);
+
     for (let k = kStart; k < kEnd; k++)
     {
         const JTinitial = moonNew(k);
@@ -417,8 +419,8 @@ export function moonNewList(yearStart, yearEnd)
 
         const posStart  = moonPositionEcl(JTinitial);
         const posMinute = moonPositionEcl(JTminute);
-        const osvStart = vsop87("earth", JTinitial);
-        const osvMinute = vsop87("earth", JTminute);
+        const osvStart = vsop87("earth", JTinitial - lightTimeJT);
+        const osvMinute = vsop87("earth", JTminute - lightTimeJT);
         const sunStart = vecMul(osvStart.r, -1);
         const sunMinute = vecMul(osvMinute.r, -1);
 

@@ -13,6 +13,7 @@ import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 import { moonPositionTod, moonPositionEcl, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
+import { besselianSolar, solarEclipses } from '../src/Eclipses.js';
 
 /**
  * Check floating point value with tolerance.   
@@ -1027,6 +1028,7 @@ describe('Moon', function() {
     describe('newMoonList', function() {
         it ('range', function() {
             const newMoons = moonNewList(2010, 2020);
+            const lightTimeJT = 1.495978707e9 / (3e6 * 86400.0);
 
             for (const JT of newMoons)
             {
@@ -1038,7 +1040,7 @@ describe('Moon', function() {
                 const osvEcl = coordEqEcl(osvJ2000);
                 //console.log(timeGregorian(JT));
 
-                let {r, v} = vsop87('earth', JT);
+                let {r, v} = vsop87('earth', JT - lightTimeJT);
                 const rSun = vecMul(r, -1);
                 const vSun = vecMul(v, -1);
 
@@ -1235,111 +1237,128 @@ describe('Integration', function() {
 });
 
 describe('Eclipses', function() {
-    describe('test', function() {
-        it('Scalar', function() {
-            const nodePassages = moonNodePassages(1960, 2020);
-            const newMoons = moonNewList(1960, 2020);
-            const nodeInclinations = [];
-            const nodeLonRates = [];
-
-            let findClosests = function(arrayIn, JT)
+    describe('solarEclipses', function() {
+        it('List of known Solar Eclipses', function() {
+            let toFixed = function(num)
             {
-                let distMax = 1e10;
-                let value = undefined;
-
-                for (let indItem = 0; indItem < arrayIn.length; indItem++)
-                {
-                    const item = arrayIn[indItem];
-                    const distNew = Math.abs(item - JT);
-
-                    if (distNew < distMax)
-                    {
-                        value = indItem;
-                        distMax = distNew;
-                    }
+                if (num < 10) {
+                    return "0" + num;
                 }
-
-                return value;
+                else 
+                {
+                    return num;
+                }
+            }
+            let toFixedFloat = function(num, fixed)
+            {
+                let str = "";
+                if (num >= 0) {
+                    str = str + " ";
+                }
+                if (Math.abs(num) < 100)
+                {
+                    str = str + " ";
+                }
+                if (Math.abs(num) < 10)
+                {
+                    str = str + " ";
+                }
+                str = str + num.toFixed(fixed);
+                return str;
             }
 
-            for (let JT of nodePassages)
+            const JT = timeJulianTs(new Date("2022-05-15T23:53:20Z")).JT;
+            console.log(JT);
+
+            const expectedEclipses = [
+                {type : "Total",   JTmax : timeJulianTs(new Date("2001-06-21T12:04:46Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2001-12-14T20:53:01Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2002-06-10T23:45:22Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2002-12-04T07:32:16Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2003-05-31T04:09:22Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2003-11-23T22:50:22Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2004-04-19T13:35:05Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2004-10-14T03:00:23Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2005-04-08T20:36:51Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2005-10-03T10:32:47Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2006-03-29T10:12:23Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2006-09-22T11:41:16Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2007-03-19T02:32:57Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2007-09-11T12:32:24Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2008-02-07T03:56:10Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2008-08-01T10:22:12Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2009-01-26T07:59:45Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2009-07-22T02:36:25Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2010-01-15T07:07:39Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2010-07-11T19:34:38Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2011-01-04T08:51:42Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2011-06-01T21:17:18Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2011-07-01T08:39:30Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2011-11-25T06:21:34Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2012-05-20T23:53:54Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2012-11-13T22:12:55Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2013-05-10T00:26:20Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2013-11-03T12:47:36Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2014-04-29T06:04:33Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2014-10-23T21:45:39Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2015-03-20T09:46:47Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2015-09-13T06:55:19Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2016-03-09T01:58:19Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2016-09-01T09:08:02Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2017-02-26T14:54:33Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2017-08-21T18:26:40Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2018-02-15T20:52:33Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2018-07-13T03:02:16Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2018-08-11T09:47:28Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2019-01-06T01:42:38Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2019-07-02T19:24:08Z")).JT},
+                {type : "Annular", JTmax : timeJulianTs(new Date("2019-12-26T05:18:53Z")).JT}
+            ];
+
+            const listEclipses = solarEclipses(2001.1, 2019);
+            
+            for (let indEclipse = 0; indEclipse < listEclipses.length; indEclipse++)
             {
-                const T = (JT - 2451545.0)/36525.0;
-                const nutTerms = nutationTerms(T);
+                const eclipse = listEclipses[indEclipse];
+                //console.log(eclipse);
+                const timeGreg = timeGregorian(eclipse.JTmax);
+                console.log("Computed : " + timeGreg.year + "-" + toFixed(timeGreg.month) + "-" + toFixed(timeGreg.mday) + 
+                "T" + toFixed(timeGreg.hour) + ":" + toFixed(timeGreg.minute)
+                + ":" + toFixed(Math.floor(timeGreg.second)) + " " + eclipse.type);
 
-                const posEcl = moonPositionEcl(JT, nutTerms);
-                const posEcl2 = moonPositionEcl(JT + 1/(24*60), nutTerms);
+                const eclipse2 = expectedEclipses[indEclipse];
+                //console.log(eclipse);
 
-                const rDiff = vecDiff(posEcl2, posEcl);
-                nodeInclinations.push(asind(rDiff[2] / norm(rDiff)));
-                const lonRate = (atan2d(posEcl2[1], posEcl2[0]) -
-                                 atan2d(posEcl[1], posEcl[0])) / 60.0;
-                nodeLonRates.push(lonRate);
-            }
+                const timeErr = 86400 * Math.abs(eclipse.JTmax - eclipse2.JTmax);
 
-            for (let JT of newMoons)
-            {
-                const T = (JT - 2451545.0)/36525.0;
-                const nutTerms = nutationTerms(T);
-                const indClosest = findClosests(nodePassages, JT);
-                const JTclosests = nodePassages[indClosest];
+                const timeGreg2 = timeGregorian(eclipse2.JTmax);
+                console.log("Expected : " + timeGreg2.year + "-" + toFixed(timeGreg2.month) + "-" + toFixed(timeGreg2.mday) + 
+                "T" + toFixed(timeGreg2.hour) + ":" + toFixed(timeGreg2.minute)
+                + ":" + toFixed(Math.floor(timeGreg2.second)) + " " + eclipse2.type + " Error " + timeErr.toFixed(2) + " s");
+                
+                checkFloat(timeErr, 0, 100);
+                console.log("            x          y        sin(d)     cos(d)      mu          l1         l2      tan(f1)     tan(f2)");
 
-                const posEcl = moonPositionEcl(JT, nutTerms);
-
-
-                const beta_m = asind(posEcl[2] / norm(posEcl))
-                const incl = nodeInclinations[indClosest];
-                const lonRate = nodeLonRates[indClosest];
-                const lonRateSun = 360 / (365.256 * 86400.0);
-                const lambda = lonRate / lonRateSun;
-
-                const sigma = beta_m * (lambda - 1) 
-                            / Math.sqrt(Math.pow(lambda - 1, 2) + lambda * lambda * tand(incl) * tand(incl));
-
-                const timeGreg = timeGregorian(JT);
-
-                const osvEarth = vsop87('earth', JT);
-
-                const semiMoon = atand(1737400.0 / norm(posEcl));
-                const semiSun  = atand(696340000 / norm(osvEarth.r));
-                const horiMoon = atand(6371000 / norm(posEcl));
-                const horiSun  = atand(6371000 / norm(osvEarth.r));
-
-                const partialLimit = semiSun + semiMoon + horiMoon - horiSun;
-                const totalLimit   = semiSun - semiMoon + horiMoon - horiSun;
-
-                let toFixed = function(num)
+                for (let deltaHour = -5; deltaHour < 5; deltaHour++)
                 {
-                    if (num < 10) {
-                        return "0" + num;
-                    }
-                    else 
-                    {
-                        return num;
-                    }
-                }
+                    const JTdelta = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
+                        timeGreg.hour + deltaHour, 0, 1);
+                    const bessel = besselianSolar(eclipse, JTdelta.JT);
 
-                if (Math.abs(sigma) < partialLimit)
-                {
-                    let eclipseType = "Partial";
-                    if (Math.abs(sigma) < totalLimit)
-                    {
-                        if (semiSun < semiMoon)
-                        {
-                            eclipseType = "Total";
-                        }
-                        else 
-                        {
-                            eclipseType = "Annular";
-                        }
-                    }
+                    const timeGregDelta = timeGregorian(JTdelta.JT);
 
-                    console.log(timeGreg.year + "-" + toFixed(timeGreg.month) + "-" + toFixed(timeGreg.mday) + 
-                                "T" + toFixed(timeGreg.hour) + ":" + toFixed(timeGreg.minute) + " " + eclipseType);
-                    //console.log(semiMoon + " " + semiSun + " " + horiMoon + " " + horiSun);
+                    console.log(
+                            toFixed(timeGregDelta.hour)
+                    + ":00 " + toFixedFloat(bessel.x, 5)
+                    + " " + toFixedFloat(bessel.y, 5) 
+                    + " " + toFixedFloat(bessel.sin_d, 5) 
+                    + " " + toFixedFloat(bessel.cos_d, 5) 
+                    + " " + toFixedFloat(bessel.mu, 5) 
+                    + " " + toFixedFloat(bessel.l1, 5) 
+                    + " " + toFixedFloat(bessel.l2, 5)
+                    + " " + toFixedFloat(bessel.tan_f1, 6) 
+                    + " " + toFixedFloat(bessel.tan_f2, 6));
                 }
-                // console.log(JT + " " + JTclosests + " " + Math.abs(JT - JTclosests) + " " + sigma);
-                // console.log(asind(osvEcl.r[2] / norm(osvEcl.r)));
             }
         });
     });
