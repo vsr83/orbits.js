@@ -226,7 +226,7 @@ export function besselianSolar(eclipse, JT)
 
     const sunEcl = {r : vecMul(earthEcl.r, -1), v : vecMul(earthEcl.v, -1), JT : JT};
     let sunJ2000 = coordEclEq(sunEcl);
-    sunJ2000.r = aberrationStellarCart(JT, sunJ2000.r);
+    //sunJ2000.r = aberrationStellarCart(JT, sunJ2000.r);
     const sunMoD = coordJ2000Mod(sunJ2000);
     const sunToD = coordModTod(sunMoD);
     
