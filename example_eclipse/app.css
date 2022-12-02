@@ -1,0 +1,93 @@
+/* The sidebar menu */
+
+table, th, td, tr {
+    font-size: 15px;
+}
+
+body 
+{
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.openbutton:hover, .closebutton:hover {
+    background-color: #444;
+  }
+
+#main {
+    position: absolute;
+    top: 0px;
+    transition: margin-left .5s; 
+    padding: 0px;
+}
+
+#container {
+  position: relative;
+  top: 0px;
+  padding: 0px;
+}
+
+#dateText
+{
+    color: #fff;
+    position : absolute;
+    bottom : 20px;
+    left : 20px;
+    z-index : 10;
+    background-color: black;
+    opacity: 1;
+    font-size: 15px;
+    font-family : monospace;
+    padding-left : 20px;
+    padding-right : 20px;
+    /*text-shadow:
+    -1px -1px #000,
+     1px -1px #000,
+    -1px  1px #000,
+     1px  1px #000;*/
+}
+
+#dateContainer
+{
+    width: 750px;
+    color: #fff;
+    position : absolute;
+    bottom : 20px;
+    left : 20px;
+    z-index : 10;
+    background-color: black;
+    opacity: 0.5;
+    font-size: 15px;
+    font-family : monospace;
+    z-index : 5;
+    /*text-shadow:
+    -1px -1px #000,
+     1px -1px #000,
+    -1px  1px #000,
+     1px  1px #000;*/
+}
+
+.container {
+  position: absolute;
+  border: none;
+  outline: none;
+}
+
+#canvasGL {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  width: 720;
+  height: 360;
+  border: none;
+  outline: none;
+}
+
+#canvasJS {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  border: none;
+  outline: none;
+  background-color: transparent;
+}

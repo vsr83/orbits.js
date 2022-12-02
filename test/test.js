@@ -13,7 +13,7 @@ import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 import { moonPositionTod, moonPositionEcl, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
-import { besselianSolar, solarEclipses } from '../src/Eclipses.js';
+import { besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid } from '../src/Eclipses.js';
 
 /**
  * Check floating point value with tolerance.   
@@ -1271,7 +1271,7 @@ describe('Eclipses', function() {
             console.log(JT);
 
             const expectedEclipses = [
-                {type : "Total",   JTmax : timeJulianTs(new Date("2001-06-21T12:04:46Z")).JT},
+                /*{type : "Total",   JTmax : timeJulianTs(new Date("2001-06-21T12:04:46Z")).JT},
                 {type : "Annular", JTmax : timeJulianTs(new Date("2001-12-14T20:53:01Z")).JT},
                 {type : "Annular", JTmax : timeJulianTs(new Date("2002-06-10T23:45:22Z")).JT},
                 {type : "Total",   JTmax : timeJulianTs(new Date("2002-12-04T07:32:16Z")).JT},
@@ -1310,12 +1310,12 @@ describe('Eclipses', function() {
                 {type : "Partial", JTmax : timeJulianTs(new Date("2018-02-15T20:52:33Z")).JT},
                 {type : "Partial", JTmax : timeJulianTs(new Date("2018-07-13T03:02:16Z")).JT},
                 {type : "Partial", JTmax : timeJulianTs(new Date("2018-08-11T09:47:28Z")).JT},
-                {type : "Partial", JTmax : timeJulianTs(new Date("2019-01-06T01:42:38Z")).JT},
+               */ {type : "Partial", JTmax : timeJulianTs(new Date("2019-01-06T01:42:38Z")).JT},
                 {type : "Total",   JTmax : timeJulianTs(new Date("2019-07-02T19:24:08Z")).JT},
                 {type : "Annular", JTmax : timeJulianTs(new Date("2019-12-26T05:18:53Z")).JT}
             ];
 
-            const listEclipses = solarEclipses(2001.1, 2019);
+            const listEclipses = solarEclipses(2019, 2019);
             
             for (let indEclipse = 0; indEclipse < listEclipses.length; indEclipse++)
             {
@@ -1339,25 +1339,95 @@ describe('Eclipses', function() {
                 checkFloat(timeErr, 0, 100);
                 console.log("            x          y        sin(d)     cos(d)      mu          l1         l2      tan(f1)     tan(f2)");
 
-                for (let deltaHour = -5; deltaHour < 5; deltaHour++)
+                const JTstart = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
+                    timeGreg.hour, -5*60, 1);
+                const JTend = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
+                    timeGreg.hour, 5*60, 1);
+    
+                const gridParams = eclipseMagGrid(JTstart.JT, JTend.JT, 5.0/1440.0, 
+                                              0, 360, -90, 90, 5);
+                console.log("Lat limits " + gridParams.latMin + " " + gridParams.latMax);
+                console.log("Lon limits " + gridParams.lonMin + " " + gridParams.lonMax);
+                console.log("JT limits  " + gridParams.JTmin + " " + gridParams.JTmax);
+                const gridData = eclipseMagGrid(gridParams.JTmin - 10/1440, gridParams.JTmax + 10/1440, 1.0/1440.0, 
+                                              gridParams.lonMin-5, gridParams.lonMax+5, 
+                                              gridParams.latMin-5, gridParams.latMax+5, 1);
+
+                console.log(gridData.magArray.length);
+                console.log(gridData.magArray[0].length);
+                for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
+                    //console.log(gridData.magArray[indLat].toString() + "; ...");
+                }
+
+                for (let deltaMinutes = -5*60; deltaMinutes < 5*60; deltaMinutes+=1)
                 {
                     const JTdelta = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
-                        timeGreg.hour + deltaHour, 0, 1);
-                    const bessel = besselianSolar(eclipse, JTdelta.JT);
+                        timeGreg.hour, deltaMinutes, 1);
+                    const bessel = besselianSolarWithDelta(eclipse, JTdelta.JT, 1/1440);
+                    //console.log(bessel);
 
                     const timeGregDelta = timeGregorian(JTdelta.JT);
+                    const centralLine = besselianCentralLine(eclipse, bessel, JTdelta.JT);
 
-                    console.log(
-                            toFixed(timeGregDelta.hour)
-                    + ":00 " + toFixedFloat(bessel.x, 5)
-                    + " " + toFixedFloat(bessel.y, 5) 
-                    + " " + toFixedFloat(bessel.sin_d, 5) 
-                    + " " + toFixedFloat(bessel.cos_d, 5) 
-                    + " " + toFixedFloat(bessel.mu, 5) 
-                    + " " + toFixedFloat(bessel.l1, 5) 
-                    + " " + toFixedFloat(bessel.l2, 5)
-                    + " " + toFixedFloat(bessel.tan_f1, 6) 
-                    + " " + toFixedFloat(bessel.tan_f2, 6));
+                    if (!isNaN(centralLine.zeta))
+                    {                       
+                        const osvFund = {
+                            r : [bessel.x, bessel.y, centralLine.zeta],
+                            v : [0, 0, 0],
+                            JT : JTdelta.JT
+                        };
+                        const osvToD = coordFundTod(osvFund, bessel.a, bessel.d);
+                        const de = 6378137;
+    
+                        osvToD.r = vecMul(osvToD.r, de);
+                        const osvPef = coordTodPef(osvToD);
+                        const osvEfi = coordPefEfi(osvPef, 0, 0);
+                        const wgs84 = coordEfiWgs84(osvEfi.r);
+
+                        console.log(
+                                toFixed(timeGregDelta.hour)
+                        + ":" + toFixed(timeGregDelta.minute) 
+                        + " " + toFixedFloat(bessel.x, 5)
+                        + " " + toFixedFloat(bessel.y, 5) 
+                        + " " + toFixedFloat(bessel.sin_d, 5) 
+                        + " " + toFixedFloat(bessel.cos_d, 5) 
+                        + " " + toFixedFloat(bessel.mu, 5) 
+                        + " " + toFixedFloat(bessel.l1, 5) 
+                        + " " + toFixedFloat(bessel.l2, 5)
+                        + " " + toFixedFloat(bessel.tan_f1, 6) 
+                        + " " + toFixedFloat(bessel.tan_f2, 6) 
+                        + " " + toFixedFloat(centralLine.zeta, 6)
+                        + " " + toFixedFloat(wgs84.lat, 2)
+                        + " " + toFixedFloat(wgs84.lon, 2)
+                        + " " + toFixedFloat(wgs84.h, 2)
+                        );
+                    }
+                    const points = besselianRiseSet(bessel);
+
+                    let latMax = -90;
+                    let latMin = 90;
+
+                    if (points.length > 0)
+                    {
+                        const de = 6378137;
+                        const osvFund2 = {r: [points[0][0], points[0][1], 0], v : [0, 0, 0], JT : JTdelta.JT};
+                        const osvToD2 = coordFundTod(osvFund2, bessel.a, bessel.d);
+                        osvToD2.r = vecMul(osvToD2.r, de);
+                        const osvPef2 = coordTodPef(osvToD2);
+                        const osvEfi2 = coordPefEfi(osvPef2, 0, 0);
+                        const wgs842 = coordEfiWgs84(osvEfi2.r);
+
+                        const osvFund3 = {r: [points[1][0], points[1][1], 0], v : [0, 0, 0], JT : JTdelta.JT};
+                        const osvToD3 = coordFundTod(osvFund3, bessel.a, bessel.d);
+                        osvToD3.r = vecMul(osvToD3.r, de);
+                        const osvPef3 = coordTodPef(osvToD3);
+                        const osvEfi3 = coordPefEfi(osvPef3, 0, 0);
+                        const wgs843 = coordEfiWgs84(osvEfi3.r);
+
+                        //console.log("AA " + wgs842.lon + " " + wgs842.lat);
+                        //console.log("AB " + wgs843.lon + " " + wgs843.lat);
+                        //console.log("AB " + points[1][0] + " " + points[1][1]);
+                    }
                 }
             }
         });
