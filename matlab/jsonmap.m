@@ -850,4 +850,39 @@ ylim([-90, 90]);
 
 plot(curve1(:, 1), curve1(:, 2), 'b.')
 plot(curve2(:, 1), curve2(:, 2), 'b.')
+
+
+[XX, YY] = meshgrid(25:0.25:179, -37:0.25:69);
+[C1, h1] = contour(XX, YY, data_der1, [0 0], 'r');
+[C2, h2] = contour(XX, YY, data_der2, [0 0], 'r');
+[C3, h3] = contour(XX, YY, data_der3, [0 0], 'r');
+[C4, h4] = contour(XX, YY, data_der4, [0 0], 'r');
+[C5, h5] = contour(XX, YY, data_der5, [0 0], 'r');
+[C6, h6] = contour(XX, YY, data_der6, [0 0], 'r');
+[C7, h7] = contour(XX, YY, data_der7, [0 0], 'r');
+[C8, h8] = contour(XX, YY, data_der8, [0 0], 'r');
+
+ht2 = clabel(C2, 0.0);
+ht3 = clabel(C3, 0.0);
+ht4 = clabel(C4, 0.0);
+ht5 = clabel(C5, 0.0);
+ht6 = clabel(C6, 0.0);
+ht7 = clabel(C7, 0.0);
+ht8 = clabel(C8, 0.0);
+ht2(2).String = "3:30 UT";
+ht3(2).String = "4:00 UT";
+ht4(2).String = "4:30 UT";
+ht5(2).String = "5:00 UT";
+ht6(2).String = "5:30 UT";
+ht7(2).String = "6:00 UT";
+ht8(2).String = "6:30 UT";
+
+contour(XX, YY, data, [0.001, 0.2, 0.4, 0.6, 0.8], 'LineWidth', 2);
+contourf(XX, YY, data_umbra, [1, 1], 'LineStyle', 'none');
 plot(path(:, 2), path(:, 1), 'b', 'LineWidth', 2);
+
+
+num_lines = size(contour_mag0);
+for ind_line = 1:num_lines
+    plot([contour_mag0(ind_line, 2), contour_mag0(ind_line, 4)], [contour_mag0(ind_line, 1), contour_mag0(ind_line, 3)], 'k');
+end

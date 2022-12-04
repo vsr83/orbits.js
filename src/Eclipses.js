@@ -486,9 +486,9 @@ function limitsIteration(a_dot, b_dot, c_dot, d, d_dot, mu_dot, tan_f, zeta)
  *     Position of the Sun in ENU frame.
  * @param {*} rEnuMoon 
  *     Position of the Moon in ENU frame.
- * @returns Magnitude of the Eclipse.
+ * @returns Magnitude of the Eclipse and whether the point is in umbra.
  */
-export function eclipseMagnitude(rEnuSun, rEnuMoon) 
+export function eclipseMagnitude(rEnuSun, rEnuMoon, signed) 
 {
     // Radius of the Moon.
     const rMoon = 1737400;
@@ -500,37 +500,75 @@ export function eclipseMagnitude(rEnuSun, rEnuMoon)
     const angularDiamMoon = 2.0 * atand(rMoon / norm(rEnuMoon));
     // Angular distance between the Moon and the Sun.
     const angularDistance = acosd(dot(rEnuSun, rEnuMoon) / (norm(rEnuSun) * norm(rEnuMoon)));
+    // Altitude of the Sun.
+    const sunAltitude = asind(rEnuSun[2] / norm(rEnuSun));
 
     // console.log(angularDiamSun + " " + angularDiamMoon + " " + angularDistance);
-
-    const sunAltitude = asind(rEnuSun[2] / norm(rEnuSun));
 
     // Magnitude is zero when the Sun is below horizon.
     if (sunAltitude < - 0.5 * angularDiamSun)
     {
-        return 0;
+        return {mag : 0.0, inUmbra : false};
     }
 
     if (angularDistance < 0.5 * Math.abs(angularDiamSun - angularDiamMoon))
     {
         // Moon is entirely inside the Sun (Annular Eclipse) or the Sun 
         // is entirely inside the Moon (Total Eclipse).
-        return angularDiamMoon / angularDiamSun;
+
+        return {mag : angularDiamMoon / angularDiamSun, inUmbra : true};
     }
     else if (angularDistance > 0.5 * (angularDiamSun + angularDiamMoon))
     {
         // Moon is entirely outside the Sun.
-        //return ((-angularDistance + 0.5 * (angularDiamSun + angularDiamMoon))
-        //        / angularDiamSun);
-        return 0;
+        if (signed)
+        {
+            return {mag : ((-angularDistance + 0.5 * (angularDiamSun + angularDiamMoon))
+                    / angularDiamSun), inUmbra : false};
+        }
+        return {mag : 0.0, inUmbra : false};
     }
     else 
     {
         // Moon boundary intersects Sun boundary.
         const moonDiamOut = angularDistance + 0.5 * (angularDiamMoon - angularDiamSun);
         const moonDiamIn = angularDiamMoon - moonDiamOut;
-        return moonDiamIn / angularDiamSun;
+
+        return {mag : moonDiamIn / angularDiamSun, inUmbra : false};
     }
+}
+
+function computeOsvSunEfi(JT, nutParams)
+{
+    const lightTimeJT = 1.495978707e8 / (3e5 * 86400.0);
+    // Position of the Earth in the Heliocentric Ecliptic frame:
+    const osvEarth = vsop87('earth', JT - lightTimeJT);
+    // Position of the Sun in the Geocentric Ecliptic frame.
+    osvEarth.JT = JT;
+    const osvSunEcl = {
+        r : vecMul(osvEarth.r, -1), 
+        v : vecMul(osvEarth.v, -1), 
+        JT : osvEarth.JT
+    };
+
+    // Transform the positions of the Sun and the Moon to the EFI frame:
+    const osvSunJ2000 = coordEclEq(osvSunEcl);
+    const osvSunMod = coordJ2000Mod(osvSunJ2000);
+    const osvSunTod = coordModTod(osvSunMod, nutParams);
+    const osvSunPef = coordTodPef(osvSunTod);
+    const osvSunEfi = coordPefEfi(osvSunPef, 0, 0);
+
+    return osvSunEfi;
+}
+
+function computeOsvMoonEfi(JT)
+{
+    // Position of the Moon in the ToD frame.
+    let moonPosToD = moonPositionTod(JT);
+    const osvMoonPef = coordTodPef({r : moonPosToD, v : [0, 0, 0], JT : JT});
+    const osvMoonEfi = coordPefEfi(osvMoonPef, 0, 0);
+
+    return osvMoonEfi;
 }
 
 /**
@@ -572,17 +610,21 @@ export function eclipseMagGrid(JTstart, JTend, JTstep, lonStart, lonEnd, latStar
 
     // Compute nutation parameters at the center of the time range.
     const JTnutation = 0.5 * (JTstart + JTend);
-    const nutParams = nutationTerms(JTnutation);
+    const T = (JTnutation - 2451545.0) / 36525.0;
+    const nutParams = nutationTerms(T);
 
     // Initialize the array.
     const magArray = [];
+    const inUmbraArray = [];
     for (let indLat = 0; indLat < numLat; indLat++)
     {
         magArray[indLat] = [];
+        inUmbraArray[indLat] = [];
 
         for (let indLon = 0; indLon < numLon; indLon++)
         {
             magArray[indLat][indLon] = -Infinity;
+            inUmbraArray[indLat][indLon] = 0.0;
         }
     }
 
@@ -598,26 +640,8 @@ export function eclipseMagGrid(JTstart, JTend, JTstep, lonStart, lonEnd, latStar
     // Compute the grid values:
     for (let JT = JTstart; JT <= JTend; JT += JTstep)
     {
-        // Position of the Earth in the Heliocentric Ecliptic frame:
-        const osvEarth = vsop87('earth', JT - lightTimeJT);
-        // Position of the Moon in the ToD frame.
-        let moonPosToD = moonPositionTod(JT);
-        // Position of the Sun in the Geocentric Ecliptic frame.
-        osvEarth.JT = JT;
-        const osvSunEcl = {
-            r : vecMul(osvEarth.r, -1), 
-            v : vecMul(osvEarth.v, -1), 
-            JT : osvEarth.JT
-        };
-
-        // Transform the positions of the Sun and the Moon to the EFI frame:
-        const osvSunJ2000 = coordEclEq(osvSunEcl);
-        const osvSunMod = coordJ2000Mod(osvSunJ2000);
-        const osvSunTod = coordModTod(osvSunMod);
-        const osvSunPef = coordTodPef(osvSunTod);
-        const osvSunEfi = coordPefEfi(osvSunPef, 0, 0);
-        const osvMoonPef = coordTodPef({r : moonPosToD, v : [0, 0, 0], JT : JT});
-        const osvMoonEfi = coordPefEfi(osvMoonPef, 0, 0);
+        const osvSunEfi = computeOsvSunEfi(JT, nutParams);
+        const osvMoonEfi = computeOsvMoonEfi(JT);
 
         // Compute value for each point of the grid:
         for (let indLat = 0; indLat < numLat; indLat++)
@@ -631,9 +655,15 @@ export function eclipseMagGrid(JTstart, JTend, JTstep, lonStart, lonEnd, latStar
                 const osvMoonEnu = coordEfiEnu(osvMoonEfi, lat, lon, 0);
                 const osvSunEnu = coordEfiEnu(osvSunEfi, lat, lon, 0);
 
-                const mag = eclipseMagnitude(osvSunEnu.r, osvMoonEnu.r);
+                const {mag, inUmbra} = eclipseMagnitude(osvSunEnu.r, osvMoonEnu.r, false);
                 
                 magArray[indLat][indLon] = Math.max(magArray[indLat][indLon], mag);
+
+                if (inUmbra)
+                {
+                    inUmbraArray[indLat][indLon] = 1.0;
+                }
+
                 if (mag > 0)
                 {
                     JTmax = Math.max(JTmax, JT);
@@ -663,6 +693,7 @@ export function eclipseMagGrid(JTstart, JTend, JTstep, lonStart, lonEnd, latStar
     }
 
     return {magArray : magArray, 
+            inUmbraArray : inUmbraArray,
             latMin : latMin, 
             latMax : latMax, 
             lonMin : lonMin, 
@@ -670,6 +701,203 @@ export function eclipseMagGrid(JTstart, JTend, JTstep, lonStart, lonEnd, latStar
             JTmax : JTmax, 
             JTmin : JTmin};
 }
+
+export function createContours(lonStart, lonEnd, latStart, latEnd, lonLatStep, gridArray, values, values_skip)
+{
+    // Handle cases where the grid intersects the zero-degree boundary.
+    if (lonStart > lonEnd)
+    {
+        lonEnd += 360;
+    }
+    if (latStart > latEnd)
+    {
+        latEnd += 360;
+    }
+
+    // Number of longitude and latitude steps.
+    const numLon = Math.floor((lonEnd - lonStart) / lonLatStep) + 1;
+    const numLat = Math.floor((latEnd - latStart) / lonLatStep) + 1;
+
+    const contours = [];
+
+    // Note that it is assumed here that the first and last values w.r.t. 
+    // longitude and latitude are equal in the case that the values go 
+    // through the entire 360/180 range.
+
+    for (let indValue = 0; indValue < values.length; indValue++)
+    {
+        contours[values[indValue]] = [];
+    }
+
+    // Compute value for each point of the grid:
+    for (let indLat = 0; indLat < numLat - 1; indLat++)
+    {
+        const lat = latStart + indLat * lonLatStep;
+
+        for (let indLon = 0; indLon < numLon - 1; indLon++)
+        {
+            const lon = lonStart + indLon * lonLatStep;
+
+            const value_00 = gridArray[indLat][indLon]; 
+            const value_01 = gridArray[indLat][indLon + 1]; 
+            const value_11 = gridArray[indLat + 1][indLon + 1]; 
+            const value_10 = gridArray[indLat + 1][indLon];
+
+            const latTop = lat + lonLatStep;
+            const lonRight = lon + lonLatStep;
+
+            for (let indValue = 0; indValue < values.length; indValue++)
+            {
+                const value = values[indValue];
+
+                // 10 -------- 11
+                //  |          |
+                //  |          |
+                // 00 -------- 01
+                // Values at the corners of the rectangle.
+
+                const grid_00 = value_00 - value;
+                const grid_01 = value_01 - value;
+                const grid_11 = value_11 - value;
+                const grid_10 = value_10 - value;
+
+                const points = [];
+                if (Math.sign(grid_00) != Math.sign(grid_01) && 
+                   !values_skip.includes(value_00) && 
+                   !values_skip.includes(value_01))
+                {
+                    // Value intersects the top line.
+                    // grid_00 + lonDelta * (grid_01 - grid_00) / lonStep = 0
+                    // => -grid_00 * lonStep = lonDelta * (grid_01 - grid_00)
+                    // lonDelta = -grid_00 * lonStep / (grid_01 - grid_00)
+                    const lonZero = lon - grid_00 * lonLatStep / (grid_01 - grid_00);
+
+                    points.push([lat, lonZero]);
+                }
+                if (Math.sign(grid_00) != Math.sign(grid_10) && 
+                   !values_skip.includes(value_00) && 
+                   !values_skip.includes(value_10))
+                {
+                    const latZero = lat - grid_00 * lonLatStep / (grid_10 - grid_00);
+                    points.push([latZero, lon]);
+                }
+                if (Math.sign(grid_10) != Math.sign(grid_11) && 
+                   !values_skip.includes(value_10) && 
+                   !values_skip.includes(value_11))
+                {
+                    const lonZero = lon - grid_10 * lonLatStep / (grid_11 - grid_10);
+                    points.push([latTop, lonZero]);
+                }
+                if (Math.sign(grid_01) != Math.sign(grid_11) && 
+                   !values_skip.includes(value_01) && 
+                   !values_skip.includes(value_11))
+                {
+                    const latZero = lat - grid_01 * lonLatStep / (grid_11 - grid_01);
+                    points.push([latZero, lonRight]);
+                }
+
+                if (points.length == 2)
+                {
+                    contours[value].push(points);
+                }
+            }
+        }
+    }
+
+    return contours;
+}
+
+
+/**
+ * Compute time derivative of the eclipse magnitude on a grid.
+ * 
+ * @param {*} JT
+ *      Julian Time.
+ * @param {*} lonStart 
+ *      Longitude start (deg).
+ * @param {*} lonEnd 
+ *      Longitude end (deg).
+ * @param {*} latStart
+ *      Latitude start (deg). 
+ * @param {*} latEnd 
+ *      Latitude end (deg).
+ * @param {*} lonLatStep 
+ *      Latitude/Longitude step (deg).
+ * @returns Grid of maximum magnitudes.
+ */
+export function eclipseMagDerGrid(JT, lonStart, lonEnd, latStart, latEnd, lonLatStep)
+{
+    // Handle cases where the grid intersects the zero-degree boundary.
+    if (lonStart > lonEnd)
+    {
+        lonEnd += 360;
+    }
+    if (latStart > latEnd)
+    {
+        latEnd += 360;
+    }
+ 
+    // Number of longitude and latitude steps.
+    const numLon = Math.floor((lonEnd - lonStart) / lonLatStep) + 1;
+    const numLat = Math.floor((latEnd - latStart) / lonLatStep) + 1;
+
+    // Compute nutation parameters at the center of the time range.
+    const T = (JT - 2451545.0) / 36525.0;
+    const nutParams = nutationTerms(T);
+
+    // Initialize the array.
+    const magDerArray = [];
+    for (let indLat = 0; indLat < numLat; indLat++)
+    {
+        magDerArray[indLat] = [];
+
+        for (let indLon = 0; indLon < numLon; indLon++)
+        {
+            magDerArray[indLat][indLon] = 0.0;
+        }
+    }
+
+    const lightTimeJT = 1.495978707e8 / (3e5 * 86400.0);
+
+    // Use 1 minute timestep in evaluation of the time derivative.
+    const JTdelta = 1.0/1440.0;
+
+    const osvSunEfiMinus = computeOsvSunEfi(JT - JTdelta, nutParams);
+    const osvMoonEfiMinus = computeOsvMoonEfi(JT - JTdelta);
+    const osvSunEfiPlus = computeOsvSunEfi(JT + JTdelta, nutParams);
+    const osvMoonEfiPlus = computeOsvMoonEfi(JT + JTdelta);
+
+    // Compute value for each point of the grid:
+    for (let indLat = 0; indLat < numLat; indLat++)
+    {
+        const lat = latStart + indLat * lonLatStep;
+
+        for (let indLon = 0; indLon < numLon; indLon++)
+        {
+            const lon = lonStart + indLon * lonLatStep;
+
+            const osvMoonEnuMinus = coordEfiEnu(osvMoonEfiMinus, lat, lon, 0);
+            const osvSunEnuMinus = coordEfiEnu(osvSunEfiMinus, lat, lon, 0);
+            const osvMoonEnuPlus = coordEfiEnu(osvMoonEfiPlus, lat, lon, 0);
+            const osvSunEnuPlus = coordEfiEnu(osvSunEfiPlus, lat, lon, 0);
+
+            const magMinus = eclipseMagnitude(osvSunEnuMinus.r, osvMoonEnuMinus.r, true).mag;
+            const magPlus = eclipseMagnitude(osvSunEnuPlus.r, osvMoonEnuPlus.r, true).mag;
+
+            if (magPlus > 0.0 && magMinus > 0.0)
+            {
+                magDerArray[indLat][indLon] = (magPlus - magMinus) / (2.0 * JTdelta);
+            }
+            else 
+            {
+                magDerArray[indLat][indLon] = 100.0;
+            }
+        }
+    }
+  
+    return magDerArray;
+}
+ 
 
 /**
  * Compute curves for the North-South limits of the umbra and penumbra.

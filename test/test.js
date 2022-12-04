@@ -13,7 +13,7 @@ import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
 import { moonPositionTod, moonPositionEcl, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
-import { besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid } from '../src/Eclipses.js';
+import {createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid } from '../src/Eclipses.js';
 
 /**
  * Check floating point value with tolerance.   
@@ -1317,7 +1317,7 @@ describe('Eclipses', function() {
 
             const listEclipses = solarEclipses(2019, 2019);
             
-            for (let indEclipse = 0; indEclipse < listEclipses.length; indEclipse++)
+            for (let indEclipse = 2; indEclipse < listEclipses.length; indEclipse++)
             {
                 const eclipse = listEclipses[indEclipse];
                 //console.log(eclipse);
@@ -1345,18 +1345,131 @@ describe('Eclipses', function() {
                     timeGreg.hour, 5*60, 1);
     
                 const gridParams = eclipseMagGrid(JTstart.JT, JTend.JT, 5.0/1440.0, 
-                                              0, 360, -90, 90, 5);
+                                              0, 360, -90, 90, 2.0);
                 console.log("Lat limits " + gridParams.latMin + " " + gridParams.latMax);
                 console.log("Lon limits " + gridParams.lonMin + " " + gridParams.lonMax);
                 console.log("JT limits  " + gridParams.JTmin + " " + gridParams.JTmax);
                 const gridData = eclipseMagGrid(gridParams.JTmin - 10/1440, gridParams.JTmax + 10/1440, 1.0/1440.0, 
                                               gridParams.lonMin-5, gridParams.lonMax+5, 
-                                              gridParams.latMin-5, gridParams.latMax+5, 1);
-
+                                              gridParams.latMin-5, gridParams.latMax+5, 0.25);
                 console.log(gridData.magArray.length);
                 console.log(gridData.magArray[0].length);
+
+                const timeGregMin = timeGregorian(gridParams.JTmin);
+                const timeGregMax = timeGregorian(gridParams.JTmax);
+                const derJTmin = timeJulianYmdhms(timeGregMin.year, timeGregMin.month, timeGregMin.mday, 
+                    timeGregMin.hour + 1, 0, 0).JT;
+                const derJTmax = timeJulianYmdhms(timeGregMax.year, timeGregMax.month, timeGregMax.mday, 
+                    timeGregMax.hour - 1, 0, 0).JT;
+
+                const contoursMag = createContours(gridParams.lonMin-5, gridParams.lonMax+5, 
+                    gridParams.latMin-5, gridParams.latMax+5, 0.25, gridData.magArray, [0.001, 0.2, 0.4, 0.6, 0.8], [100.0]);
+
+                for (let indValues = 0; indValues < Object.keys(contoursMag).length; indValues++)
+                {
+                    const value = Object.keys(contoursMag)[indValues];
+                    console.log("contour_mag" + indValues + " = [...");
+                    for (let indLine = 0; indLine < contoursMag[value].length; indLine++)
+                    {
+                        if (indLine < contoursMag[value].length - 1)
+                        {
+                            console.log(contoursMag[value][indLine].toString() + "; ...");
+                        }
+                        else 
+                        {
+                            console.log(contoursMag[value][indLine].toString() + "];");
+                        }
+                    }
+                }
+    
+                console.log(derJTmin + " " + derJTmax);
+                let ind_curve = 0;
+                for (let derJT = derJTmin; derJT <= derJTmax; derJT += 1/48)
+                {
+                    ind_curve++;
+                    const derGreg = timeGregorian(derJT);
+                    //console.log(derGreg);
+
+                    const gridDataDer = eclipseMagDerGrid(derJT, 
+                        gridParams.lonMin-5, gridParams.lonMax+5, 
+                        gridParams.latMin-5, gridParams.latMax+5, 0.25);
+                    const contours = createContours(gridParams.lonMin-5, gridParams.lonMax+5, 
+                        gridParams.latMin-5, gridParams.latMax+5, 0.25, gridDataDer, [0.0], [100.0]);
+
+                    /*console.log("contours_" + ind_curve + " = [...");
+                    for (let indLine = 0; indLine < contours[0].length; indLine++)
+                    {
+                        if (indLine < contours[0].length - 1)
+                        {
+                            console.log(contours[0][indLine].toString() + "; ...");
+                        }
+                        else 
+                        {
+                            console.log(contours[0][indLine].toString() + "];");
+                        }
+                    }*/
+
+                    /*
+                    for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
+                        //console.log(gridData.magArray[indLat].toString() + "; ...");
+                        //console.log(gridData.inUmbraArray[indLat].toString() + "; ...");
+                        if (indLat == 0)
+                        {
+                            console.log("data_der" + ind_curve + " = [" + gridDataDer[indLat].toString() + "; ...");
+                        }
+                        else if (indLat == gridData.magArray.length - 1)
+                        {
+                            console.log(gridDataDer[indLat].toString() + "];");
+                        }
+                        else 
+                        {
+                            console.log(gridDataDer[indLat].toString() + "; ...");
+                        }
+                    }
+                    console.log("data_der" + ind_curve + "(find(data_der" + ind_curve + " == 100)) = NaN;");
+                    */
+                }
+
+                /*
+
+                for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
+                    if (indLat == 0)
+                    {
+                        console.log("data = [" + gridData.magArray[indLat].toString() + "; ...");
+                    }
+                    else if (indLat == gridData.magArray.length - 1)
+                    {
+                        console.log(gridData.magArray[indLat].toString() + "];");
+                    }
+                    else 
+                    {
+                        console.log(gridData.magArray[indLat].toString() + "; ...");
+                    }
+                }
+                */
+
+                /*
+                for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
+                    if (indLat == 0)
+                    {
+                        console.log("data_umbra = [" + gridData.inUmbraArray[indLat].toString() + "; ...");
+                    }
+                    else if (indLat == gridData.magArray.length - 1)
+                    {
+                        console.log(gridData.inUmbraArray[indLat].toString() + "];");
+                    }
+                    else 
+                    {
+                        console.log(gridData.inUmbraArray[indLat].toString() + "; ...");
+                    }
+                }*/
+
+
+
                 for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
                     //console.log(gridData.magArray[indLat].toString() + "; ...");
+                    //console.log(gridData.inUmbraArray[indLat].toString() + "; ...");
+                    //console.log(gridDataDer[indLat].toString() + "; ...");
                 }
 
                 for (let deltaMinutes = -5*60; deltaMinutes < 5*60; deltaMinutes+=1)
@@ -1403,9 +1516,6 @@ describe('Eclipses', function() {
                         );
                     }
                     const points = besselianRiseSet(bessel);
-
-                    let latMax = -90;
-                    let latMin = 90;
 
                     if (points.length > 0)
                     {

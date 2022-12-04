@@ -134,12 +134,13 @@ highp float dotp(in highp vec3 v1, in highp vec3 v2)
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 }
 
-float eclipseMagnitude(in vec3 rEnuSun, in vec3 rEnuMoon)
+vec2 eclipseMagnitude(in vec3 rEnuSun, in vec3 rEnuMoon)
 {
     // Angular diameter of the Sun.
     float angularDiamSun  = 2.0 * atand((R_SUN) / (length(rEnuSun)));
     // Angular diameter of the Moon.
     float angularDiamMoon = 2.0 * atand((R_MOON) / (length(rEnuMoon)));
+    //return vec2(angularDiamMoon/angularDiamSun, 0.0);
 
     //float foo = length(rEnuMoon);
 
@@ -151,39 +152,39 @@ float eclipseMagnitude(in vec3 rEnuSun, in vec3 rEnuMoon)
     highp float elMoon = acosd(rEnuMoon.z / length(rEnuMoon));
 
     // Angular distance between the Moon and the Sun.
-    float angularDistance = acosd(cosd(elSun)*cosd(elMoon) 
+    highp float angularDistance = acosd(cosd(elSun)*cosd(elMoon) 
                     + sind(elSun)*sind(elMoon)*cosd(azSun - azMoon));
 
-    float sunAltitude = asind(rEnuSun.z / length(rEnuSun));
+    highp float sunAltitude = asind(rEnuSun.z / length(rEnuSun));
 
     // Magnitude is zero when the Sun is below horizon.
     if (sunAltitude < - 0.5 * angularDiamSun)
     {
-        return 0.0;
+        return vec2(0.0, 0.0);
     }
 
     if (angularDistance < 0.5 * abs(angularDiamSun - angularDiamMoon))
     {
         // Moon is entirely inside the Sun (Annular Eclipse) or the Sun 
         // is entirely inside the Moon (Total Eclipse).
-        return angularDiamMoon / angularDiamSun;
+        return vec2(0.0*angularDiamMoon / angularDiamSun, 1.0);
     }
     else if (angularDistance > 0.5 * (angularDiamSun + angularDiamMoon))
     {
         // Moon is entirely outside the Sun.
         //return ((-angularDistance + 0.5 * (angularDiamSun + angularDiamMoon))
         //        / angularDiamSun);
-        return 0.0;
+        return vec2(0.0, 0.0);
     }
     else 
     {
         // Moon boundary intersects Sun boundary.
         float moonDiamOut = angularDistance + 0.5 * (angularDiamMoon - angularDiamSun);
         float moonDiamIn = angularDiamMoon - moonDiamOut;
-        return moonDiamIn / angularDiamSun;
+        return vec2(moonDiamIn / angularDiamSun, 0.0);
     }
 
-    return 0.5;
+    return vec2(0.5, 0.0);
 }
 
 
@@ -199,6 +200,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 vecsum = vec3(0.0, 0.0, 0.0);
 
     highp float magMax = 0.0;
+    highp float totMax = 0.0;
     for (int j = 0; j < NUM_TIMESTEPS; j++)
     {
         highp vec3 rEfiMoon = u_moonPosition[j];
@@ -206,15 +208,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         highp vec3 rEnuMoon = coordEfiEnu(rEfiMoon, latitude, longitude, 0.0);
         highp vec3 rEnuSun  = coordEfiEnu(rEfiSun, latitude, longitude, 0.0);
 
-        float mag = eclipseMagnitude(rEnuSun, rEnuMoon);
+        vec2 mag = eclipseMagnitude(rEnuSun, rEnuMoon);
 
-        magMax = max(magMax, mag);
+        magMax = max(magMax, mag.x);
+        totMax = max(totMax, mag.y);
     }
 
     float byte1 = floor(magMax * 128.0);
     float byte2 = floor((magMax - byte1/128.0) * 32768.0);
 
-    fragColor = vec4(byte1/256.0, byte2/256.0, magMax, 1.0);
+    fragColor = vec4(byte1/256.0, byte2/256.0, totMax, 1.0);
 }
 
 void main() 
