@@ -538,7 +538,7 @@ export function eclipseMagnitude(rEnuSun, rEnuMoon, signed)
     }
 }
 
-function computeOsvSunEfi(JT, nutParams)
+export function computeOsvSunEfi(JT, nutParams)
 {
     const lightTimeJT = 1.495978707e8 / (3e5 * 86400.0);
     // Position of the Earth in the Heliocentric Ecliptic frame:
@@ -561,7 +561,7 @@ function computeOsvSunEfi(JT, nutParams)
     return osvSunEfi;
 }
 
-function computeOsvMoonEfi(JT)
+export function computeOsvMoonEfi(JT)
 {
     // Position of the Moon in the ToD frame.
     let moonPosToD = moonPositionTod(JT);
@@ -750,10 +750,11 @@ export function createContours(lonStart, lonEnd, latStart, latEnd, lonLatStep, g
             {
                 const value = values[indValue];
 
-                // 10 -------- 11
-                //  |          |
-                //  |          |
-                // 00 -------- 01
+                // latTop 10 -------- 11
+                //         |          |
+                //         |          |
+                // lat -- 00 -------- 01
+                //        lon       lonRight
                 // Values at the corners of the rectangle.
 
                 const grid_00 = value_00 - value;

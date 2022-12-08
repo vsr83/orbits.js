@@ -337,7 +337,8 @@ function moonSigmaTerms(D, Ms, Mm, F, T)
 
     const rTod = moonPositionTod(JT, nutTerms);
     const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
-    const osvJ2000 = coordModJ2000(osvMod, nutTerms);
+    //const osvMod = {r : rTod, v : [0, 0, 0], JT : JT};
+    const osvJ2000 = coordModJ2000(osvMod);
     const osvEcl = coordEqEcl(osvJ2000);
 
     return osvEcl.r;

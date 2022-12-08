@@ -1271,7 +1271,7 @@ describe('Eclipses', function() {
             console.log(JT);
 
             const expectedEclipses = [
-                /*{type : "Total",   JTmax : timeJulianTs(new Date("2001-06-21T12:04:46Z")).JT},
+                {type : "Total",   JTmax : timeJulianTs(new Date("2001-06-21T12:04:46Z")).JT},
                 {type : "Annular", JTmax : timeJulianTs(new Date("2001-12-14T20:53:01Z")).JT},
                 {type : "Annular", JTmax : timeJulianTs(new Date("2002-06-10T23:45:22Z")).JT},
                 {type : "Total",   JTmax : timeJulianTs(new Date("2002-12-04T07:32:16Z")).JT},
@@ -1310,14 +1310,14 @@ describe('Eclipses', function() {
                 {type : "Partial", JTmax : timeJulianTs(new Date("2018-02-15T20:52:33Z")).JT},
                 {type : "Partial", JTmax : timeJulianTs(new Date("2018-07-13T03:02:16Z")).JT},
                 {type : "Partial", JTmax : timeJulianTs(new Date("2018-08-11T09:47:28Z")).JT},
-               */ {type : "Partial", JTmax : timeJulianTs(new Date("2019-01-06T01:42:38Z")).JT},
+                {type : "Partial", JTmax : timeJulianTs(new Date("2019-01-06T01:42:38Z")).JT},
                 {type : "Total",   JTmax : timeJulianTs(new Date("2019-07-02T19:24:08Z")).JT},
                 {type : "Annular", JTmax : timeJulianTs(new Date("2019-12-26T05:18:53Z")).JT}
             ];
 
-            const listEclipses = solarEclipses(2019, 2019);
+            const listEclipses = solarEclipses(2001.1, 2019);
             
-            for (let indEclipse = 2; indEclipse < listEclipses.length; indEclipse++)
+            for (let indEclipse = 0; indEclipse < listEclipses.length; indEclipse++)
             {
                 const eclipse = listEclipses[indEclipse];
                 //console.log(eclipse);
@@ -1336,6 +1336,7 @@ describe('Eclipses', function() {
                 "T" + toFixed(timeGreg2.hour) + ":" + toFixed(timeGreg2.minute)
                 + ":" + toFixed(Math.floor(timeGreg2.second)) + " " + eclipse2.type + " Error " + timeErr.toFixed(2) + " s");
                 
+                /*
                 checkFloat(timeErr, 0, 100);
                 console.log("            x          y        sin(d)     cos(d)      mu          l1         l2      tan(f1)     tan(f2)");
 
@@ -1381,7 +1382,9 @@ describe('Eclipses', function() {
                         }
                     }
                 }
-    
+
+                */
+                /*
                 console.log(derJTmin + " " + derJTmax);
                 let ind_curve = 0;
                 for (let derJT = derJTmin; derJT <= derJTmax; derJT += 1/48)
@@ -1396,7 +1399,7 @@ describe('Eclipses', function() {
                     const contours = createContours(gridParams.lonMin-5, gridParams.lonMax+5, 
                         gridParams.latMin-5, gridParams.latMax+5, 0.25, gridDataDer, [0.0], [100.0]);
 
-                    /*console.log("contours_" + ind_curve + " = [...");
+                    console.log("contours_" + ind_curve + " = [...");
                     for (let indLine = 0; indLine < contours[0].length; indLine++)
                     {
                         if (indLine < contours[0].length - 1)
@@ -1464,7 +1467,7 @@ describe('Eclipses', function() {
                     }
                 }*/
 
-
+                /*
 
                 for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
                     //console.log(gridData.magArray[indLat].toString() + "; ...");
@@ -1538,8 +1541,8 @@ describe('Eclipses', function() {
                         //console.log("AB " + wgs843.lon + " " + wgs843.lat);
                         //console.log("AB " + points[1][0] + " " + points[1][1]);
                     }
-                }
-            }
+                }*/
+            
         });
     });
 });

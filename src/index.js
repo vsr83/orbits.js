@@ -13,7 +13,7 @@ import {aberrationStellarSph, aberrationStellarCart} from './Aberration.js';
 import {moonPositionEcl, moonNodePassages, moonNewList, moonEquitorial, moonPositionTod} from './Moon.js';
 import {constellations, constellationBoundaries} from './Constellations.js';
 import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM} from './Integration.js';
-import {besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
+import {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
 
 export {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
     atan2d, atand};
@@ -30,4 +30,4 @@ export {aberrationStellarSph, aberrationStellarCart};
 export {moonPositionEcl, moonNodePassages, moonNewList, moonEquitorial, moonPositionTod};
 export {constellations, constellationBoundaries};
 export {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM};
-export {besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid};
+export {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid};
