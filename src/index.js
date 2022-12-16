@@ -1,5 +1,5 @@
 import {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
-atan2d, atand} from './MathUtils.js';
+atan2d, atand, linComb} from './MathUtils.js';
 import {limitAngleDeg, angleDiff, angleArcDeg, angleDegArc, angleDegHms, angleHmsDeg} from './Angles.js';
 import {nutationTerms} from './Nutation.js'
 import {timeGregorian, timeGast, timeGmst, dateJulianYmd, timeJulianYmdhms, timeJulianTs } from './Time.js';
@@ -16,7 +16,7 @@ import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvSt
 import {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
 
 export {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
-    atan2d, atand};
+    atan2d, atand, linComb};
 export {limitAngleDeg, angleDiff, angleArcDeg, angleDegArc, angleDegHms, angleHmsDeg};
 export {nutationTerms};
 export {timeGregorian, timeGast, timeGmst, dateJulianYmd, timeJulianYmdhms, timeJulianTs};
