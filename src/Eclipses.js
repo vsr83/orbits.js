@@ -7,6 +7,7 @@ import { timeGast } from './Time.js';
 import {rotateCart1d, rotateCart3d} from './Rotations.js';
 import {aberrationStellarCart} from './Aberration.js';
 import { limitAngleDeg } from './Angles.js';
+import { correlationTdbUt1 } from './TimeCorrelation.js';
 
 /**
  * Compute longitude rate of the Moon. This estimates the first-order
@@ -538,13 +539,13 @@ export function eclipseMagnitude(rEnuSun, rEnuMoon, signed)
     }
 }
 
-export function computeOsvSunEfi(JT, nutParams)
+export function computeOsvSunEfi(JTtdb, nutParams)
 {
     const lightTimeJT = 1.495978707e8 / (3e5 * 86400.0);
     // Position of the Earth in the Heliocentric Ecliptic frame:
-    const osvEarth = vsop87('earth', JT - lightTimeJT);
+    const osvEarth = vsop87('earth', JTtdb - lightTimeJT);
     // Position of the Sun in the Geocentric Ecliptic frame.
-    osvEarth.JT = JT;
+    osvEarth.JT = JTtdb;
     const osvSunEcl = {
         r : vecMul(osvEarth.r, -1), 
         v : vecMul(osvEarth.v, -1), 
@@ -555,17 +556,20 @@ export function computeOsvSunEfi(JT, nutParams)
     const osvSunJ2000 = coordEclEq(osvSunEcl);
     const osvSunMod = coordJ2000Mod(osvSunJ2000);
     const osvSunTod = coordModTod(osvSunMod, nutParams);
+    osvSunTod.JT = correlationTdbUt1(osvSunTod.JT);
     const osvSunPef = coordTodPef(osvSunTod);
     const osvSunEfi = coordPefEfi(osvSunPef, 0, 0);
 
     return osvSunEfi;
 }
 
-export function computeOsvMoonEfi(JT)
+export function computeOsvMoonEfi(JTtdb)
 {
     // Position of the Moon in the ToD frame.
-    let moonPosToD = moonPositionTod(JT);
-    const osvMoonPef = coordTodPef({r : moonPosToD, v : [0, 0, 0], JT : JT});
+    let moonPosToD = moonPositionTod(JTtdb);
+
+    const JTut1 = correlationTdbUt1(JTtdb);
+    const osvMoonPef = coordTodPef({r : moonPosToD, v : [0, 0, 0], JT : JTut1});
     const osvMoonEfi = coordPefEfi(osvMoonPef, 0, 0);
 
     return osvMoonEfi;

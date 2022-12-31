@@ -1551,7 +1551,7 @@ describe('Eclipses', function() {
 
 describe('TimeCorrelation', function() {
     describe('correlationUt1Tai', function() {
-        it('1899', function() {
+        it('conversions', function() {
             const JD1899Ut1 = dateJulianYmd(1899, 1, 1);
             const JD2000Ut1 = dateJulianYmd(2000, 1, 1);
             const JD2020Ut1 = dateJulianYmd(2020, 1, 1);
