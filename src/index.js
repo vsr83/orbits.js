@@ -14,6 +14,7 @@ import {moonPositionEcl, moonNodePassages, moonNewList, moonEquitorial, moonPosi
 import {constellations, constellationBoundaries} from './Constellations.js';
 import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM} from './Integration.js';
 import {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
+import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb } from './TimeCorrelation.js';
 
 export {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
     atan2d, atand, linComb};
@@ -31,3 +32,4 @@ export {moonPositionEcl, moonNodePassages, moonNewList, moonEquitorial, moonPosi
 export {constellations, constellationBoundaries};
 export {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM};
 export {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid};
+export {correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb};
