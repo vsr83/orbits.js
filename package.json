@@ -8,7 +8,8 @@
     "build": "webpack",
     "vsop87a": "cd data && node download_vsop87a.js && node create_json_vsop87a.js > vsop87a.json & cd ..",
     "xhip": "cd data && node download_xhip.js && node create_json_xhip.js > hipparcos_reduced.json & cd ..",
-    "cbnd": "cd data && node download_cbnd.js && node create_json_cbnd.js > constellation_boundaries.json & cd .."
+    "cbnd": "cd data && node download_cbnd.js && node create_json_cbnd.js > constellation_boundaries.json & cd ..",
+    "elp2000": "cd data && node download_elp2000.js && node create_json_elp2000.js > ELP2000-82b.json & cd .."
   },
   "keywords": [],
   "author": "Ville Räisänen",
