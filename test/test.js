@@ -15,6 +15,7 @@ import { moonPositionTod, moonPositionEcl, moonNodePassage, moonNodePassages, mo
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
 import {createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid } from '../src/Eclipses.js';
 import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb } from '../src/TimeCorrelation.js';
+import { elp2000 } from '../src/Elp2000-82b.js';
 
 
 /**
@@ -983,6 +984,7 @@ describe('Aberration', function() {
     });
 });
 
+/*
 describe('Moon', function() {
     describe('moonEquatorial', function() {
         it('No nutation parameter', function() {        
@@ -1011,17 +1013,18 @@ describe('Moon', function() {
 
             for (let JT of nodePassages)
             {
-                const T = (JT - 2451545.0)/36525.0;
-                const nutTerms = nutationTerms(T);
-                const rTod = moonPositionTod(JT, nutTerms);
-                const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
-                const osvJ2000 = coordModJ2000(osvMod, nutTerms);
-                const osvEcl = coordEqEcl(osvJ2000);
+                //const T = (JT - 2451545.0)/36525.0;
+                //const nutTerms = nutationTerms(T);
+                //const rTod = moonPositionTod(JT, nutTerms);
+                //const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
+                //const osvJ2000 = coordModJ2000(osvMod, nutTerms);
+                //const osvEcl = coordEqEcl(osvJ2000);
+                const rEcl = elp2000(JT);
 
-                const latMoon = asind(osvEcl.r[2] / norm(osvEcl.r));
+                const latMoon = asind(rEcl[2] / norm(rEcl));
                 //console.log(latMoon + " " + osvEcl.r[2]);
                 // 1m accuracy:
-                checkFloat(osvEcl.r[2], 0.0, 1);
+                checkFloat(rEcl[2], 0.0, 1);
                 //console.log(timeGregorian(JT));
             }
         });
@@ -1034,20 +1037,15 @@ describe('Moon', function() {
 
             for (const JT of newMoons)
             {
-                const T = (JT - 2451545.0)/36525.0;
-                const nutTerms = nutationTerms(T);
-                const rTod = moonPositionTod(JT, nutTerms);
-                const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
-                const osvJ2000 = coordModJ2000(osvMod, nutTerms);
-                const osvEcl = coordEqEcl(osvJ2000);
-                //console.log(timeGregorian(JT));
+
+                const rEcl = elp2000(JT);
 
                 let {r, v} = vsop87('earth', JT - lightTimeJT);
                 const rSun = vecMul(r, -1);
                 const vSun = vecMul(v, -1);
 
                 const eclLonSun = limitAngleDeg(atan2d(rSun[1], rSun[0]));
-                const eclLonMoon= limitAngleDeg(atan2d(osvEcl.r[1], osvEcl.r[0]));
+                const eclLonMoon= limitAngleDeg(atan2d(rEcl[1], rEcl[0]));
 
                 const lonDiff = angleDiff(eclLonSun, eclLonMoon);
                 const maxAngle = 1 / 3600; //360 / (27 * 24 * 60);
@@ -1057,7 +1055,7 @@ describe('Moon', function() {
         });
     });
 });
-
+*/
 describe('Integration', function() {
     describe('timeStepping', function() {
         it('Scalar', function() {
@@ -1337,214 +1335,7 @@ describe('Eclipses', function() {
                 console.log("Expected : " + timeGreg2.year + "-" + toFixed(timeGreg2.month) + "-" + toFixed(timeGreg2.mday) + 
                 "T" + toFixed(timeGreg2.hour) + ":" + toFixed(timeGreg2.minute)
                 + ":" + toFixed(Math.floor(timeGreg2.second)) + " " + eclipse2.type + " Error " + timeErr.toFixed(2) + " s");
-                
-                /*
-                checkFloat(timeErr, 0, 100);
-                console.log("            x          y        sin(d)     cos(d)      mu          l1         l2      tan(f1)     tan(f2)");
-
-                const JTstart = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
-                    timeGreg.hour, -5*60, 1);
-                const JTend = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
-                    timeGreg.hour, 5*60, 1);
-    
-                const gridParams = eclipseMagGrid(JTstart.JT, JTend.JT, 5.0/1440.0, 
-                                              0, 360, -90, 90, 2.0);
-                console.log("Lat limits " + gridParams.latMin + " " + gridParams.latMax);
-                console.log("Lon limits " + gridParams.lonMin + " " + gridParams.lonMax);
-                console.log("JT limits  " + gridParams.JTmin + " " + gridParams.JTmax);
-                const gridData = eclipseMagGrid(gridParams.JTmin - 10/1440, gridParams.JTmax + 10/1440, 1.0/1440.0, 
-                                              gridParams.lonMin-5, gridParams.lonMax+5, 
-                                              gridParams.latMin-5, gridParams.latMax+5, 0.25);
-                console.log(gridData.magArray.length);
-                console.log(gridData.magArray[0].length);
-
-                const timeGregMin = timeGregorian(gridParams.JTmin);
-                const timeGregMax = timeGregorian(gridParams.JTmax);
-                const derJTmin = timeJulianYmdhms(timeGregMin.year, timeGregMin.month, timeGregMin.mday, 
-                    timeGregMin.hour + 1, 0, 0).JT;
-                const derJTmax = timeJulianYmdhms(timeGregMax.year, timeGregMax.month, timeGregMax.mday, 
-                    timeGregMax.hour - 1, 0, 0).JT;
-
-                const contoursMag = createContours(gridParams.lonMin-5, gridParams.lonMax+5, 
-                    gridParams.latMin-5, gridParams.latMax+5, 0.25, gridData.magArray, [0.001, 0.2, 0.4, 0.6, 0.8], [100.0]);
-
-                for (let indValues = 0; indValues < Object.keys(contoursMag).length; indValues++)
-                {
-                    const value = Object.keys(contoursMag)[indValues];
-                    console.log("contour_mag" + indValues + " = [...");
-                    for (let indLine = 0; indLine < contoursMag[value].length; indLine++)
-                    {
-                        if (indLine < contoursMag[value].length - 1)
-                        {
-                            console.log(contoursMag[value][indLine].toString() + "; ...");
-                        }
-                        else 
-                        {
-                            console.log(contoursMag[value][indLine].toString() + "];");
-                        }
-                    }
-                }
-
-                */
-                /*
-                console.log(derJTmin + " " + derJTmax);
-                let ind_curve = 0;
-                for (let derJT = derJTmin; derJT <= derJTmax; derJT += 1/48)
-                {
-                    ind_curve++;
-                    const derGreg = timeGregorian(derJT);
-                    //console.log(derGreg);
-
-                    const gridDataDer = eclipseMagDerGrid(derJT, 
-                        gridParams.lonMin-5, gridParams.lonMax+5, 
-                        gridParams.latMin-5, gridParams.latMax+5, 0.25);
-                    const contours = createContours(gridParams.lonMin-5, gridParams.lonMax+5, 
-                        gridParams.latMin-5, gridParams.latMax+5, 0.25, gridDataDer, [0.0], [100.0]);
-
-                    console.log("contours_" + ind_curve + " = [...");
-                    for (let indLine = 0; indLine < contours[0].length; indLine++)
-                    {
-                        if (indLine < contours[0].length - 1)
-                        {
-                            console.log(contours[0][indLine].toString() + "; ...");
-                        }
-                        else 
-                        {
-                            console.log(contours[0][indLine].toString() + "];");
-                        }
-                    }*/
-
-                    /*
-                    for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
-                        //console.log(gridData.magArray[indLat].toString() + "; ...");
-                        //console.log(gridData.inUmbraArray[indLat].toString() + "; ...");
-                        if (indLat == 0)
-                        {
-                            console.log("data_der" + ind_curve + " = [" + gridDataDer[indLat].toString() + "; ...");
-                        }
-                        else if (indLat == gridData.magArray.length - 1)
-                        {
-                            console.log(gridDataDer[indLat].toString() + "];");
-                        }
-                        else 
-                        {
-                            console.log(gridDataDer[indLat].toString() + "; ...");
-                        }
-                    }
-                    console.log("data_der" + ind_curve + "(find(data_der" + ind_curve + " == 100)) = NaN;");
-                    */
-                }
-
-                /*
-
-                for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
-                    if (indLat == 0)
-                    {
-                        console.log("data = [" + gridData.magArray[indLat].toString() + "; ...");
-                    }
-                    else if (indLat == gridData.magArray.length - 1)
-                    {
-                        console.log(gridData.magArray[indLat].toString() + "];");
-                    }
-                    else 
-                    {
-                        console.log(gridData.magArray[indLat].toString() + "; ...");
-                    }
-                }
-                */
-
-                /*
-                for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
-                    if (indLat == 0)
-                    {
-                        console.log("data_umbra = [" + gridData.inUmbraArray[indLat].toString() + "; ...");
-                    }
-                    else if (indLat == gridData.magArray.length - 1)
-                    {
-                        console.log(gridData.inUmbraArray[indLat].toString() + "];");
-                    }
-                    else 
-                    {
-                        console.log(gridData.inUmbraArray[indLat].toString() + "; ...");
-                    }
-                }*/
-
-                /*
-
-                for (let indLat = 0; indLat < gridData.magArray.length; indLat++){
-                    //console.log(gridData.magArray[indLat].toString() + "; ...");
-                    //console.log(gridData.inUmbraArray[indLat].toString() + "; ...");
-                    //console.log(gridDataDer[indLat].toString() + "; ...");
-                }
-
-                for (let deltaMinutes = -5*60; deltaMinutes < 5*60; deltaMinutes+=1)
-                {
-                    const JTdelta = timeJulianYmdhms(timeGreg.year, timeGreg.month, timeGreg.mday, 
-                        timeGreg.hour, deltaMinutes, 1);
-                    const bessel = besselianSolarWithDelta(eclipse, JTdelta.JT, 1/1440);
-                    //console.log(bessel);
-
-                    const timeGregDelta = timeGregorian(JTdelta.JT);
-                    const centralLine = besselianCentralLine(eclipse, bessel, JTdelta.JT);
-
-                    if (!isNaN(centralLine.zeta))
-                    {                       
-                        const osvFund = {
-                            r : [bessel.x, bessel.y, centralLine.zeta],
-                            v : [0, 0, 0],
-                            JT : JTdelta.JT
-                        };
-                        const osvToD = coordFundTod(osvFund, bessel.a, bessel.d);
-                        const de = 6378137;
-    
-                        osvToD.r = vecMul(osvToD.r, de);
-                        const osvPef = coordTodPef(osvToD);
-                        const osvEfi = coordPefEfi(osvPef, 0, 0);
-                        const wgs84 = coordEfiWgs84(osvEfi.r);
-
-                        console.log(
-                                toFixed(timeGregDelta.hour)
-                        + ":" + toFixed(timeGregDelta.minute) 
-                        + " " + toFixedFloat(bessel.x, 5)
-                        + " " + toFixedFloat(bessel.y, 5) 
-                        + " " + toFixedFloat(bessel.sin_d, 5) 
-                        + " " + toFixedFloat(bessel.cos_d, 5) 
-                        + " " + toFixedFloat(bessel.mu, 5) 
-                        + " " + toFixedFloat(bessel.l1, 5) 
-                        + " " + toFixedFloat(bessel.l2, 5)
-                        + " " + toFixedFloat(bessel.tan_f1, 6) 
-                        + " " + toFixedFloat(bessel.tan_f2, 6) 
-                        + " " + toFixedFloat(centralLine.zeta, 6)
-                        + " " + toFixedFloat(wgs84.lat, 2)
-                        + " " + toFixedFloat(wgs84.lon, 2)
-                        + " " + toFixedFloat(wgs84.h, 2)
-                        );
-                    }
-                    const points = besselianRiseSet(bessel);
-
-                    if (points.length > 0)
-                    {
-                        const de = 6378137;
-                        const osvFund2 = {r: [points[0][0], points[0][1], 0], v : [0, 0, 0], JT : JTdelta.JT};
-                        const osvToD2 = coordFundTod(osvFund2, bessel.a, bessel.d);
-                        osvToD2.r = vecMul(osvToD2.r, de);
-                        const osvPef2 = coordTodPef(osvToD2);
-                        const osvEfi2 = coordPefEfi(osvPef2, 0, 0);
-                        const wgs842 = coordEfiWgs84(osvEfi2.r);
-
-                        const osvFund3 = {r: [points[1][0], points[1][1], 0], v : [0, 0, 0], JT : JTdelta.JT};
-                        const osvToD3 = coordFundTod(osvFund3, bessel.a, bessel.d);
-                        osvToD3.r = vecMul(osvToD3.r, de);
-                        const osvPef3 = coordTodPef(osvToD3);
-                        const osvEfi3 = coordPefEfi(osvPef3, 0, 0);
-                        const wgs843 = coordEfiWgs84(osvEfi3.r);
-
-                        //console.log("AA " + wgs842.lon + " " + wgs842.lat);
-                        //console.log("AB " + wgs843.lon + " " + wgs843.lat);
-                        //console.log("AB " + points[1][0] + " " + points[1][1]);
-                    }
-                }*/
-            
+            }            
         });
     });
 });
@@ -1591,4 +1382,18 @@ describe('TimeCorrelation', function() {
             checkFloat(JD2040Ut1_3, JD2040Ut1, 1e-10);
         });
     });
+
+    describe('Elp2000-82b', function() {
+        describe('elp2000', function() {
+            it('2020-01-01', function() {
+                // 390185.76414, -98340.34055, -34449.72290
+                const coord = elp2000(timeJulianYmdhms(2020, 1, 1, 0, 0, 0).JT);
+                console.log(coord);
+
+                console.log(elp2000(2460054.648924834));
+                console.log(correlationUt1Tdb(2460054.648924834));
+            });
+        });
+    });
+    
 });

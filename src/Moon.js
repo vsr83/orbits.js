@@ -3,6 +3,8 @@ import {cosd, sind, tand, atan2d, asind, vecDiff, vecMul} from "./MathUtils.js";
 import {coordTodMod, coordModJ2000, coordEqEcl} from "./Frames.js";
 import {vsop87} from "./Vsop87A.js";
 import {angleDiff} from "./Angles.js";
+import { elp2000 } from "./Elp2000-82b.js";
+import { aberrationStellarCart } from "./Aberration.js";
 
 // Periodic terms for the longitude and distance of the Moon.
 // The unit is 0.000 001 degree for longitude and 0.001 kilometer for distance.
@@ -329,19 +331,21 @@ function moonSigmaTerms(D, Ms, Mm, F, T)
  */
  export function moonPositionEcl(JT, nutTerms)
 {
-    if (nutTerms === undefined)
+    /*if (nutTerms === undefined)
     {
         const T = (JT - 2451545.0)/36525.0;
         nutTerms = nutationTerms(T);
-    }
+    }*/
 
-    const rTod = moonPositionTod(JT, nutTerms);
+    /*const rTod = moonPositionTod(JT, nutTerms);
     const osvMod = coordTodMod({r : rTod, v : [0, 0, 0], JT : JT}, nutTerms)
     //const osvMod = {r : rTod, v : [0, 0, 0], JT : JT};
     const osvJ2000 = coordModJ2000(osvMod);
     const osvEcl = coordEqEcl(osvJ2000);
 
-    return osvEcl.r;
+    return osvEcl.r;*/
+
+    return elp2000(JT);
 }
 
 /**
@@ -422,8 +426,8 @@ export function moonNewList(yearStart, yearEnd)
         const posMinute = moonPositionEcl(JTminute);
         const osvStart = vsop87("earth", JTinitial - lightTimeJT);
         const osvMinute = vsop87("earth", JTminute - lightTimeJT);
-        const sunStart = vecMul(osvStart.r, -1);
-        const sunMinute = vecMul(osvMinute.r, -1);
+        let sunStart = vecMul(osvStart.r, -1);
+        let sunMinute = vecMul(osvMinute.r, -1);
 
         const lonSunStart = atan2d(sunStart[1], sunStart[0]);
         const lonSunMinute = atan2d(sunMinute[1], sunMinute[0]);

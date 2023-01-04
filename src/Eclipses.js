@@ -8,6 +8,7 @@ import {rotateCart1d, rotateCart3d} from './Rotations.js';
 import {aberrationStellarCart} from './Aberration.js';
 import { limitAngleDeg } from './Angles.js';
 import { correlationTdbUt1 } from './TimeCorrelation.js';
+import { elp2000 } from './Elp2000-82b.js';
 
 /**
  * Compute longitude rate of the Moon. This estimates the first-order
@@ -241,8 +242,10 @@ export function coordFundTod(osv, a, d)
  *     The eclipse JSON.
  * @param {*} JT 
  *     Julian time.
+ * @param {*} nutParams
+ *     Nutation parameters. Computed, if undefined.
  */
-export function besselianSolar(eclipse, JT)
+export function besselianSolar(eclipse, JT, nutParams)
 {
     // Average light traveltime from the Sun to the Earth.
 
@@ -252,12 +255,19 @@ export function besselianSolar(eclipse, JT)
 
     const sunEcl = {r : vecMul(earthEcl.r, -1), v : vecMul(earthEcl.v, -1), JT : JT};
     let sunJ2000 = coordEclEq(sunEcl);
+    sunJ2000.r = aberrationStellarCart(JT, sunJ2000.r);
+
     //sunJ2000.r = aberrationStellarCart(JT, sunJ2000.r);
     const sunMoD = coordJ2000Mod(sunJ2000);
-    const sunToD = coordModTod(sunMoD);
+    const sunToD = coordModTod(sunMoD, nutParams);
     
-    let moonPosToD = moonPositionTod(JT);
-    
+    //let moonPosToD = moonPositionTod(JT);
+    let moonPosEq = elp2000(JT);
+    const moonPosJ2000 = coordEclEq({r : moonPosEq, v : [0, 0, 0], JT : JT});
+    const osvMoonMod = coordJ2000Mod({r : moonPosJ2000.r, v : [0, 0, 0], JT : JT});
+    const osvMoonTod = coordModTod(osvMoonMod, nutParams);
+    const moonPosToD = osvMoonTod.r;
+
     // The direction vector from Sun to the Moon.
     let g = vecDiff(sunToD.r, moonPosToD);
     const gUnit = vecMul(g, 1/norm(g));
@@ -325,11 +335,13 @@ export function besselianSolar(eclipse, JT)
  *      Julian time
  * @param {*} JTdelta 
  *      Delta-time used for the computation of the derivative.
+ * @param {*} nutParams
+ *     Nutation parameters. Computed, if undefined.
  */
-export function besselianSolarWithDelta(eclipse, JT, JTdelta)
+export function besselianSolarWithDelta(eclipse, JT, JTdelta, nutParams)
 {
-    const bessel0 = besselianSolar(eclipse, JT);
-    const bessel1 = besselianSolar(eclipse, JT + JTdelta);
+    const bessel0 = besselianSolar(eclipse, JT, nutParams);
+    const bessel1 = besselianSolar(eclipse, JT + JTdelta, nutParams);
 
     bessel0.a_dot = (bessel1.a - bessel0.a) / JTdelta;
     bessel0.d_dot = (bessel1.d - bessel0.d) / JTdelta;
@@ -554,6 +566,8 @@ export function computeOsvSunEfi(JTtdb, nutParams)
 
     // Transform the positions of the Sun and the Moon to the EFI frame:
     const osvSunJ2000 = coordEclEq(osvSunEcl);
+    osvSunJ2000.r = aberrationStellarCart(JTtdb, osvSunJ2000.r);
+
     const osvSunMod = coordJ2000Mod(osvSunJ2000);
     const osvSunTod = coordModTod(osvSunMod, nutParams);
     osvSunTod.JT = correlationTdbUt1(osvSunTod.JT);
@@ -566,13 +580,22 @@ export function computeOsvSunEfi(JTtdb, nutParams)
 export function computeOsvMoonEfi(JTtdb)
 {
     // Position of the Moon in the ToD frame.
-    let moonPosToD = moonPositionTod(JTtdb);
+    //let moonPosToD = moonPositionTod(JTtdb);
 
-    const JTut1 = correlationTdbUt1(JTtdb);
-    const osvMoonPef = coordTodPef({r : moonPosToD, v : [0, 0, 0], JT : JTut1});
-    const osvMoonEfi = coordPefEfi(osvMoonPef, 0, 0);
+    //const JTut1 = correlationTdbUt1(JTtdb);
+    //const osvMoonPef = coordTodPef({r : moonPosToD, v : [0, 0, 0], JT : JTut1});
+    //const osvMoonEfi = coordPefEfi(osvMoonPef, 0, 0);
 
-    return osvMoonEfi;
+    const moonPosEq = elp2000(JTtdb);
+    const moonPosJ2000 = coordEclEq({r : moonPosEq, v : [0, 0, 0], JT : JTtdb});
+    const osvMoonMod2 = coordJ2000Mod({r : moonPosJ2000.r, v : [0, 0, 0], JT : JTtdb});
+    const osvMoonTod2 = coordModTod(osvMoonMod2);
+    osvMoonTod2.JT = correlationTdbUt1(osvMoonTod2.JT);
+    const osvMoonPef2 = coordTodPef(osvMoonTod2);
+    const osvMoonEfi2 = coordPefEfi(osvMoonPef2, 0, 0);
+    //console.log(osvMoonEfi2.r + " " + osvMoonEfi.r);
+
+    return osvMoonEfi2;
 }
 
 /**
