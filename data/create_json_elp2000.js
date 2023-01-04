@@ -2,8 +2,9 @@
 // data files.
 // The script should be executed only after download_elp2000.js.
 
-// The script takes truncation level (in arcseconds) of the data as a command 
-// line argument. If no argument is given, truncation is set to 0.0.
+// The script takes two truncation levels (in arcseconds for longitude/latitude 
+// and in kilometers for distance) of the data as a command line arguments. 
+// If both are not given, the truncation levels are set to 0.0.
 
 import {readFileSync} from 'fs';
 
@@ -61,6 +62,9 @@ function parseMainProblem(fileName, truncationSize)
                         A : A, B1 : B1, B2 : B2, B3 : B3, B4 : B4, B5 : B5, B6 : B6});
         }
     }
+    // Sort lines according to absolute value of the amplitude to allow user-specified
+    // truncation size.
+    lines.sort((a, b) => (Math.abs(a.A) < Math.abs(b.A)) ? 1 : -1);
 
     return lines;
 }
@@ -108,6 +112,9 @@ function parsePerturbationsEarthFig(fileName, truncationSize)
                         phi : phi, A : A, B : B});
         }
     }
+    // Sort lines according to absolute value of the amplitude to allow user-specified
+    // truncation size.
+    lines.sort((a, b) => (Math.abs(a.A) < Math.abs(b.A)) ? 1 : -1);
 
     return lines;
 }
@@ -162,6 +169,9 @@ function parsePerturbationsPlanetaryTable(fileName, truncationSize)
                         i11 : i11, phi : phi, A : A, B : B});
         }
     }
+    // Sort lines according to absolute value of the amplitude to allow user-specified
+    // truncation size.
+    lines.sort((a, b) => (Math.abs(a.A) < Math.abs(b.A)) ? 1 : -1);
 
     return lines;
 }
@@ -281,7 +291,9 @@ const jsonExport = {
     ELP33 : ELP33,
     ELP34 : ELP34,
     ELP35 : ELP35,
-    ELP36 : ELP36
+    ELP36 : ELP36,
+    truncationArcSeconds : truncationArcSeconds,
+    truncationKilometers : truncationKilometers
 };
 
 console.log(JSON.stringify(jsonExport));
