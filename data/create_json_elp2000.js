@@ -2,16 +2,28 @@
 // data files.
 // The script should be executed only after download_elp2000.js.
 
+// The script takes truncation level (in arcseconds) of the data as a command 
+// line argument. If no argument is given, truncation is set to 0.0.
+
 import {readFileSync} from 'fs';
 
+let truncationKilometers = 0.0;
+let truncationArcSeconds = 0.0;
+if (process.argv.length > 3)
+{
+    truncationArcSeconds = parseFloat(process.argv[2]);
+    truncationKilometers = parseFloat(process.argv[3]);
+}
 
 /**
  * Create structure mapping indices to coefficient arrays.
  * 
  * @param {*} fileName 
  *     Path of the file.
+ * @param {*} truncationSize
+ *     Truncation level of amplitudes.
  */
-function parseMainProblem(fileName)
+function parseMainProblem(fileName, truncationSize)
 {
     let content;
 
@@ -42,9 +54,12 @@ function parseMainProblem(fileName)
         const B4 = parseFloat(line.substring(63, 75));
         const B5 = parseFloat(line.substring(75, 87));
         const B6 = parseFloat(line.substring(87, 99));
-        
-        lines.push({i1 : i1, i2 : i2, i3 : i3, i4 : i4, 
-                    A : A, B1 : B1, B2 : B2, B3 : B3, B4 : B4, B5 : B5, B6 : B6});
+
+        if (Math.abs(A) > truncationSize)
+        {
+            lines.push({i1 : i1, i2 : i2, i3 : i3, i4 : i4, 
+                        A : A, B1 : B1, B2 : B2, B3 : B3, B4 : B4, B5 : B5, B6 : B6});
+        }
     }
 
     return lines;
@@ -55,8 +70,10 @@ function parseMainProblem(fileName)
  * 
  * @param {*} fileName 
  *     Path of the file.
+ * @param {*} truncationSize
+ *     Truncation level of amplitudes.
  */
-function parsePerturbationsEarthFig(fileName)
+function parsePerturbationsEarthFig(fileName, truncationSize)
 {
     let content;
 
@@ -85,8 +102,11 @@ function parsePerturbationsEarthFig(fileName)
         const A  = parseFloat(line.substring(25, 35));
         const B  = parseFloat(line.substring(35, 45));
         
-        lines.push({i1 : i1, i2 : i2, i3 : i3, i4 : i4, i5 : i5,
-                    phi : phi, A : A, B : B});
+        if (Math.abs(A) > truncationSize)
+        {
+            lines.push({i1 : i1, i2 : i2, i3 : i3, i4 : i4, i5 : i5,
+                        phi : phi, A : A, B : B});
+        }
     }
 
     return lines;
@@ -97,8 +117,10 @@ function parsePerturbationsEarthFig(fileName)
  * 
  * @param {*} fileName 
  *     Path of the file.
+ * @param {*} truncationSize
+ *     Truncation level of amplitudes.
  */
-function parsePerturbationsPlanetaryTable(fileName)
+function parsePerturbationsPlanetaryTable(fileName, truncationSize)
 {
     let content;
 
@@ -133,91 +155,95 @@ function parsePerturbationsPlanetaryTable(fileName)
         const A  = parseFloat(line.substring(43, 53));
         const B  = parseFloat(line.substring(53, 63));
         
-        lines.push({i1 : i1, i2 : i2, i3 : i3, i4 : i4, i5 : i5,
-                    i6 : i6, i7 : i7, i8 : i8, i9 : i9, i10 : i10, 
-                    i11 : i11, phi : phi, A : A, B : B});
+        if (Math.abs(A) > truncationSize)
+        {
+            lines.push({i1 : i1, i2 : i2, i3 : i3, i4 : i4, i5 : i5,
+                        i6 : i6, i7 : i7, i8 : i8, i9 : i9, i10 : i10, 
+                        i11 : i11, phi : phi, A : A, B : B});
+        }
     }
 
     return lines;
 }
 
+const radiansToArcSeconds = 648000.0 / Math.PI;
 
 // Longitude periodic terms (sine)
-const ELP01 = parseMainProblem("elpseries/ELP01");
+const ELP01 = parseMainProblem("elpseries/ELP01", truncationArcSeconds);
 // Latitude (sine)
-const ELP02 = parseMainProblem("elpseries/ELP02");
+const ELP02 = parseMainProblem("elpseries/ELP02", truncationArcSeconds);
 // Distance (cosine)
-const ELP03 = parseMainProblem("elpseries/ELP03");
+const ELP03 = parseMainProblem("elpseries/ELP03", truncationKilometers);
 // Earth figure perturbations - Longitude
-const ELP04 = parsePerturbationsEarthFig("elpseries/ELP04");
+const ELP04 = parsePerturbationsEarthFig("elpseries/ELP04", truncationArcSeconds);
 // Earth figure perturbations - Latitude
-const ELP05 = parsePerturbationsEarthFig("elpseries/ELP05");
+const ELP05 = parsePerturbationsEarthFig("elpseries/ELP05", truncationArcSeconds);
 // Earth figure perturbations - Distance
-const ELP06 = parsePerturbationsEarthFig("elpseries/ELP06");
+const ELP06 = parsePerturbationsEarthFig("elpseries/ELP06", truncationKilometers);
 // Earth figure perturbations - Longitude/t
-const ELP07 = parsePerturbationsEarthFig("elpseries/ELP07");
+const ELP07 = parsePerturbationsEarthFig("elpseries/ELP07", truncationArcSeconds);
 // Earth figure perturbations - Latitude/t
-const ELP08 = parsePerturbationsEarthFig("elpseries/ELP08");
+const ELP08 = parsePerturbationsEarthFig("elpseries/ELP08", truncationArcSeconds);
 // Earth figure perturbations - Distance/t
-const ELP09 = parsePerturbationsEarthFig("elpseries/ELP09");
+const ELP09 = parsePerturbationsEarthFig("elpseries/ELP09", truncationKilometers);
 
 // Planetary perturbations Table 1 - Longitude
-const ELP10 = parsePerturbationsPlanetaryTable("elpseries/ELP10");
+const ELP10 = parsePerturbationsPlanetaryTable("elpseries/ELP10", truncationArcSeconds);
 // Planetary perturbations Table 1 - Latitude
-const ELP11 = parsePerturbationsPlanetaryTable("elpseries/ELP11");
+const ELP11 = parsePerturbationsPlanetaryTable("elpseries/ELP11", truncationArcSeconds);
 // Planetary perturbations Table 1 - Distance
-const ELP12 = parsePerturbationsPlanetaryTable("elpseries/ELP12");
+const ELP12 = parsePerturbationsPlanetaryTable("elpseries/ELP12", truncationKilometers);
 // Planetary perturbations Table 1 - Longitude/t
-const ELP13 = parsePerturbationsPlanetaryTable("elpseries/ELP13");
+const ELP13 = parsePerturbationsPlanetaryTable("elpseries/ELP13", truncationArcSeconds);
 // Planetary perturbations Table 1 - Latitude/t
-const ELP14 = parsePerturbationsPlanetaryTable("elpseries/ELP14");
+const ELP14 = parsePerturbationsPlanetaryTable("elpseries/ELP14", truncationArcSeconds);
 // Planetary perturbations Table 1 - Distance/t
-const ELP15 = parsePerturbationsPlanetaryTable("elpseries/ELP15");
+const ELP15 = parsePerturbationsPlanetaryTable("elpseries/ELP15", truncationKilometers);
 
 // Planetary perturbations Table 2 - Longitude
-const ELP16 = parsePerturbationsPlanetaryTable("elpseries/ELP16");
+const ELP16 = parsePerturbationsPlanetaryTable("elpseries/ELP16", truncationArcSeconds);
 // Planetary perturbations Table 2 - Latitude
-const ELP17 = parsePerturbationsPlanetaryTable("elpseries/ELP17");
+const ELP17 = parsePerturbationsPlanetaryTable("elpseries/ELP17", truncationArcSeconds);
 // Planetary perturbations Table 2 - Distance
-const ELP18 = parsePerturbationsPlanetaryTable("elpseries/ELP18");
+const ELP18 = parsePerturbationsPlanetaryTable("elpseries/ELP18", truncationKilometers);
 // Planetary perturbations Table 2 - Longitude/t
-const ELP19 = parsePerturbationsPlanetaryTable("elpseries/ELP19");
+const ELP19 = parsePerturbationsPlanetaryTable("elpseries/ELP19", truncationArcSeconds);
 // Planetary perturbations Table 2 - Latitude/t
-const ELP20 = parsePerturbationsPlanetaryTable("elpseries/ELP20");
+const ELP20 = parsePerturbationsPlanetaryTable("elpseries/ELP20", truncationArcSeconds);
 // Planetary perturbations Table 2 - Distance/t
-const ELP21 = parsePerturbationsPlanetaryTable("elpseries/ELP21");
+const ELP21 = parsePerturbationsPlanetaryTable("elpseries/ELP21", truncationKilometers);
 
 // Tidal effects - Longitude
-const ELP22 = parsePerturbationsEarthFig("elpseries/ELP22");
+const ELP22 = parsePerturbationsEarthFig("elpseries/ELP22", truncationArcSeconds);
 // Tidal effects - Latitude
-const ELP23 = parsePerturbationsEarthFig("elpseries/ELP23");
+const ELP23 = parsePerturbationsEarthFig("elpseries/ELP23", truncationArcSeconds);
 // Tidal effects - Distance
-const ELP24 = parsePerturbationsEarthFig("elpseries/ELP24");
+const ELP24 = parsePerturbationsEarthFig("elpseries/ELP24", truncationKilometers);
 // Tidal effects - Longitude/t
-const ELP25 = parsePerturbationsEarthFig("elpseries/ELP25");
-// Tidal effects - Latitude7t
-const ELP26 = parsePerturbationsEarthFig("elpseries/ELP26");
+const ELP25 = parsePerturbationsEarthFig("elpseries/ELP25", truncationArcSeconds);
+// Tidal effects - Latitude/t
+const ELP26 = parsePerturbationsEarthFig("elpseries/ELP26", truncationArcSeconds);
 // Tidal effects - Distance/t
-const ELP27 = parsePerturbationsEarthFig("elpseries/ELP27");
+const ELP27 = parsePerturbationsEarthFig("elpseries/ELP27", truncationKilometers);
 
 // Moon figure perturbations - Longitude
-const ELP28 = parsePerturbationsEarthFig("elpseries/ELP28");
+const ELP28 = parsePerturbationsEarthFig("elpseries/ELP28", truncationArcSeconds);
 // Moon figure perturbations - Latitude
-const ELP29 = parsePerturbationsEarthFig("elpseries/ELP29");
+const ELP29 = parsePerturbationsEarthFig("elpseries/ELP29", truncationArcSeconds);
 // Moon figure perturbations - Distance
-const ELP30 = parsePerturbationsEarthFig("elpseries/ELP30");
+const ELP30 = parsePerturbationsEarthFig("elpseries/ELP30", truncationKilometers);
 // Relativistic perturbations - Longitude
-const ELP31 = parsePerturbationsEarthFig("elpseries/ELP31");
+const ELP31 = parsePerturbationsEarthFig("elpseries/ELP31", truncationArcSeconds);
 // Relativistic perturbations - Latitude
-const ELP32 = parsePerturbationsEarthFig("elpseries/ELP32");
+const ELP32 = parsePerturbationsEarthFig("elpseries/ELP32", truncationArcSeconds);
 // Relativistic perturbations - Distance
-const ELP33 = parsePerturbationsEarthFig("elpseries/ELP33");
+const ELP33 = parsePerturbationsEarthFig("elpseries/ELP33", truncationKilometers);
 // Planetary perturbations (solar eccentricity) - Longitude/t^2
-const ELP34 = parsePerturbationsEarthFig("elpseries/ELP34");
+const ELP34 = parsePerturbationsEarthFig("elpseries/ELP34", truncationArcSeconds);
 // Planetary perturbations (solar eccentricity) - Latitude/t^2
-const ELP35 = parsePerturbationsEarthFig("elpseries/ELP35");
+const ELP35 = parsePerturbationsEarthFig("elpseries/ELP35", truncationArcSeconds);
 // Planetary perturbations (solar eccentricity) - Distance/t^2
-const ELP36 = parsePerturbationsEarthFig("elpseries/ELP36");
+const ELP36 = parsePerturbationsEarthFig("elpseries/ELP36", truncationKilometers);
 
 const jsonExport = {
     ELP01 : ELP01,
