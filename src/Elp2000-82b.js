@@ -128,7 +128,13 @@ function computeMainFigureSin(delArgs, data)
     let sum = 0.0;
     for (let i = 0; i < data.length; i++)
     {
-        let A = data[i].A;
+        // Constants fitted to DE200/LE200.
+        let A = data[i].A
+              + (data[i].B1 + dtasm * data[i].B5)
+              * (corrections.deltanp - am * corrections.deltanu)
+              + data[i].B2 * corrections.deltaGamma
+              + data[i].B3 * corrections.deltaE
+              + data[i].B4 * corrections.deltaep;
 
         // A sin(i_1 D + i_2l' + i_3l + i_4F)
         sum += A * Math.sin((data[i].i1 * delArgs.D
@@ -154,7 +160,13 @@ function computeMainFigureCos(delArgs, data)
     let sum = 0.0;
     for (let i = 0; i < data.length; i++)
     {
-        let A = data[i].A;
+        // Constants fitted to DE200/LE200.
+        let A = data[i].A - (2.0/3.0) * data[i].A * corrections.deltanu
+              + (data[i].B1 + dtasm * data[i].B5)
+              * (corrections.deltanp - am * corrections.deltanu)
+              + data[i].B2 * corrections.deltaGamma
+              + data[i].B3 * corrections.deltaE
+              + data[i].B4 * corrections.deltaep;
 
         // A cos(i_1 D + i_2l' + i_3l + i_4F)
         sum += A * Math.cos((data[i].i1 * delArgs.D
@@ -253,7 +265,7 @@ function computePlanetary2(planetaryArgs, delArgs, data)
                                    + data[i].i5 * planetaryArgs[4]
                                    + data[i].i6 * planetaryArgs[5]
                                    + data[i].i7 * planetaryArgs[6]
-                                   + data[i].i8 * planetaryArgs[7]
+                                   + data[i].i8 * delArgs.D
                                    + data[i].i9 * delArgs.LP
                                    + data[i].i10* delArgs.L 
                                    + data[i].i11* delArgs.F) * Math.PI / 648000.0
@@ -314,6 +326,7 @@ export function elp2000(JT)
     longitude += computePlanetary2(planetaryArgs, delArgsLin, elp2000Data.ELP16);
     latitude  += computePlanetary2(planetaryArgs, delArgsLin, elp2000Data.ELP17);
     distance  += computePlanetary2(planetaryArgs, delArgsLin, elp2000Data.ELP18);
+
     longitude += computePlanetary2(planetaryArgs, delArgsLin, elp2000Data.ELP19) * T;
     latitude  += computePlanetary2(planetaryArgs, delArgsLin, elp2000Data.ELP20) * T;
     distance  += computePlanetary2(planetaryArgs, delArgsLin, elp2000Data.ELP21) * T;
@@ -322,6 +335,7 @@ export function elp2000(JT)
     longitude += computeNonPlanetary(0.0, delArgsLin, elp2000Data.ELP22);
     latitude  += computeNonPlanetary(0.0, delArgsLin, elp2000Data.ELP23);
     distance  += computeNonPlanetary(0.0, delArgsLin, elp2000Data.ELP24);
+
     longitude += computeNonPlanetary(0.0, delArgsLin, elp2000Data.ELP25) * T;
     latitude  += computeNonPlanetary(0.0, delArgsLin, elp2000Data.ELP26) * T;
     distance  += computeNonPlanetary(0.0, delArgsLin, elp2000Data.ELP27) * T;
