@@ -9,18 +9,21 @@ import { vecMul } from './MathUtils.js';
 
 // The following table contains the complete expressions for the arguments W_1, W_2, W_3,
 // T, ϖ', which are computed as 4th order polynomials of Julian centuries after Epoch.
+// J. Chapront, M. Chapront-Touze, G.Francou - A new determination of lunar 
+// orbital parameters, precession constant and tidal acceleration from LLR measurements,
+// Astronomy Astrophysics, March 2002.
 const argumentPolynomialCoefficients = [
     // W_1 : Polynomial coefficients for mean mean longitude of the Moon.
-    [785939.95571, 1732559343.73604, -5.8883, 0.006604, -0.00003169],
+    [785939.8782, 1732559343.3328, -6.870, 0.006604, -0.00003169],
     // W_2 : Polynomial coefficients for mean longitude of the lunar perigee
-    [300071.67475, 14643420.2632, -38.2776, -0.045047, 0.00021301],
+    [300071.6518, 14643420.3304, -38.2639, -0.045047, 0.00021301],
     // W_3 : Polynomial coefficients for the mean longitude of the lunar ascending node.
-    [450160.39816, -6967919.3622, 6.3622, 0.007625, -0.00003586],
+    [450160.3265, -6967919.8851, 6.3593, 0.007625, -0.00003586],
     // T : Polynomial coefficients for the mean longitude of the Earth-Moon barycenter.
-    [361679.22059, 129597742.2758, -0.0202, 0.000009, 0.00000015],
+    [361679.1880, 129597742.3016, -0.0202, 0.000009, 0.00000015],
     // ϖ' : Polynomial coefficients for the mean longitude of the perihelion of the 
     // Earth-Moon barycenter.
-    [370574.42753, 1161.2283, 0.5327, -0.000138, 0.0]
+    [370574.4136, 1161.2283, 0.5327, -0.000138, 0.0]
 ];
 
 // Table F - Planetary longitudes in J2000 and mean motions ("/cy) from VSOP82.
@@ -47,7 +50,7 @@ const corrections = {
 const dtasm = 2.0 * 0.002571881335 / (3.0 * 0.074801329518);
 const am = 0.074801329518;
 
-const precessionConstant = 5029.0966;
+const precessionConstant = 5029.0966 - 0.0316;
 
 /**
  * Evaluate polynomials for W_1, W_2, W_3, T and OBP.
