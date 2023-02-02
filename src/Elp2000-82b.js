@@ -366,7 +366,7 @@ export function elp2000(JT)
     const zMod = distance * Math.sin(latitude);
 
     // Laskar's series.
-    const P = 0.10180391e-4 * T + 0.47020439e-10 * T*T - 0.5417367e-9 *T*T*T 
+    const P = 0.10180391e-4 * T + 0.47020439e-6 * T*T - 0.5417367e-9 *T*T*T 
             - 0.2507948e-11 * T*T*T*T + 0.463486e-14 * T*T*T*T*T;
     const Q = -0.113469002e-3 * T + 0.12372674e-6 *T*T + 0.12654170e-8 *T*T*T 
             - 0.1371808e-11 *T*T*T*T - 0.320334e-14*T*T*T*T*T;
