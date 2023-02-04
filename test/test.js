@@ -16,8 +16,7 @@ import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvSt
 import {createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid } from '../src/Eclipses.js';
 import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb } from '../src/TimeCorrelation.js';
 import { elp2000 } from '../src/Elp2000-82b.js';
-
-
+import { horizons_data_planets_1900_2100 } from '../data/horizons_data_planets_1900_2100.js';
 /**
  * Check floating point value with tolerance.   
  * 
@@ -871,93 +870,56 @@ describe('Vsop87A', function() {
     describe('vsop87', function() {
         let JT = dateJulianYmd(2022, 6, 4);
 
-        it('Mercury', function() {
-            let {r, v} = vsop87('mercury', JT);
-            const rExp = [0.832216213265148e10,
-                         -6.797620046569159e10,
-                         -0.631833047746736e10];
-            const vExp = [ 3.858225040730701e4,
-                           0.841936365251681e4,
-                          -0.285100298395750e4];
-            checkFloatArray(r, rExp, 1);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Venus', function() {
-            let {r, v} = vsop87('venus', JT);
-            const rExp = [1.034553614357372e11,
-                         -0.331752946333728e11,
-                         -0.064250597873576e11];
-            const vExp = [ 1.050760766009897e4,
-                           3.319522640775217e4,
-                          -0.015061516960006e4];
-            checkFloatArray(r, rExp, 1);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Earth', function() {
-            let {r, v} = vsop87('earth', JT);
-            const rExp = [-0.441603031327149e11,
-                          -1.451855385436845e11,
-                           0.000070723106588e11];
-            const vExp = [ 2.802462046043991e4,
-                          -0.877593220974710e4,
-                          -0.000006085918161e4];
-            checkFloatArray(r, rExp, 1);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Mars', function() {
-            let {r, v} = vsop87('mars', JT);
-            const rExp =[ 1.696288009064622e11,
-                         -1.184051043620771e11,
-                         -0.066425106325372e11];
-            const vExp = [1.478752475232476e4,
-                          2.194392463015448e4,
-                          0.009715597396017e4];
-            checkFloatArray(r, rExp, 1);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Jupiter', function() {
-            let {r, v} = vsop87('jupiter', JT);
-            const rExp =[ 7.370688842802807e11,
-                         -0.919165975255762e11,
-                         -0.161087368565761e11];
-            const vExp = [ 0.146404196154004e4,
-                           1.359336294642521e4,
-                          -0.008922200077270e4];
-            checkFloatArray(r, rExp, 1);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Saturn', function() {
-            let {r, v} = vsop87('saturn', JT);
-            const rExp =[ 1.121823661255941e12,
-                         -0.963345953041318e12,
-                         -0.027895459837396e12];
-            const vExp = [ 5.758138754399658e3,
-                           7.321848375466634e3,
-                          -0.356301821101666e3];
-            checkFloatArray(r, rExp, 1);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Uranus', function() {
-            let {r, v} = vsop87('uranus', JT);
-            const rExp =[ 2.090329648084641e12,
-                          2.077548675094168e12,
-                         -0.019375227735338e12];
-            const vExp = [-4.849445825477810e3,
-                           4.526483779517674e3,
-                           0.079428295534293e3];
-            checkFloatArray(r, rExp, 300);
-            checkFloatArray(v, vExp, 1e-3);
-        });
-        it('Neptune', function() {
-            let {r, v} = vsop87('neptune', JT);
-            const rExp =[ 4.441950700597463e12,
-                         -0.539571281726818e12,
-                         -0.091260681739656e12];
-            const vExp = [0.622289525677747e3,
-                          5.443509008569659e3,
-                         -0.126229531062381e3];
-            checkFloatArray(r, rExp, 300);
-            checkFloatArray(v, vExp, 1e-3);
+        it('JPL Horizons 1900-2100', function() {
+            const objects = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+            // VSOP87 error should be less than 1 arcsecond for 2000 years around the epoch.
+            const maxErrorExp = {
+                'mercury' :  100.0, // arcsec    46e6 km * sind(1/3600) =   223 km
+                'venus' :    100.0, // arcsec 107.5e6 km * sind(1/3600) =   521 km
+                'earth' :    100.0, // arcsec 147.1e6 km * sind(1/3600) =   713 km
+                'mars'  :    200.0, // arcsec 206.7e6 km * sind(1/3600) =  1002 km
+                'jupiter' : 3591.0, // arcsec 740.6e6 km * sind(1/3600) =  3591 km
+                'saturn' :  6582.0, // arcsec 1357.e6 km * sind(1/3600) =  6582 km 
+                'uranus' : 20000.0, // arcsec 2733.e6 km * sind(1/3600) = 13253 km
+                'neptune': 55000.0, // arcsec 4471.e6 km * sind(1/3600) = 21677 km
+            }
+            const maxErrorExpV = {
+                'mercury' :  0.0001, // arcsec    46e6 km * sind(1/3600) =   223 km
+                'venus' :    0.0001, // arcsec 107.5e6 km * sind(1/3600) =   521 km
+                'earth' :    0.0001, // arcsec 147.1e6 km * sind(1/3600) =   713 km
+                'mars'  :    0.0002, // arcsec 206.7e6 km * sind(1/3600) =  1002 km
+                'jupiter' :  0.003, // arcsec 740.6e6 km * sind(1/3600) =  3591 km
+                'saturn' :   0.003, // arcsec 1357.e6 km * sind(1/3600) =  6582 km 
+                'uranus' :   0.003, // arcsec 2733.e6 km * sind(1/3600) = 13253 km
+                'neptune':   0.003, // arcsec 4471.e6 km * sind(1/3600) = 21677 km
+            }
+
+            for (let indObject = 0; indObject < objects.length; indObject++)
+            {
+                const objName = objects[indObject];
+                let maxError = 0;
+                let maxErrorV = 0;
+
+                for (let indValue = 0; indValue < horizons_data_planets_1900_2100[objName].length; indValue++)
+                {
+                    const values = horizons_data_planets_1900_2100[objName][indValue];
+                    const rExp = [values[1], values[2], values[3]];
+                    const vExp = [values[4], values[5], values[6]];
+                    const JT = values[0];
+                    const r = vecMul(vsop87(objName, JT).r, 0.001);
+                    const v = vecMul(vsop87(objName, JT).v, 0.001);
+
+                    const diff = vecDiff(r, rExp);
+                    const diffNorm = norm(diff);
+                    const diffV = vecDiff(v, vExp);
+                    const diffNormV = norm(diffV);
+                    //console.log(objName + " " + r + " " + rExp + " " + diffNorm);
+                    maxError = Math.max(maxError, diffNorm);
+                    maxErrorV = Math.max(maxErrorV, diffNormV);
+                }
+                console.log(objName + " " + maxError + " " + maxErrorExp[objName] + " " + maxErrorV);
+                assert.equal(maxError < maxErrorExp[objName], true);
+            }
         });
     });
 });
@@ -1210,8 +1172,8 @@ describe('Integration', function() {
 
                 
                 //console.log(osv.name);
-                //console.log(' r    : ' + osv.r);
-                //console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
+                console.log(' r    : ' + osv.r);
+                console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
                 const rBary = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
                 if (osv.name != 'Sun')
                 {
@@ -1219,12 +1181,12 @@ describe('Integration', function() {
                     let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 - 69/86400);
 
                     r = vecSum(r, rBary);
-                    //console.log(' rVSOP: ' + r);
+                    console.log(' rVSOP: ' + r);
                 }
                 else 
                 {
                     const r = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
-                    //console.log(' rVSOP: ' + r);
+                    console.log(' rVSOP: ' + r);
                 }
                 //console.log(' v    : ' + osv.v);
                 //console.log(' vExp : ' + osvExp.v + ' (error: ' + vError + ')');           
@@ -1381,19 +1343,18 @@ describe('TimeCorrelation', function() {
             checkFloat(JD2020Ut1_3, JD2020Ut1, 1e-10);
             checkFloat(JD2040Ut1_3, JD2040Ut1, 1e-10);
         });
-    });
+    });    
+});
 
-    describe('Elp2000-82b', function() {
-        describe('elp2000', function() {
-            it('2020-01-01', function() {
-                // 390185.76414, -98340.34055, -34449.72290
-                const coord = elp2000(timeJulianYmdhms(2020, 1, 1, 0, 0, 0).JT);
-                console.log(coord);
+describe('Elp2000-82b', function() {
+    describe('elp2000', function() {
+        it('2020-01-01', function() {
+            // 390185.76414, -98340.34055, -34449.72290
+            const coord = elp2000(timeJulianYmdhms(2020, 1, 1, 0, 0, 0).JT);
+            console.log(coord);
 
-                console.log(elp2000(2460054.648924834));
-                console.log(correlationUt1Tdb(2460054.648924834));
-            });
+            console.log(elp2000(2460054.648924834));
+            console.log(correlationUt1Tdb(2460054.648924834));
         });
     });
-    
 });
