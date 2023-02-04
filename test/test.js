@@ -17,6 +17,8 @@ import {createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCen
 import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb } from '../src/TimeCorrelation.js';
 import { elp2000 } from '../src/Elp2000-82b.js';
 import { horizons_data_planets_1900_2100 } from '../data/horizons_data_planets_1900_2100.js';
+import { horizons_data_moon_1900_2100 } from '../data/horizons_data_moon_1900_2100.js';
+
 /**
  * Check floating point value with tolerance.   
  * 
@@ -55,6 +57,53 @@ function checkFloat(val, exp, tol)
          checkFloat(val[indVal], exp[indVal], tol);
      }
  }
+
+ /**
+ * Compute the position of the Moon for a sequence of Julian times and compute
+ * errors to the given coordinates.
+ * 
+ * @param {*} array 
+ *      The expected array with rows in the format [JT, X, Y, Z].
+ * @returns Object with maximum, minimum and average errors.
+ */
+function checkArrayElp2000(array)
+{
+    let maxError = 0;
+    let avgError = 0;
+    let minError = 1e10;
+
+    for (let indValue = 0; indValue < array.length; indValue++)
+    {
+        const values = array[indValue];
+        const JT = values[0];
+        const computed = vecMul(elp2000(JT), 0.001);
+        const expected = [values[1], values[2], values[3]];
+
+        // Difference between the two coordinate vectors.
+        const diff = [
+            computed[0] - expected[0], 
+            computed[1] - expected[1], 
+            computed[2] - expected[2]
+        ];
+
+        const diffNorm = Math.sqrt(diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
+        avgError += diffNorm;
+        if (diffNorm > maxError)
+        {
+            maxError = diffNorm;
+        }
+        if (diffNorm < minError)
+        {
+            minError = diffNorm;
+        }
+        //console.log(JT + " " + diffNorm);
+    }
+
+    avgError /= array.length;
+
+    return {avgError : avgError, maxError : maxError, minError : minError};
+}
+
  
 
 describe('Angles', function() {
@@ -917,7 +966,7 @@ describe('Vsop87A', function() {
                     maxError = Math.max(maxError, diffNorm);
                     maxErrorV = Math.max(maxErrorV, diffNormV);
                 }
-                console.log(objName + " " + maxError + " " + maxErrorExp[objName] + " " + maxErrorV);
+                //console.log(objName + " " + maxError + " " + maxErrorExp[objName] + " " + maxErrorV);
                 assert.equal(maxError < maxErrorExp[objName], true);
             }
         });
@@ -1172,8 +1221,8 @@ describe('Integration', function() {
 
                 
                 //console.log(osv.name);
-                console.log(' r    : ' + osv.r);
-                console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
+                //console.log(' r    : ' + osv.r);
+                //console.log(' rExp : ' + osvExp.r + ' (error: ' + rError + ')');
                 const rBary = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
                 if (osv.name != 'Sun')
                 {
@@ -1181,12 +1230,12 @@ describe('Integration', function() {
                     let {r, v} = vsop87(osv.name.toLowerCase(), 2460182.500000000 - 69/86400);
 
                     r = vecSum(r, rBary);
-                    console.log(' rVSOP: ' + r);
+                    //console.log(' rVSOP: ' + r);
                 }
                 else 
                 {
                     const r = vecMul(vsop87ABary(2460182.500000000 - 69/86400).r, -1);
-                    console.log(' rVSOP: ' + r);
+                    //console.log(' rVSOP: ' + r);
                 }
                 //console.log(' v    : ' + osv.v);
                 //console.log(' vExp : ' + osvExp.v + ' (error: ' + vError + ')');           
@@ -1230,7 +1279,7 @@ describe('Eclipses', function() {
             }
 
             const JT = timeJulianTs(new Date("2022-05-15T23:53:20Z")).JT;
-            console.log(JT);
+            //console.log(JT);
 
             const expectedEclipses = [
                 {type : "Total",   JTmax : timeJulianTs(new Date("2001-06-21T12:04:46Z")).JT},
@@ -1284,19 +1333,21 @@ describe('Eclipses', function() {
                 const eclipse = listEclipses[indEclipse];
                 //console.log(eclipse);
                 const timeGreg = timeGregorian(eclipse.JTmax);
-                console.log("Computed : " + timeGreg.year + "-" + toFixed(timeGreg.month) + "-" + toFixed(timeGreg.mday) + 
-                "T" + toFixed(timeGreg.hour) + ":" + toFixed(timeGreg.minute)
-                + ":" + toFixed(Math.floor(timeGreg.second)) + " " + eclipse.type);
+                //console.log("Computed : " + timeGreg.year + "-" + toFixed(timeGreg.month) + "-" + toFixed(timeGreg.mday) + 
+                //"T" + toFixed(timeGreg.hour) + ":" + toFixed(timeGreg.minute)
+                //+ ":" + toFixed(Math.floor(timeGreg.second)) + " " + eclipse.type);
 
                 const eclipse2 = expectedEclipses[indEclipse];
                 //console.log(eclipse);
 
                 const timeErr = 86400 * Math.abs(eclipse.JTmax - eclipse2.JTmax);
 
+                assert.equal(timeErr < 120.0, true);
+
                 const timeGreg2 = timeGregorian(eclipse2.JTmax);
-                console.log("Expected : " + timeGreg2.year + "-" + toFixed(timeGreg2.month) + "-" + toFixed(timeGreg2.mday) + 
-                "T" + toFixed(timeGreg2.hour) + ":" + toFixed(timeGreg2.minute)
-                + ":" + toFixed(Math.floor(timeGreg2.second)) + " " + eclipse2.type + " Error " + timeErr.toFixed(2) + " s");
+                //console.log("Expected : " + timeGreg2.year + "-" + toFixed(timeGreg2.month) + "-" + toFixed(timeGreg2.mday) + 
+                //"T" + toFixed(timeGreg2.hour) + ":" + toFixed(timeGreg2.minute)
+                //+ ":" + toFixed(Math.floor(timeGreg2.second)) + " " + eclipse2.type + " Error " + timeErr.toFixed(2) + " s");
             }            
         });
     });
@@ -1348,13 +1399,11 @@ describe('TimeCorrelation', function() {
 
 describe('Elp2000-82b', function() {
     describe('elp2000', function() {
-        it('2020-01-01', function() {
-            // 390185.76414, -98340.34055, -34449.72290
-            const coord = elp2000(timeJulianYmdhms(2020, 1, 1, 0, 0, 0).JT);
-            console.log(coord);
-
-            console.log(elp2000(2460054.648924834));
-            console.log(correlationUt1Tdb(2460054.648924834));
+        // Compare to data from the Fortran reference implementation.
+        it('ELP2000-82b Reference Implementation 1900-2100 monthly', function() {
+            const errInfo = checkArrayElp2000(horizons_data_moon_1900_2100);
+            // Max error below 250 m.
+            assert.equal(errInfo.maxError < 0.25, true);
         });
     });
 });
