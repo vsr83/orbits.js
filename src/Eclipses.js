@@ -1,4 +1,4 @@
-import {moonNodePassages, moonNewList, moonPositionEcl, moonPositionTod} from './Moon.js';
+import {moonNodePassages, moonNewList, moonPositionEcl} from './Moon.js';
 import {nutationTerms} from './Nutation.js';
 import {vecDiff, asind, acosd,  norm, dot, atan2d, atand, tand, cross, vecMul, vecSum, cosd, sind} from './MathUtils.js';
 import {vsop87} from './Vsop87A.js';

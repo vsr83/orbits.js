@@ -10,7 +10,7 @@ import {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerP
 import {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName} from './Hipparcos.js';
 import {vsop87, vsop87ABary, vsop87AData} from './Vsop87A.js';
 import {aberrationStellarSph, aberrationStellarCart} from './Aberration.js';
-import {moonPositionEcl, moonNodePassages, moonNewList, moonEquitorial, moonPositionTod} from './Moon.js';
+import {moonPositionEcl, moonNodePassages, moonNewList} from './Moon.js';
 import {constellations, constellationBoundaries} from './Constellations.js';
 import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM} from './Integration.js';
 import {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
@@ -29,7 +29,7 @@ export {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerP
 export {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName};
 export {vsop87, vsop87ABary, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
-export {moonPositionEcl, moonNodePassages, moonNewList, moonEquitorial, moonPositionTod};
+export {moonPositionEcl, moonNodePassages, moonNewList};
 export {constellations, constellationBoundaries};
 export {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvStatePM};
 export {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid};

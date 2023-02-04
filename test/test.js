@@ -11,7 +11,7 @@ import {keplerSolve, keplerPerifocal, keplerPlanets, keplerOsculating, keplerPro
 import {hipparcosFind, hipparcosGet, properMotion} from "../src/Hipparcos.js";
 import {vsop87, vsop87ABary} from "../src/Vsop87A.js";
 import {aberrationStellarCart, aberrationStellarSph} from "../src/Aberration.js";
-import { moonPositionTod, moonPositionEcl, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
+import {moonPositionEcl, moonNodePassage, moonNodePassages, moonNew, moonNewList } from '../src/Moon.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
 import {createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid } from '../src/Eclipses.js';
 import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb } from '../src/TimeCorrelation.js';

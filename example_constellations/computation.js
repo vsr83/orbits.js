@@ -235,8 +235,10 @@ function createRotMatrix(lon, lat)
  */
 function computePlanetPos(JT, planet, nutTerms)
 {
-    let posVelEarth = orbitsjs.vsop87('earth', JT);
-    let posVelInitial = orbitsjs.vsop87(planet, JT);
+    const JTtdb = orbitsjs.correlationUt1Tdb(JT);
+
+    let posVelEarth = orbitsjs.vsop87('earth', JTtdb);
+    let posVelInitial = orbitsjs.vsop87(planet, JTtdb);
 
     if (planet === 'earth')
     {
@@ -307,9 +309,13 @@ function computeSatPos(satrec, timeStamp, JT, nutTerms)
  */
 function computeMoonPosEnu(JT, nutTerms)
 {
-    const moonPosTod = orbitsjs.moonPositionTod(JT, nutTerms);
-    const targetOsvPef = orbitsjs.coordTodPef({r : moonPosTod, v : [0, 0, 0], JT : JT});
-    const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
+    //const moonPosTod = orbitsjs.moonPositionTod(JT, nutTerms);
+    //const targetOsvPef = orbitsjs.coordTodPef({r : moonPosTod, v : [0, 0, 0], JT : JT});
+    //const targetOsvEfi = orbitsjs.coordPefEfi(targetOsvPef, 0, 0);
+
+    const JTtdb = orbitsjs.correlationUt1Tdb(JT);
+
+    const targetOsvEfi = orbitsjs.computeOsvMoonEfi(JTtdb);
     const targetOsvEnu = orbitsjs.coordEfiEnu(targetOsvEfi, 
         guiControls.observerLat, guiControls.observerLon, 0);
     return targetOsvEnu.r;
