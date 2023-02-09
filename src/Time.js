@@ -1,6 +1,7 @@
 import { limitAngleDeg } from "./Angles.js";
 import { nutationTerms } from "./Nutation.js";
 import { sind, cosd, atand, rad2Deg } from "./MathUtils.js";
+import { correlationUt1Tdb } from "./TimeCorrelation.js";
 
 /**
  * Compute Greenwich Mean Sidereal Time (GMST).
@@ -12,7 +13,7 @@ import { sind, cosd, atand, rad2Deg } from "./MathUtils.js";
  * @param {*} JT 
  *      Julian time.
  */
- export function timeGmst(JT)
+ export function timeGmstOld(JT)
  {
     // For computation of the UT1 time.
     const JDmin = Math.floor(JT) - 0.5;
@@ -41,6 +42,41 @@ import { sind, cosd, atand, rad2Deg } from "./MathUtils.js";
     // GMST(A.34)
     return limitAngleDeg(1.002737909350795 * UT1 + theta_G0, 360);
  }
+
+ /**
+  * Compute Greenwich Mean Sidereal Time (GMST).
+  * 
+  * References: 
+  *  [1] S. Urban, K. Seidelmann - Explanatory Supplement to the Astronomical Almanac,
+  *      3rd edition, 2013.
+  * 
+  * @param {*} JTut1 
+  *      Julian time (UT1)
+  * @param {*} JTtt 
+  *      Julian time (TT). If undefined, time correlation data is used.
+  * @returns GMST time.
+  */
+export function timeGmst(JTut1, JTtt)
+{
+    if (JTtt === undefined)
+    {
+        JTtt = correlationUt1Tdb(JTut1);
+    }
+
+    const DU = JTut1 - 2451545.0;
+    const T = (JTtt - 2451545.0) / 36525.0;
+    const T2 = T*T;
+    const T3 = T2*T;
+    const T4 = T3*T;
+    const T5 = T4*T;
+
+    // Equation (6.64).
+    const GMST = 86400.0 * (0.7790572732640 + 0.00273781191135448 * DU + DU % 1.0)
+               + 0.00096707 + 307.47710227 * T + 0.092772113 * T2 - 2.93e-8 * T3 
+               - 1.99708e-5 * T4 - 2.453e-9 * T5;
+
+    return (GMST * 360.0 / 86400.0) % 360.0;
+} 
  
 
 /**
@@ -68,7 +104,8 @@ export function timeGast(JT, nutParams)
     const N12 = -cosd(nutParams.eps) * sind(nutParams.dpsi);
 
     // The equinox equation (A.37) for GAST
-    return limitAngleDeg(GMST - atand(N12 / N11));
+    //return limitAngleDeg(GMST - atand(N12 / N11));
+    return limitAngleDeg(GMST + nutParams.dpsi * cosd(nutParams.eps));
 }
 
 /**
