@@ -26,8 +26,7 @@ export function coordEclEq(osv)
     const T4 = T3*T;
     const T5 = T4*T;
 
-    const eps = 23.439279444444445 - 0.013010213611111*T - 5.086111111111112e-08*T2 
-        + 0.565e-07*T3 - 1.6e-10*T4 - 1.205555555555555e-11*T5;
+    const eps = 23.439279444444445;
     const rEq = rotateCart1d(osv.r, -eps);
 
     // The change in eps is less than arcminute in century. Thus, the influence to the
@@ -53,8 +52,7 @@ export function coordEqEcl(osv)
     const T4 = T3*T;
     const T5 = T4*T;
 
-    const eps = 23.439279444444445 - 0.013010213611111*T - 5.086111111111112e-08*T2 
-        + 0.565e-07*T3 - 1.6e-10*T4 - 1.205555555555555e-11*T5;
+    const eps = 23.439279444444445;
 
     const rEcl = rotateCart1d(osv.r, eps);
     const vEcl = rotateCart1d(osv.v, eps);
