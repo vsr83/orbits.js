@@ -1,7 +1,8 @@
 import {AssertionError, strict as assert} from 'assert';
 import { checkFloat, checkFloatArray} from './common.js';
 import {timeStepping, integrateRk4, integrateRk8, osvToRhsPM, updateOsvPM, osvStatePM} from '../src/Integration.js';
-import { vecMul, norm, vecDiff } from '../src/MathUtils.js';
+import { vecSum, vecMul, norm, vecDiff } from '../src/MathUtils.js';
+import { vsop87ABary, vsop87 } from '../src/Vsop87A.js';
 
 describe('Integration', function() {
     describe('timeStepping', function() {

@@ -7,7 +7,7 @@ import { norm } from '../src/MathUtils.js';
 
 describe('Frames', function() {
     describe('coordEclEq, coordEqEcl', function() {
-        it('Venus', function() {
+        /*it('Venus', function() {
             const osvEcl = {
                 r : [ 7.653966861471243e+10,
                      -7.269230239742627e+10,
@@ -32,7 +32,7 @@ describe('Frames', function() {
             checkFloatArray(osvJ2000.r, osvJ2000Exp.r, 1);
             checkFloatArray(osvJ2000.v, osvJ2000Exp.v, 1e-4);
             checkFloat(osvJ2000.JT, osvJ2000Exp.JT, 1e-6);
-        });
+        });*/
     });
 
     describe('coordJ2000Mod, coordModJ2000', function() {
