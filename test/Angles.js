@@ -1,6 +1,5 @@
 import {angleDiff, limitAngleDeg, angleDegArc, angleArcDeg, angleDegHms, angleHmsDeg} from "../src/Angles.js";
 import { checkFloat, checkFloatArray} from './common.js';
-import {AssertionError, strict as assert} from 'assert';
 
 describe('Angles', function() {
     describe('limitAngleDeg', function() {
