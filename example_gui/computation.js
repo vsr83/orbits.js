@@ -122,7 +122,10 @@ function processMoon(configuration, timeStamp)
 
     const JTtdb = orbitsjs.correlationUt1Tdb(JT);
 
-    const moonPosEq = orbitsjs.elp2000(JTtdb);
+    let moonPosEq = orbitsjs.elp2000(JTtdb);
+    const lightTimeSecs = orbitsjs.norm(moonPosEq) / 3.0e8;
+    moonPosEq = orbitsjs.elp2000(JTtdb - lightTimeSecs/86400.0);
+
     const osvJ2000 = orbitsjs.coordEclEq({r : moonPosEq, v : [0, 0, 0], JT : JT});
 
     return osvJ2000;
@@ -153,6 +156,7 @@ function processPlanet(configuration, timeStamp)
     {
         const distInitial = orbitsjs.norm(diffPosInitial);
         const lightTimeInitial = distInitial / 299792458.0;
+        console.log(lightTimeInitial);
 
         const posVelUpdated = orbitsjs.vsop87(configuration.target.toLowerCase(), 
                 JTtdb - lightTimeInitial / 86400.0);
