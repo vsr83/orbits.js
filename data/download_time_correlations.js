@@ -34,3 +34,4 @@ function downloadFile(url, targetFile)
 }
 
 downloadFile('https://datacenter.iers.org/data/latestVersion/EOP_C01_IAU1980_1900-now.txt', 'EOP_C01_IAU1980_1900-now.txt');
+downloadFile('https://datacenter.iers.org/data/latestVersion/EOP_14_C04_IAU1980_one_file_1962-now.txt', 'EOP_14_C04_IAU1980_one_file_1962-now.txt');

@@ -1,5 +1,5 @@
-// This script generates the UT1-TAI differences from the downloaded time correlation
-// data files.
+// This script generates the UT1-TAI, UTC-UT1 differences and polar motion data from 
+// the downloaded time correlation data files.
 // The script should be executed only after download_time_correlations.js.
 
 import {readFileSync} from 'fs';
@@ -75,7 +75,7 @@ function parseUt1Tai(fileName)
         }
         //console.log(fracYear + " " + JD + " " + diffUt1TaiLine + " " + (diffUt1TaiLine - diffPrev));
 
-        diffUt1Tai.push([JD, fracYear, diffUt1TaiLine]);
+        diffUt1Tai.push([JD, diffUt1TaiLine]);
 
         if (fracYear > maxYear)
         {
@@ -85,17 +85,130 @@ function parseUt1Tai(fileName)
         diffPrev = diffUt1TaiLine;
     }
 
-    data.diffUt1Tai = diffUt1Tai;
-    data.diffUt1TaiMinYear = minYear;
-    data.diffUt1TaiMaxYear = maxYear;
-    data.diffUt1TaiMinJD = dateJulianYmd(minYear, 1, 1);
-    data.diffUt1TaiMaxJD = dateJulianYmd(maxYear, 1, 1);
+    data.data = diffUt1Tai;
+    data.minJD = dateJulianYmd(minYear, 1, 1);
+    data.maxJD = dateJulianYmd(maxYear, 1, 1);
 
     return data;
 }
 
 
-const jsonArray = parseUt1Tai("EOP_C01_IAU1980_1900-now.txt");
+/**
+ * Parse UTC-UT1 differences from EOP (IERS) 14 C04 time series data.
+ * 
+ * @param {*} fileName 
+ *     Path of the file.
+ */
+function parseUtcUt1(fileName)
+{
+    let content;
+    const utcUt1 = [];
+    const data = {data : utcUt1};
 
+    try 
+    {
+        content = readFileSync(fileName).toString().split("\n");
+    }
+    catch (err)
+    {
+        console.error(err);
+    }
+
+    let JDmin = 1e12;
+    let JDmax = -1e12;
+
+    for (let indLine = 1; indLine < content.length-1; indLine++)
+    {
+        const line = content[indLine];
+
+        const MJD = parseFloat(line.substring(13, 19));
+        const JD = MJD + 2400000.5;
+        const polarX = parseFloat(line.substring(21, 30));
+        const polarY = parseFloat(line.substring(32, 41));
+        const diffUt1Utc = parseFloat(line.substring(43, 53));
+
+        if (utcUt1.length != 0 && indLine != content.length - 2 && indLine % 7 != 0)
+        {
+            continue;
+        }
+
+        if (!isNaN(MJD))
+        {
+            JDmin = Math.min(JDmin, JD);
+            JDmax = Math.max(JDmax, JD);
+            utcUt1.push([JD, diffUt1Utc]);
+        }
+    }
+    data.minJD = JDmin;
+    data.maxJD = JDmax;
+
+    return data;
+}
+
+/**
+ * Parse polar motion from EOP (IERS) 14 C04 time series data.
+ * 
+ * @param {*} fileName 
+ *     Path of the file.
+ */
+function parsePolar(fileName)
+{
+    let content;
+    const utcUt1 = [];
+    const data = {data : utcUt1};
+
+    try 
+    {
+        content = readFileSync(fileName).toString().split("\n");
+    }
+    catch (err)
+    {
+        console.error(err);
+    }
+
+    let JDmin = 1e12;
+    let JDmax = -1e12;
+
+    for (let indLine = 1; indLine < content.length-1; indLine++)
+    {
+        const line = content[indLine];
+
+        const MJD = parseFloat(line.substring(13, 19));
+        const JD = MJD + 2400000.5;
+        const polarX = parseFloat(line.substring(21, 30));
+        const polarY = parseFloat(line.substring(32, 41));
+        const diffUt1Utc = parseFloat(line.substring(43, 53));
+
+        if (utcUt1.length != 0 && indLine != content.length - 2 && indLine % 7 != 0)
+        {
+            continue;
+        }
+
+        if (!isNaN(MJD))
+        {
+            JDmin = Math.min(JDmin, JD);
+            JDmax = Math.max(JDmax, JD);
+            utcUt1.push([JD, polarX, polarY]);
+        }
+    }
+    data.minJD = JDmin;
+    data.maxJD = JDmax;
+
+    return data;
+}
+
+
+
+const jsonArrayUt1Tai = parseUt1Tai("EOP_C01_IAU1980_1900-now.txt");
+const jsonArrayUt1Utc = parseUtcUt1("EOP_14_C04_IAU1980_one_file_1962-now.txt");
+const jsonArrayPolar = parsePolar("EOP_14_C04_IAU1980_one_file_1962-now.txt");
+const correlationData = {
+    ut1Tai : jsonArrayUt1Tai,
+    ut1Utc : jsonArrayUt1Utc,
+    polar  : jsonArrayPolar
+};
 //console.log(jsonArray);
-console.log(JSON.stringify(jsonArray));
+//console.log(JSON.stringify(jsonArray));
+//console.log(JSON.stringify(jsonArrayUtcUt1));
+
+console.log(JSON.stringify(correlationData));

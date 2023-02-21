@@ -1,35 +1,69 @@
-import dataUt1Tai from '../data/correlation_ut1tai.json'  assert {type: "json"};
+import corrData from '../data/time_correlation_data.json'  assert {type: "json"};
 
-/**
- * Interpolate UT1-TAI difference from the table.
- * 
- * @param {*} JT 
- *      Julian time.
- */
-function correlationInterpolate(JT)
+const ut1Tai = corrData.ut1Tai;
+const ut1Utc = corrData.ut1Utc;
+
+function interpolateSearch(data, JT)
 {
-    // This obviously could be made faster with simple binary search.
-
-    if (JT < dataUt1Tai.diffUt1TaiMinJD)
+    if (JT <= data.minJD)
     {
-        return dataUt1Tai.diffUt1Tai[0][2];
+        return data.data[0];
     }
-    if (JT > dataUt1Tai.diffUt1TaiMaxJD)
+    if (JT >= data.maxJD)
     {
-        return dataUt1Tai.diffUt1Tai[dataUt1Tai.diffUt1Tai.length - 1][2];
+        return data.data[data.data.length - 1];
     }
 
-    for (let indLine = 0; indLine < dataUt1Tai.diffUt1Tai.length - 1; indLine++)
-    {
-        let JTcurrent = dataUt1Tai.diffUt1Tai[indLine][0];
-        let JTnext = dataUt1Tai.diffUt1Tai[indLine + 1][0];
-        let value = dataUt1Tai.diffUt1Tai[indLine][2];
-        let valueNext = dataUt1Tai.diffUt1Tai[indLine + 1][2];
+    let pointerStart = 0;
+    let pointerEnd = data.data.length - 1;
+    let done = false;
 
-        if (JT >= JTcurrent && JT <= JTnext)
+    while (!done)
+    {
+        let firstHalfStart = pointerStart;
+        let secondHalfStart = Math.floor(0.5 * (pointerStart + pointerEnd));
+        let JTstart = data.data[firstHalfStart][0];
+        let JTmiddle = data.data[secondHalfStart][0];
+        let JTend = data.data[pointerEnd][0];
+
+        if (JT >= JTstart && JT <= JTmiddle)
         {
-            return value + (valueNext - value) * (JT - JTcurrent) / (JTnext - JTcurrent);
+            pointerEnd = secondHalfStart;
         }
+        else 
+        {
+            pointerStart = secondHalfStart;
+        }
+
+        if (pointerEnd - pointerStart <= 1)
+        {
+            done = true;
+        }
+
+        //console.log(pointerStart + " " + pointerEnd + " " + done + " " + data.data.length);
+    }
+
+    if (pointerStart == pointerEnd)
+    {
+        return data.data[pointerStart];
+    }
+    else 
+    {
+        const dataFirst = data.data[pointerStart];
+        const dataSecond = data.data[pointerEnd];
+
+        let dataOut = [JT];
+        for (let indData = 1; indData < dataFirst.length; indData++)
+        {
+            const value = dataFirst[indData];
+            const valueNext = dataSecond[indData];
+            const JTcurrent = dataFirst[0];
+            const JTnext = dataSecond[0];
+
+            dataOut.push(value + (valueNext - value) * (JT - JTcurrent) / (JTnext - JTcurrent));
+        }
+
+        return dataOut;
     }
 }
 
@@ -42,7 +76,7 @@ function correlationInterpolate(JT)
  */
 export function correlationUt1Tai(JTut1)
 {
-    return JTut1 - correlationInterpolate(JTut1) / 86400.0;
+    return JTut1 - interpolateSearch(ut1Tai, JTut1)[1] / 86400.0;
 }
 
 /**
@@ -54,7 +88,7 @@ export function correlationUt1Tai(JTut1)
  */
 export function correlationTaiUt1(JTtai)
 {
-    return JTtai + correlationInterpolate(JTtai) / 86400.0;
+    return JTtai + interpolateSearch(ut1Tai, JTtai)[1] / 86400.0;
 }
 
 /**
@@ -81,4 +115,28 @@ export function correlationUt1Tdb(JTut1)
 {
     const JTtai = correlationUt1Tai(JTut1);
     return JTtai + 32.184 / 86400.0;
+}
+
+/**
+ * Convert UT1 to UTC time.
+ * 
+ * @param {*} JT 
+ *      UT1 Julian time.
+ * @returns UTC Julian time.
+ */
+export function correlationUt1Utc(JTut1)
+{
+    return JTut1 - interpolateSearch(ut1Utc, JTut1)[1] / 86400.0
+}
+
+/**
+ * Convert UTC to UT1 time.
+ * 
+ * @param {*} JT 
+ *      UTC Julian time.
+ * @returns UT1 Julian time.
+ */
+export function correlationUtcUt1(JTutc)
+{
+    return JTut1 + interpolateSearch(ut1Utc, JTutc)[1] / 86400.0
 }
