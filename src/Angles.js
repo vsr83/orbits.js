@@ -6,10 +6,10 @@
  *      The angle in degrees.
  * @returns Angle limited to the interval [0, 360).
  */
- export function limitAngleDeg(deg)
- {
-     return deg - 360.0 * Math.floor(deg / 360.0);
- }
+export function limitAngleDeg(deg)
+{
+    return deg - 360.0 * Math.floor(deg / 360.0);
+}
 
  /**
  * Limit angle to [-180, 180.0) interval.
@@ -42,40 +42,40 @@ export function limitAngleDeg180(deg)
   *      The second angle in degrees.
   * @returns Shortest rotation deg1 -> deg2.
   */
- export function angleDiff(deg1, deg2)
- {
-     // Handle missing arguments to avoid recursion.
-     if (deg1 === undefined)
-     {
-         deg1 = 0;
-     }
-     if (deg2 === undefined)
-     {
-         deg2 = 0;
-     }
+export function angleDiff(deg1, deg2)
+{
+    // Handle missing arguments to avoid recursion.
+    if (deg1 === undefined)
+    {
+        deg1 = 0;
+    }
+    if (deg2 === undefined)
+    {
+        deg2 = 0;
+    }
 
-     const deg1Lim = limitAngleDeg(deg1);
-     const deg2Lim = limitAngleDeg(deg2);
+    const deg1Lim = limitAngleDeg(deg1);
+    const deg2Lim = limitAngleDeg(deg2);
 
-     if (deg1Lim <= deg2Lim)
-     {
-         const diff = deg2Lim - deg1Lim;
-         
-         if (diff <= 180.0)
-         {
-             return diff;
-         }
-         else 
-         {
-             // 30 350 -> 350 - 390 = -40
-             return deg2Lim - (deg1Lim + 360.0); 
-         }
-     }
-     else 
-     {
-         return -angleDiff(deg2, deg1)
-     }
- }
+    if (deg1Lim <= deg2Lim)
+    {
+        const diff = deg2Lim - deg1Lim;
+        
+        if (diff <= 180.0)
+        {
+            return diff;
+        }
+        else 
+        {
+            // 30 350 -> 350 - 390 = -40
+            return deg2Lim - (deg1Lim + 360.0); 
+        }
+    }
+    else 
+    {
+        return -angleDiff(deg2, deg1)
+    }
+}
 
 /**
   * Convert angle in degree-arcmin-arcsec format to degrees.

@@ -100,8 +100,6 @@ export function timeGast(JT, nutParams)
     }
 
     const GMST = timeGmst(JT);
-    const N11 = cosd(nutParams.dpsi);
-    const N12 = -cosd(nutParams.eps) * sind(nutParams.dpsi);
 
     // The equinox equation (A.37) for GAST
     //return limitAngleDeg(GMST - atand(N12 / N11));

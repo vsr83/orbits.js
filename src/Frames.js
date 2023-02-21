@@ -13,19 +13,15 @@ import { cosd, sind, vecDiff, norm, atand, atan2d, asind, rad2Deg, vecSum } from
  * Convert coordinates from ecliptic to equatorial system.
  * 
  * @param {*} osv
- *      Orbit state vector with fields r, v and JT in ecliptic frame.
+ *      Orbit state vector with fields r, v and JT in ecliptic frame. 
  * 
  * @returns Orbit state vector in equatorial frame.
  */
 export function coordEclEq(osv)
 {
-    // Julian centuries after J2000.0 epoch.
-    const T = (osv.JT - 2451545.0) / 36525.0;
-    const T2 = T*T;
-    const T3 = T2*T;
-    const T4 = T3*T;
-    const T5 = T4*T;
-
+    // Mean obiquity of the ecliptic at the J2000 epoch.
+    // Since the obliquity is at a specific epoch, it is a constant.
+    // The value is from 2010 version of the Astronomical Almanac p. B52.
     const eps = 23.439279444444445;
     const rEq = rotateCart1d(osv.r, -eps);
 
@@ -45,13 +41,9 @@ export function coordEclEq(osv)
  */
 export function coordEqEcl(osv)
 {
-    // Julian centuries after J2000.0 epoch.
-    const T = (osv.JT - 2451545.0) / 36525.0;
-    const T2 = T*T;
-    const T3 = T2*T;
-    const T4 = T3*T;
-    const T5 = T4*T;
-
+    // Mean obiquity of the ecliptic at the J2000 epoch.
+    // Since the obliquity is at a specific epoch, it is a constant.
+    // The value is from 2010 version of the Astronomical Almanac p. B52.
     const eps = 23.439279444444445;
 
     const rEcl = rotateCart1d(osv.r, eps);
@@ -63,8 +55,14 @@ export function coordEqEcl(osv)
 /**
  * Convert coordinates from J2000 to the Mean-of-Date (MoD) frame.
  * 
+ * The implementation follows Lieske, J.  - Precession matrix based on
+ * IAU/1976/ system of astronomical constants, Astronomy and Astrophysics
+ * vol. 73, no. 3, Mar 1979, p.282-284.
+ * 
  * @param {*} osv
  *      Orbit state vector with fields r, v and JT in J2000 frame.
+ *      The rate of precession is less than an arcminute per year so the 
+ *      time standard of the Julian time does not matter.
  * @returns Object r, v, JT fields for position, velocity and Julian date.
  */
 export function coordJ2000Mod(osv)
@@ -87,8 +85,15 @@ export function coordJ2000Mod(osv)
 /**
  * Convert coordinates from Mean-of-Date (MoD) to the J2000 frame.
  * 
+ * The implementation follows Lieske, J.  - Precession matrix based on
+ * IAU/1976/ system of astronomical constants, Astronomy and Astrophysics
+ * vol. 73, no. 3, Mar 1979, p.282-284.
+ * 
  * @param {*} osv
  *      Orbit state vector with fields r, v and JT in J2000 frame.
+ *      The rate of precession is less than an arcminute per year so the 
+ *      time standard of the Julian time does not matter.
+ * 
  * @returns Object r, v, JT fields for position, velocity and Julian date.
  */
 export function coordModJ2000(osv)
@@ -113,6 +118,8 @@ export function coordModJ2000(osv)
  * 
  * @param {*} osv
  *      Orbit state vector with fields r, v and JT in MoD frame.
+ *      Nutation has maximum angle around 20 arcseconds with about 18 
+ *      year period so the time standard of the Julian time does not matter.
  * @param {*} nutTerms 
  *      Nutation terms object with fields eps, deps and dpsi. If empty, nutation 
  *      is computed.
@@ -158,6 +165,8 @@ export function coordModTod(osv, nutTerms, dPsi1980, dEps1980)
  * 
  * @param {*} osv
  *      Orbit state vector with fields r, v and JT in ToD frame.
+ *      Nutation has maximum angle around 20 arcseconds with about 18 
+ *      year period so the time standard of the Julian time does not matter.
  * @param {*} nutTerms 
  *      Nutation terms object with fields eps, deps and dpsi. If empty, nutation 
  *      is computed.
