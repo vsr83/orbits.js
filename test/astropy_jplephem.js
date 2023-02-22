@@ -1,5 +1,5 @@
 import ephemData from '../data/astropy_jplephem_data.json'  assert {type: "json"};
-import { correlationUt1Tdb } from '../src/TimeCorrelation.js';
+import { correlationUt1Tdb, correlationUt1Utc, correlationUtcUt1 } from '../src/TimeCorrelation.js';
 import { vsop87 } from '../src/Vsop87A.js';
 import {AssertionError, strict as assert} from 'assert';
 import {norm, vecMul, vecSum, atand, atan2d, asind, linComb, vecDiff, tand, sind, cosd} from "../src/MathUtils.js";
@@ -49,13 +49,23 @@ describe('Astropy - JPL Ephemeris', function() {
             {
                 const JTut1 = JTut1List[indTimestamp];
                 const JTtdbExp = JTtdbList[indTimestamp];
+                const JTutcExp = JTutcList[indTimestamp];
                 const JTtdb = correlationUt1Tdb(JTut1);
+                const JTutc = correlationUt1Utc(JTut1);
+                const JTut12 = correlationUtcUt1(JTutc);
 
-                const deltaErr = 86400.0 * Math.abs(JTtdb - JTtdbExp);
+                const deltaErrTdb = 86400.0 * Math.abs(JTtdb - JTtdbExp);
+                const deltaErrUtc = 86400.0 * Math.abs(JTutc - JTutcExp);
+                const deltaErrUt1 = 86400.0 * Math.abs(JTut1 - JTut12);
 
                 if (JTut1 > 2441712.5) 
                 {
-                    assert.equal(deltaErr < 0.1, true);
+                    assert.equal(deltaErrTdb < 0.1, true);
+                }
+
+                if (JTutc > 2441712.5)
+                {
+                    assert.equal(deltaErrUtc < 0.1, true);                    
                 }
             }
         }

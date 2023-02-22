@@ -30,11 +30,11 @@ describe('TimeCorrelation', function() {
             checkFloat(JD1899Tai - JD1899Ut1, 0.0001433/86400, 1e-8);
             checkFloat(JD2000Tai - JD2000Ut1, 31.6432070/86400, 1e-8);
             checkFloat(JD2020Tai - JD2020Ut1, 37.177333/86400, 1e-8);
-            checkFloat(JD2040Tai - JD2040Ut1, 37.1098410/86400, 1e-8);
+            checkFloat(JD2040Tai - JD2040Ut1, 37.0180883/86400, 1e-8);
             checkFloat(JD1899Tdb - JD1899Ut1, (32.184 + 0.0001433)/86400, 1e-8);
             checkFloat(JD2000Tdb - JD2000Ut1, (32.184 + 31.6432070)/86400, 1e-8);
             checkFloat(JD2020Tdb - JD2020Ut1, (32.184 + 37.177333)/86400, 1e-8);
-            checkFloat(JD2040Tdb - JD2040Ut1, (32.184 + 37.1098410)/86400, 1e-8);
+            checkFloat(JD2040Tdb - JD2040Ut1, (32.184 + 37.0180883)/86400, 1e-8);
             checkFloat(JD1899Ut1_2, JD1899Ut1, 1e-10);
             checkFloat(JD2000Ut1_2, JD2000Ut1, 1e-10);
             checkFloat(JD2020Ut1_2, JD2020Ut1, 1e-10);

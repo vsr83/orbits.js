@@ -3,7 +3,7 @@ import corrData from '../data/time_correlation_data.json'  assert {type: "json"}
 const ut1Tai = corrData.ut1Tai;
 const ut1Utc = corrData.ut1Utc;
 
-function interpolateSearch(data, JT)
+function interpolateSearch(data, JT, doInterp)
 {
     if (JT <= data.minJD)
     {
@@ -52,18 +52,28 @@ function interpolateSearch(data, JT)
         const dataFirst = data.data[pointerStart];
         const dataSecond = data.data[pointerEnd];
 
-        let dataOut = [JT];
-        for (let indData = 1; indData < dataFirst.length; indData++)
+        if (doInterp)
         {
-            const value = dataFirst[indData];
-            const valueNext = dataSecond[indData];
-            const JTcurrent = dataFirst[0];
-            const JTnext = dataSecond[0];
+            let dataOut = [JT];
+            for (let indData = 1; indData < dataFirst.length; indData++)
+            {
+                const value = dataFirst[indData];
+                const valueNext = dataSecond[indData];
+                const JTcurrent = dataFirst[0];
+                const JTnext = dataSecond[0];
 
-            dataOut.push(value + (valueNext - value) * (JT - JTcurrent) / (JTnext - JTcurrent));
+                dataOut.push(value + (valueNext - value) * (JT - JTcurrent) / (JTnext - JTcurrent));
+            }
+
+            return dataOut;
         }
-
-        return dataOut;
+        else 
+        {
+            // We wish to avoid situation, where a leap second is introduced and
+            // the new value introduces a jump to the second for a julian time before
+            // end of the year.
+            return dataFirst;
+        }
     }
 }
 
@@ -76,7 +86,7 @@ function interpolateSearch(data, JT)
  */
 export function correlationUt1Tai(JTut1)
 {
-    return JTut1 - interpolateSearch(ut1Tai, JTut1)[1] / 86400.0;
+    return JTut1 - interpolateSearch(ut1Tai, JTut1, true)[1] / 86400.0;
 }
 
 /**
@@ -88,7 +98,7 @@ export function correlationUt1Tai(JTut1)
  */
 export function correlationTaiUt1(JTtai)
 {
-    return JTtai + interpolateSearch(ut1Tai, JTtai)[1] / 86400.0;
+    return JTtai + interpolateSearch(ut1Tai, JTtai, true)[1] / 86400.0;
 }
 
 /**
@@ -126,7 +136,7 @@ export function correlationUt1Tdb(JTut1)
  */
 export function correlationUt1Utc(JTut1)
 {
-    return JTut1 - interpolateSearch(ut1Utc, JTut1)[1] / 86400.0
+    return JTut1 - interpolateSearch(ut1Utc, JTut1, false)[1] / 86400.0
 }
 
 /**
@@ -138,5 +148,24 @@ export function correlationUt1Utc(JTut1)
  */
 export function correlationUtcUt1(JTutc)
 {
-    return JTut1 + interpolateSearch(ut1Utc, JTutc)[1] / 86400.0
+    // There is some difficulty with the first/last second of the year in case of 
+    // leap seconds.
+    let JTut1 = JTutc + interpolateSearch(ut1Utc, JTutc, false)[1] / 86400.0;
+
+    const JTsecond = 1.0/86400.0;
+
+    // We wish for UTC(UT1(UTC)) = UTC.
+    if (Math.abs(JTutc - correlationUt1Utc(JTut1)) > 0.001 * JTsecond)
+    {
+        if (JTutc - Math.floor(JTutc) > 0)
+        {
+            JTut1 = JTutc + interpolateSearch(ut1Utc, JTutc + JTsecond, false)[1] / 86400.0;
+        }
+        else 
+        {
+            JTut1 = JTutc + interpolateSearch(ut1Utc, JTutc - JTsecond, false)[1] / 86400.0;
+        }
+    }
+
+    return JTut1;
 }

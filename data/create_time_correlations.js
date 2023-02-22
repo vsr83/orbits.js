@@ -179,7 +179,7 @@ function parsePolar(fileName)
         const polarY = parseFloat(line.substring(32, 41));
         const diffUt1Utc = parseFloat(line.substring(43, 53));
 
-        if (utcUt1.length != 0 && indLine != content.length - 2 && indLine % 7 != 0)
+        if (utcUt1.length != 0 && indLine != content.length - 2 && indLine % 1 != 0)
         {
             continue;
         }
