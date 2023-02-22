@@ -1,6 +1,6 @@
 import hipparcosData from '../data/hipparcos_reduced.json'  assert {type: "json"};
 import { dateJulianYmd } from './Time.js';
-import { sind, cosd, linComb, deg2Rad, rad2Deg, dot, cross } from './MathUtils.js';
+import { linComb, deg2Rad, rad2Deg, dot, cross } from './MathUtils.js';
 
 /**
  * Find objects from the reduced Hipparcos catalog.

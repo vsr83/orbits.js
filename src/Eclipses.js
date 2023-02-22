@@ -1,8 +1,8 @@
 import {moonNodePassages, moonNewList, moonPositionEcl} from './Moon.js';
 import {nutationTerms} from './Nutation.js';
-import {vecDiff, asind, acosd,  norm, dot, atan2d, atand, tand, cross, vecMul, vecSum, cosd, sind} from './MathUtils.js';
+import {vecDiff, asind, acosd,  norm, dot, atan2d, atand, tand, vecMul, vecSum, cosd, sind} from './MathUtils.js';
 import {vsop87} from './Vsop87A.js';
-import { coordEclEq, coordJ2000Mod, coordModJ2000, coordModTod, coordTodMod, coordTodPef, coordPefEfi, coordEfiEnu, coordWgs84Efi } from './Frames.js';
+import { coordEclEq, coordJ2000Mod, coordModTod, coordTodPef, coordPefEfi, coordEfiEnu } from './Frames.js';
 import { timeGast } from './Time.js';
 import {rotateCart1d, rotateCart3d} from './Rotations.js';
 import {aberrationStellarCart} from './Aberration.js';

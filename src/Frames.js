@@ -1,7 +1,7 @@
 import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
 import { nutationTerms } from "./Nutation.js";
 import { timeGast } from "./Time.js";
-import { cosd, sind, vecDiff, norm, atand, atan2d, asind, rad2Deg, vecSum } from "./MathUtils.js";
+import { cosd, sind, vecDiff, norm, atand, atan2d, asind, vecSum } from "./MathUtils.js";
 
 /*
  * References:

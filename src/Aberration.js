@@ -1,4 +1,6 @@
 import {sind, cosd, atan2d, asind, norm} from "./MathUtils.js";
+//import { coordEclEq, coordJ2000Mod } from "./Frames.js";
+//import { vsop87 } from "./Vsop87A.js";
 
 // Coefficients used in the computation of the stellar aberration.
 // Meeus - Astronomical Algorithms 1998, Chapter 23
@@ -242,9 +244,20 @@ export function aberrationStellarSph(JT, RA, decl, dvJ2000)
             + (zCoeff[indCoeff][2] + zCoeff[indCoeff][3] * T) * Math.cos(A);
     }
     
+    //const osvEarthEcl = vsop87('earth', JT);
+    //osvEarthEcl.JT = JT;
+    //const osvEarthJ2000 = coordEclEq(osvEarthEcl);
+    //console.log(vX);
+
     const au = 149597870700;
     // From m/s to 10e-8 au/day;
     const factor = 86164.0905 * 1e8 / au;
+    //console.log(vX + " " + vY + " " + vZ);
+
+    //vX = osvEarthJ2000.v[0] * factor;
+    //vY = osvEarthJ2000.v[1] * factor;
+    //vZ = osvEarthJ2000.v[2] * factor;
+    //console.log(vX + " " + vY + " " + vZ);
     
     vX += factor * dvJ2000[0];
     vY += factor * dvJ2000[1];

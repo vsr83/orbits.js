@@ -3,6 +3,17 @@ import corrData from '../data/time_correlation_data.json'  assert {type: "json"}
 const ut1Tai = corrData.ut1Tai;
 const ut1Utc = corrData.ut1Utc;
 
+/**
+ * Perform binary search of data.
+ * 
+ * @param {*} data 
+ *      JSON of data with fields minJD, maxJD and data.
+ * @param {*} JT 
+ *      Julian time.
+ * @param {*} doInterp
+ *      Whether to perform interpolation of the values. 
+ * @returns The possibly interpolated data.
+ */
 function interpolateSearch(data, JT, doInterp)
 {
     if (JT <= data.minJD)
