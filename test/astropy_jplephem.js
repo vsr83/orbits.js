@@ -9,6 +9,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
 import { aberrationStellarCart } from '../src/Aberration.js';
 import { limitAngleDeg } from '../src/Angles.js';
 import mjdPolar from '../data/mjd_polar.json' assert {type : "json"};
+import { computePlanet } from '../src/Positions.js';
 
 function polarMotion(JT)
 {
@@ -182,8 +183,16 @@ describe('Astropy - JPL Ephemeris', function() {
                 const osvEfi = coordPefEfi(osvPef, dx/3600, dy/3600);
                 const osvEnu = coordEfiEnu(osvEfi, lat, lon, h);
 
-                const az = limitAngleDeg(atan2d(osvEnu.r[0], osvEnu.r[1]));
-                const alt = asind(osvEnu.r[2] / norm(osvEnu.r));
+                let az = limitAngleDeg(atan2d(osvEnu.r[0], osvEnu.r[1]));
+                let alt = asind(osvEnu.r[2] / norm(osvEnu.r));
+
+                //
+                const outputs = computePlanet(objName, JTut1, {lat : lat, lon : lon, h : h});
+                //console.log(outputs.angles.enu.az + " " + az);
+                //az = outputs.angles.enu.az;
+                //alt = outputs.angles.enu.alt;
+                //
+
                 const azErr = Math.abs(az - azExp) * 3600;
                 const altErr = Math.abs(alt - altExp) * 3600;
                 azErrMax = Math.max(azErr, azErrMax);
@@ -197,6 +206,7 @@ describe('Astropy - JPL Ephemeris', function() {
                 //console.log(objName + " " + JTut1 + " " + raExp + " " + decExp);
                 //console.log(objName + " " + JTtdb + " " + icrsRaList[indTimestamp] + " " +
                 //            icrsDecList[indTimestamp]);
+
             }
            raErrAvg /= numTimestamps;
            decErrAvg /= numTimestamps;
