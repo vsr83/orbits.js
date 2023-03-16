@@ -2,6 +2,7 @@ import corrData from '../data/time_correlation_data.json'  assert {type: "json"}
 
 const ut1Tai = corrData.ut1Tai;
 const ut1Utc = corrData.ut1Utc;
+const polar  = corrData.polar;
 
 /**
  * Perform binary search of data.
@@ -179,4 +180,17 @@ export function correlationUtcUt1(JTutc)
     }
 
     return JTut1;
+}
+
+/**
+ * Compute polar motion.
+ * 
+ * @param {*} JTut1
+ *      UT1 Julian time.
+ * @returns [dx, dy] array in degrees;
+ */ 
+export function polarMotion(JTut1)
+{
+    const data = interpolateSearch(polar, JTut1, true);
+    return [data[1] / 3600.0, data[2] / 3600.0];
 }
