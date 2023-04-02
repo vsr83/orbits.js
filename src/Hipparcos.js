@@ -1,6 +1,9 @@
 import hipparcosData from '../data/hipparcos_reduced.json'  assert {type: "json"};
 import { dateJulianYmd } from './Time.js';
-import { linComb, deg2Rad, rad2Deg, dot, cross } from './MathUtils.js';
+import { linComb, deg2Rad, rad2Deg, dot, cross, sind, cosd, tand, vecMul } from './MathUtils.js';
+
+// Astronomical unit.
+const au = 1.495978707e11;
 
 /**
  * Find objects from the reduced Hipparcos catalog.
@@ -31,7 +34,7 @@ export function hipparcosFind(searchKey)
  *      Designation of the object.
  * @param {*} JT
  *      Julian time.
- * @returns JSON object with fields RA, DE and mag.
+ * @returns Hipparcos star data propagated into a new epoch.
  */
 export function hipparcosGet(designation, JT)
 {
@@ -50,7 +53,7 @@ export function hipparcosGet(designation, JT)
 
     const starData = properMotion(hipparcosData[designation], JT);
 
-    return {RA : starData.RA, DE : starData.DE, mag : starData.mag};
+    return starData;
 }
 
 const hipparcosIndToName = [];
@@ -182,6 +185,64 @@ export function properMotion(starDataJ1991, JT)
         mag : starDataJ1991.mag, 
         constellation : starDataJ1991.constellation,
         radVel : radVel
+    };
+}
+
+/**
+ * Convert trigonometric parallax of a star to distance.
+ * 
+ * @param {*} par 
+ *      Trigonometric parallax in degrees.
+ * @returns Distance.
+ */
+export function parallaxToDistance(par)
+{
+    // tand par = au / distance
+
+    const distance = au / tand(par);
+
+    return distance;
+}
+
+/**
+ * Apply annual parallax to Hipparcos data.
+ * 
+ * @param {*} hipData 
+ *       Object representing Hipparcos data 
+ * @param {*} earthPosEqMeters
+ *       Earth position in equatorial frame.
+ * @return Object representing Hipparcos data with updated RA and DE fields.
+ */
+export function annualParallax(hipData, earthPosEqMeters)
+{
+    // This computation is based on the section 7.2.2.3 of
+    // Urban, Seidelmann - Explanatory Supplement to the Astronomcal Almanac
+    // 3rd Edition, 2012.
+
+    const Plx = hipData.Plx / (3600.0 * 1000.0);
+
+    // Position in astronomical units.
+    const earthPos = vecMul(earthPosEqMeters, 1 / au);
+
+    // (7.37): 
+    const RA = hipData.RA + Plx 
+             * (earthPos[0] * sind(hipData.RA) - earthPos[1] * cosd(hipData.RA))
+             / cosd(hipData.DE);
+    const DE = hipData.DE + Plx 
+             * (earthPos[0] * cosd(hipData.RA)*sind(hipData.DE) 
+             +  earthPos[1] * sind(hipData.RA)*sind(hipData.DE) 
+             -  earthPos[2] * cosd(hipData.DE));
+
+    return {
+        id : hipData.id, 
+        RA : RA, 
+        DE : DE, 
+        Plx : hipData.Plx,
+        RA_delta : hipData.RA_delta,
+        DE_delta : hipData.DE_delta, 
+        mag : hipData.mag, 
+        constellation : hipData.constellation,
+        radVel : hipData.radVel
     };
 }
 
