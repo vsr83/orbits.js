@@ -9,7 +9,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
 import { aberrationStellarCart } from '../src/Aberration.js';
 import { limitAngleDeg } from '../src/Angles.js';
 import mjdPolar from '../data/mjd_polar.json' assert {type : "json"};
-import { computePlanet } from '../src/Positions.js';
+import { computePlanet, computeStar } from '../src/Positions.js';
 
 function polarMotion(JT)
 {
@@ -217,4 +217,12 @@ describe('Astropy - JPL Ephemeris', function() {
 
         }
     });
+});
+
+describe('tmp', function() 
+{
+    it('tmp2', function() 
+    {
+        console.log(computeStar("3 Alpha Lyrae (Vega)", 2460035.5));
+    })
 });

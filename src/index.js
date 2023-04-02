@@ -7,7 +7,7 @@ import {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiWgs84, coordWgs84Efi, 
     coordEfiEnu, coordEnuEfi, coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer} from './Frames.js';
 import {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerPlanets} from './Kepler.js';
-import {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName} from './Hipparcos.js';
+import {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName, parallaxToDistance, annualParallax} from './Hipparcos.js';
 import {vsop87, vsop87ABary, vsop87AData} from './Vsop87A.js';
 import {aberrationStellarSph, aberrationStellarCart} from './Aberration.js';
 import {moonPositionEcl, moonNodePassages, moonNewList} from './Moon.js';
@@ -16,6 +16,9 @@ import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvSt
 import {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
 import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb, correlationUtcUt1, correlationUt1Utc, polarMotion } from './TimeCorrelation.js';
 import { elp2000 } from './Elp2000-82b.js';
+import {planetMagnitude} from './Planets.js';
+import { plutoPositionEclHel } from './Pluto.js';
+
 
 export {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
     atan2d, atand, linComb};
@@ -26,7 +29,7 @@ export {coordEclEq, coordEqEcl, coordJ2000Mod, coordModJ2000, coordModTod, coord
     coordTodPef, coordPefTod, coordPefEfi, coordEfiPef, coordEfiEnu, coordEnuEfi, 
     coordEnuAzEl, coordAzElEnu, coordPerIne, coordInePer, coordEfiWgs84, coordWgs84Efi};
 export {keplerSolve, keplerPerifocal, keplerOsculating, keplerPropagate, keplerPlanets};
-export {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName};
+export {hipparcosFind, hipparcosGet, hipparcosData, hipparcosIndToName, parallaxToDistance, annualParallax};
 export {vsop87, vsop87ABary, vsop87AData};
 export {aberrationStellarSph, aberrationStellarCart};
 export {moonPositionEcl, moonNodePassages, moonNewList};
@@ -35,3 +38,5 @@ export {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvSt
 export {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid};
 export {correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb, correlationUtcUt1, correlationUt1Utc, polarMotion};
 export {elp2000};
+export {planetMagnitude};
+export {plutoPositionEclHel};
