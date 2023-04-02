@@ -8,6 +8,7 @@ import { aberrationStellarCart } from '../src/Aberration.js';
 import { limitAngleDeg } from "./Angles.js";
 import { planetMagnitude } from "./Planets.js";
 import { hipparcosGet, annualParallax, parallaxToDistance } from "./Hipparcos.js";
+import { refractionSamuelsson } from "./Refraction.js";
 
 const planetData = {
     mercury : {
@@ -274,6 +275,7 @@ export function computePlanet(planetName, JTut1, observer, corrections)
     const osvTod = coordModTod(osvMod);
     osvTod.JT = JTut1;
     const osvPef = coordTodPef(osvTod);
+    
     // Apply polar motion.
     let dx = 0;
     let dy = 0;
@@ -334,6 +336,14 @@ export function computePlanet(planetName, JTut1, observer, corrections)
         alt  : getDec(outputs.osv.enu.r),
         dist : norm(outputs.osv.enu.r)
     };
+
+    // Perform refraction correction. Note that the correction is only done for the ENU frame
+    // angles and not in any other frame nor cartesian coordinates.
+    if (corrections.refraction)
+    {
+        outputs.angles.enu.alt = refractionSamuelsson(outputs.angles.enu.alt, 
+            corrections.refractionParameters.temperature, corrections.refractionParameters.pressure);
+    }
 
     outputs.target.angDiameter = 2.0 * atand(planetData[planetName].diameter 
         / (2.0 * outputs.angles.enu.dist));
@@ -444,6 +454,7 @@ export function computeStar(starName, JTut1, observer, corrections, osvEarthEcl)
     const osvTod = coordModTod(osvMod);
     osvTod.JT = JTut1;
     const osvPef = coordTodPef(osvTod);
+
     // Apply polar motion.
     let dx = 0;
     let dy = 0;
@@ -505,6 +516,14 @@ export function computeStar(starName, JTut1, observer, corrections, osvEarthEcl)
         alt  : getDec(outputs.osv.enu.r),
         dist : norm(outputs.osv.enu.r)
     };
+
+    // Perform refraction correction. Note that the correction is only done for the ENU frame
+    // angles and not in any other frame nor cartesian coordinates.
+    if (corrections.refraction)
+    {
+        outputs.angles.enu.alt = refractionSamuelsson(outputs.angles.enu.alt, 
+            corrections.refractionParameters.temperature, corrections.refractionParameters.pressure);
+    }
 
     outputs.target.magnitude = hipData.mag;
     outputs.target.angDiameter = 0.0;
