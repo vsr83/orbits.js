@@ -161,6 +161,62 @@ function getAz(r, limit180)
 }
 
 /**
+ * Compute angles from OSV outputs.
+ * 
+ * @param {*} osvOutput 
+ *      OSV in each frame.
+ * @returns Object with angles for each frame in degrees.
+ */
+function computeOsvAngles(osvOutput)
+{
+    const angles = {};
+
+    // Convert OSV locations to angles:
+    angles.eclHel = {
+        lon  : getRa(osvOutput.eclHel.r, false),
+        lat  : getDec(osvOutput.eclHel.r),
+        dist : norm(osvOutput.eclHel.r)
+    };
+    angles.eclGeo = {
+        lon : getRa(osvOutput.eclGeo.r, false),
+        lat : getDec(osvOutput.eclGeo.r),
+        dist : norm(osvOutput.eclGeo.r)
+    };
+    angles.J2000 = {
+        ra   : getRa(osvOutput.J2000.r, false),
+        dec  : getDec(osvOutput.J2000.r),
+        dist : norm(osvOutput.J2000.r)
+    };
+    angles.mod = {
+        ra   : getRa(osvOutput.mod.r, false),
+        dec  : getDec(osvOutput.mod.r),
+        dist : norm(osvOutput.mod.r)
+    };
+    angles.tod = {
+        ra   : getRa(osvOutput.tod.r, false),
+        dec  : getDec(osvOutput.tod.r),
+        dist : norm(osvOutput.tod.r)
+    };
+    angles.pef = {
+        lon  : getRa(osvOutput.pef.r, true),
+        lat  : getDec(osvOutput.pef.r),
+        dist : norm(osvOutput.pef.r)
+    };
+    angles.efi = {
+        lon  : getRa(osvOutput.efi.r, true),
+        lat  : getDec(osvOutput.efi.r),
+        dist : norm(osvOutput.efi.r)
+    };
+    angles.enu = {
+        az   : getAz(osvOutput.enu.r, false),
+        alt  : getDec(osvOutput.enu.r),
+        dist : norm(osvOutput.enu.r)
+    };
+
+    return angles;
+}
+
+/**
  * Compute outputs for a planet or the Sun.
  * 
  * @param {*} planetName 
@@ -275,7 +331,7 @@ export function computePlanet(planetName, JTut1, observer, corrections)
     const osvTod = coordModTod(osvMod);
     osvTod.JT = JTut1;
     const osvPef = coordTodPef(osvTod);
-    
+
     // Apply polar motion.
     let dx = 0;
     let dy = 0;
@@ -287,55 +343,18 @@ export function computePlanet(planetName, JTut1, observer, corrections)
     const osvEnu = coordEfiEnu(osvEfi, observer.lat, observer.lon, observer.h);
 
     // Export OSVs:
-    outputs.osv.eclGeo = osvEcl;
-    outputs.osv.J2000 = osvJ2000;
-    outputs.osv.mod = osvMod;
-    outputs.osv.tod = osvTod;
-    outputs.osv.pef = osvPef;
-    outputs.osv.efi = osvEfi;
-    outputs.osv.enu = osvEnu;
+    outputs.osv = {
+        eclHel : osvEcl, 
+        eclGeo : osvGeo, 
+        J2000  : osvJ2000,
+        mod    : osvMod, 
+        tod    : osvTod, 
+        pef    : osvPef, 
+        efi    : osvEfi, 
+        enu    : osvEnu
+    };
 
-    // Convert OSV locations to angles:
-    outputs.angles.eclHel = {
-        lon  : getRa(outputs.osv.eclHel.r, true),
-        lat  : getDec(outputs.osv.eclHel.r),
-        dist : norm(outputs.osv.eclHel.r)
-    };
-    outputs.angles.eclGeo = {
-        lon : getRa(outputs.osv.eclGeo.r, false),
-        lat : getDec(outputs.osv.eclGeo.r),
-        dist : norm(outputs.osv.eclGeo.r)
-    };
-    outputs.angles.J2000 = {
-        ra   : getRa(outputs.osv.J2000.r, false),
-        dec  : getDec(outputs.osv.J2000.r),
-        dist : norm(outputs.osv.J2000.r)
-    };
-    outputs.angles.mod = {
-        ra   : getRa(outputs.osv.mod.r, false),
-        dec  : getDec(outputs.osv.mod.r),
-        dist : norm(outputs.osv.mod.r)
-    };
-    outputs.angles.tod = {
-        ra   : getRa(outputs.osv.tod.r, false),
-        dec  : getDec(outputs.osv.tod.r),
-        dist : norm(outputs.osv.tod.r)
-    };
-    outputs.angles.pef = {
-        lon  : getRa(outputs.osv.pef.r, false),
-        lat  : getDec(outputs.osv.pef.r),
-        dist : norm(outputs.osv.pef.r)
-    };
-    outputs.angles.efi = {
-        lon  : getRa(outputs.osv.efi.r, true),
-        lat  : getDec(outputs.osv.efi.r),
-        dist : norm(outputs.osv.efi.r)
-    };
-    outputs.angles.enu = {
-        az   : getAz(outputs.osv.enu.r, true),
-        alt  : getDec(outputs.osv.enu.r),
-        dist : norm(outputs.osv.enu.r)
-    };
+    outputs.angles = computeOsvAngles(outputs.osv);
 
     // Perform refraction correction. Note that the correction is only done for the ENU frame
     // angles and not in any other frame nor cartesian coordinates.
@@ -353,7 +372,6 @@ export function computePlanet(planetName, JTut1, observer, corrections)
     outputs.target.magnitude = magData.magnitude;
     outputs.target.apparentDisk = magData.apparentDisk;
     outputs.target.surfaceBrightness = magData.surfaceBrightness;
-
 
     return outputs;
 }
@@ -466,56 +484,19 @@ export function computeStar(starName, JTut1, observer, corrections, osvEarthEcl)
     const osvEnu = coordEfiEnu(osvEfi, observer.lat, observer.lon, observer.h);
 
     // Export OSVs:
-    outputs.osv.eclHel = osvEcl;
-    outputs.osv.eclGeo = osvGeo;
-    outputs.osv.J2000 = osvJ2000;
-    outputs.osv.mod = osvMod;
-    outputs.osv.tod = osvTod;
-    outputs.osv.pef = osvPef;
-    outputs.osv.efi = osvEfi;
-    outputs.osv.enu = osvEnu;
+    outputs.osv = {
+        eclHel : osvEcl, 
+        eclGeo : osvGeo, 
+        J2000  : osvJ2000,
+        mod    : osvMod, 
+        tod    : osvTod, 
+        pef    : osvPef, 
+        efi    : osvEfi, 
+        enu    : osvEnu
+    };
 
     // Convert OSV locations to angles:
-    outputs.angles.eclHel = {
-        lon  : getRa(outputs.osv.eclHel.r, false),
-        lat  : getDec(outputs.osv.eclHel.r),
-        dist : norm(outputs.osv.eclHel.r)
-    };
-    outputs.angles.eclGeo = {
-        lon : getRa(outputs.osv.eclGeo.r, false),
-        lat : getDec(outputs.osv.eclGeo.r),
-        dist : norm(outputs.osv.eclGeo.r)
-    };
-    outputs.angles.J2000 = {
-        ra   : getRa(outputs.osv.J2000.r, false),
-        dec  : getDec(outputs.osv.J2000.r),
-        dist : norm(outputs.osv.J2000.r)
-    };
-    outputs.angles.mod = {
-        ra   : getRa(outputs.osv.mod.r, false),
-        dec  : getDec(outputs.osv.mod.r),
-        dist : norm(outputs.osv.mod.r)
-    };
-    outputs.angles.tod = {
-        ra   : getRa(outputs.osv.tod.r, false),
-        dec  : getDec(outputs.osv.tod.r),
-        dist : norm(outputs.osv.tod.r)
-    };
-    outputs.angles.pef = {
-        lon  : getRa(outputs.osv.pef.r, true),
-        lat  : getDec(outputs.osv.pef.r),
-        dist : norm(outputs.osv.pef.r)
-    };
-    outputs.angles.efi = {
-        lon  : getRa(outputs.osv.efi.r, true),
-        lat  : getDec(outputs.osv.efi.r),
-        dist : norm(outputs.osv.efi.r)
-    };
-    outputs.angles.enu = {
-        az   : getAz(outputs.osv.enu.r, false),
-        alt  : getDec(outputs.osv.enu.r),
-        dist : norm(outputs.osv.enu.r)
-    };
+    outputs.angles = computeOsvAngles(outputs.osv);
 
     // Perform refraction correction. Note that the correction is only done for the ENU frame
     // angles and not in any other frame nor cartesian coordinates.
@@ -525,10 +506,11 @@ export function computeStar(starName, JTut1, observer, corrections, osvEarthEcl)
             corrections.refractionParameters.temperature, corrections.refractionParameters.pressure);
     }
 
-    outputs.target.magnitude = hipData.mag;
-    outputs.target.angDiameter = 0.0;
-    outputs.target.fracIlluminated = 1.0;
-    outputs.target.apparentDisk = 0.0;
+    // Export magnitude data:
+    outputs.target.magnitude         = hipData.mag;
+    outputs.target.angDiameter       = 0.0;
+    outputs.target.fracIlluminated   = 1.0;
+    outputs.target.apparentDisk      = 0.0;
     outputs.target.surfaceBrightness = 0.0;
 
     return outputs;
