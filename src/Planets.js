@@ -163,3 +163,112 @@ export function planetMagnitude(planetName, posTargetEclHel, posTargetEclGeo)
 
     return outputs;
 }
+
+/**
+ * Compute approximate rotational parameters of a planet. This code
+ * is based on Table 10.1 of:
+ * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 
+ * 3rd edition, 2012.
+ * 
+ * @param {*} planetName
+ *      Name of the planet. 
+ * @param {*} JTut1 
+ *      Julian time (UT1).
+ * @returns Object with fields alpha_0, delta_0 and W.
+ */
+export function planetRotationParams(planetName, JTut1)
+{
+    // Julian centuries after J2000.0 epoch.
+    const T = (osv.JT - 2451545.0) / 36525.0;
+    // Days after J2000.0 epoch.
+    const t = JTut1 - 2451545.0;
+
+    // The CCW position of the (rising) node (intersection BCRS and planet equators) 
+    // along the BCRS plane minus 90 degrees.
+    let alpha_0 = 0;
+    // 90 - delta_0 is the CW rotation of the planet equator w.r.t. BCRS equator.
+    let delta_0 = 0;
+    // CCW rotation of the prime meridian w.r.t. the node.
+    let W = 0;
+
+    foo = 1 * T;
+    if (planetName === "mercury")
+    {
+        const M1 = 174.791086 +  4.092335 * t;
+        const M2 = 349.582171 +  8.184670 * t;
+        const M3 = 164.373257 + 12.277005 * t; 
+        const M4 = 339.164343 + 16.369340 * t;
+        const M5 = 153.955429 + 20.461675 * t;
+
+        alpha_0 = 281.0097 - 0.0328 * T;
+        delta_0 =  61.4143 - 0.0049 * T;
+        W = 329.5469 + 6.1385205 * t 
+          + 0.00993822 * sind(M1)
+          - 0.00104581 * sind(M2)
+          - 0.00010280 * sind(M3)
+          - 0.00002364 * sind(M4)
+          - 0.00000532 * sind(M5);
+    }
+    else if (planetName === "venus")
+    {
+        alpha_0 = 272.76;
+        delta_0 = 67.16;
+        W = 160.20 - 1.4813688 * t;
+    }
+    else if (planetName === "earth")
+    {
+        alpha_0 = 0.00 - 0.641 * T;
+        delta_0 = 90.00 - 0.557 * T;
+        W = 190.147 + 360.9856235 * t;
+    }
+    else if (planetName === "mars")
+    {
+        alpha_0 = 317.68143 - 0.1061 * T;
+        delta_0 =  52.88650 - 0.0609 * T;
+        W = 176.630 + 350.89198226 * t;
+    }
+    else if (planetName === "jupiter")
+    {
+        const J1 =  99.360714 + 4850.4046 * T;
+        const J2 = 175.895369 + 1191.9605 * T;
+        const J3 = 300.323162 +  262.5475 * T;
+        const J4 = 114.012305 + 6070.2476 * T;
+        const J5 =  49.511251 +   64.3000 * T;
+
+        alpha_0 = 268.056595 - 0.006499 * T
+                + 0.000117 * sind(J1)
+                + 0.000938 * sind(J2)
+                + 0.001432 * sind(J3)
+                + 0.000030 * sind(J4)
+                + 0.002150 * sind(J5);
+        delta_0 = 64.495303 + 0.002413 * T 
+                + 0.000050 * cosd(J1)
+                + 0.000404 * cosd(J2)
+                + 0.000617 * cosd(J3)
+                - 0.000013 * cosd(J4)
+                + 0.000926 * cosd(J5);
+        // The linear term seems suspicious but seems to be used elsewhere.
+        W = 284.95 + 870.536 * t;
+    }
+    else if (planetName === "saturn")
+    {
+        alpha_0 = 40.589 - 0.036 * T;
+        delta_0 = 83.537 - 0.004 * T;
+        W = 38.90 + 810.7939024 * t;
+    }
+    else if (planetName === "uranus")
+    {
+        alpha_0 = 257.311;
+        delta_0 = -15.175;
+        W = 203.81 - 501.1600928 * t;
+    }
+    else if (planetName === "neptune")
+    {
+        const N = 357.85 + 52.316 * T;
+        alpha_0 = 299.36 + 0.70 * sind(N);
+        delta_0 = 43.46 - 0.51 * cosd(N);
+        W = 253.18 + 536.3128492 * t - 0.48 *sind(N);
+    }
+
+    return {alpha_0 : alpha_0, delta_0 : delta_0, W : W};
+}
