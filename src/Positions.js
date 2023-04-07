@@ -306,6 +306,9 @@ export function computePlanet(planetName, JTut1, observer, corrections)
     }
 
     osvEcl.JT = JTtdb;
+
+    outputs.osv.eclGeo = osvEcl;
+
     const osvJ2000 = coordEclEq(osvEcl);
 
     // Handle stellar and diurnal aberration:
@@ -345,7 +348,7 @@ export function computePlanet(planetName, JTut1, observer, corrections)
     // Export OSVs:
     outputs.osv = {
         eclHel : osvEcl, 
-        eclGeo : osvGeo, 
+        eclGeo : outputs.osv.eclGeo, 
         J2000  : osvJ2000,
         mod    : osvMod, 
         tod    : osvTod, 
@@ -440,6 +443,7 @@ export function computeStar(starName, JTut1, observer, corrections, osvEarthEcl)
 
     console.log(distance + " " + hipData.DE + " " + hipData.RA);
 
+    // Convert from 
     const rJ2000 = [distance * cosd(hipData.DE) * cosd(hipData.RA),
                     distance * cosd(hipData.DE) * sind(hipData.RA),
                     distance * sind(hipData.DE)];
