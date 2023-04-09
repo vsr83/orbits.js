@@ -16,8 +16,9 @@ import {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvSt
 import {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid} from './Eclipses.js';
 import { correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb, correlationUtcUt1, correlationUt1Utc, polarMotion } from './TimeCorrelation.js';
 import { elp2000 } from './Elp2000-82b.js';
-import {planetMagnitude} from './Planets.js';
+import {planetMagnitude, planetRotationParams, planetData} from './Planets.js';
 import { plutoPositionEclHel } from './Pluto.js';
+import { rotateCart1d, rotateCart2d, rotateCart3d } from './Rotations.js';
 
 
 export {sind, cosd, tand, dot, cross, norm, vecSum, vecDiff, vecMul, deg2Rad, rad2Deg, asind, acosd, 
@@ -38,5 +39,6 @@ export {integrateRk4, integrateRk8, timeStepping, osvToRhsPM, updateOsvPM, osvSt
 export {computeOsvSunEfi, computeOsvMoonEfi, createContours, eclipseMagDerGrid, besselianSolarWithDelta, besselianCentralLine, besselianSolar, solarEclipses, coordFundTod, besselianRiseSet, besselianLimits, eclipseMagnitude, eclipseMagGrid};
 export {correlationTaiUt1, correlationUt1Tai, correlationTdbUt1, correlationUt1Tdb, correlationUtcUt1, correlationUt1Utc, polarMotion};
 export {elp2000};
-export {planetMagnitude};
+export {planetMagnitude, planetRotationParams, planetData};
 export {plutoPositionEclHel};
+export {rotateCart1d, rotateCart2d, rotateCart3d};

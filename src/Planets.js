@@ -1,6 +1,6 @@
-import {norm, vecDiff, acosd, cosd, dot, atand} from "./MathUtils.js";
+import {norm, vecDiff, acosd, sind, cosd, dot, atand} from "./MathUtils.js";
 
-const planetData = {
+export const planetData = {
     mercury : {
         diameter    : 4879400,
         polarRadius : 2439700,
@@ -179,7 +179,7 @@ export function planetMagnitude(planetName, posTargetEclHel, posTargetEclGeo)
 export function planetRotationParams(planetName, JTut1)
 {
     // Julian centuries after J2000.0 epoch.
-    const T = (osv.JT - 2451545.0) / 36525.0;
+    const T = (JTut1 - 2451545.0) / 36525.0;
     // Days after J2000.0 epoch.
     const t = JTut1 - 2451545.0;
 
@@ -191,7 +191,6 @@ export function planetRotationParams(planetName, JTut1)
     // CCW rotation of the prime meridian w.r.t. the node.
     let W = 0;
 
-    foo = 1 * T;
     if (planetName === "mercury")
     {
         const M1 = 174.791086 +  4.092335 * t;
