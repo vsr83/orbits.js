@@ -1,0 +1,334 @@
+body {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+#canvas {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  /*z-index : 9;*/
+}
+
+#canvasJS {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  z-index : 10;
+}
+
+#dateContainer
+{
+    width: 700px;
+    color: #fff;
+    position : absolute;
+    bottom : 10px;
+    left : 10px;
+    z-index : 11;
+    background-color: #303030;
+    opacity: 0.5;
+    font-size: 15px;
+    font-family : monospace;
+    z-index : 6;
+}
+
+#targetContainer
+{
+  position : absolute;
+  top : 10px;
+  left : 0;
+  right : 0;
+  z-index : 11;
+  opacity: 1.0;
+  font-size: 15px;
+  font-family : monospace;
+  z-index : 6;
+  width : 400px;
+  margin-left: auto; 
+  margin-right: auto; 
+}
+
+
+#targetText
+{
+    color: #fff;
+    z-index : 11;
+    opacity: 1;
+    top : 10px;
+    font-size: 25px;
+    font-family : monospace;
+    text-align : center;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#containerHidden {
+  position: relative;
+  top: 0px;
+  padding: 0px;
+  visibility: hidden;
+}
+
+#dateText
+{
+    color: #fff;
+    position : absolute;
+    bottom : 10px;
+    left : 10px;
+    z-index : 11;
+    background-color: #303030;
+    opacity: 1;
+    font-size: 12px;
+    font-family : monospace;
+    padding-left : 20px;
+    padding-right : 20px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#dateContainer
+{
+    width: 700px;
+    color: #fff;
+    position : absolute;
+    bottom : 10px;
+    left : 10px;
+    z-index : 11;
+    background-color: #303030;
+    opacity: 0.5;
+    font-size: 15px;
+    font-family : monospace;
+    z-index : 6;
+}
+
+/*
+.container {
+  position: absolute;
+  border: none;
+  outline: none;
+}*/
+
+.dg
+{
+    user-select: none;
+}
+
+#warningText
+{
+    color: #fff;
+    position : absolute;
+    top : 40px;
+    left : 10px;
+    z-index : 11;
+    background-color: #700000;
+    opacity: 1;
+    font-size: 15px;
+    font-family : monospace;
+    padding-left : 20px;
+    padding-right : 20px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#warningContainer
+{
+    width: 300px;
+    color: #fff;
+    position : absolute;
+    top : 10px;
+    left : 10px;
+    z-index : 11;
+    background-color: RED;
+    opacity: 0.5;
+    font-size: 15px;
+    font-family : monospace;
+    z-index : 6;
+}
+
+#nameText
+{
+    color: #fff;
+    z-index : 11;
+    opacity: 1;
+    top : 10px;
+    font-size: 25px;
+    font-family : monospace;
+    text-align : center;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#nameContainer
+{
+    z-index : 11;
+    opacity: 1.0;
+    padding-top : 10px;
+    position: absolute; 
+    left: 0; 
+    right: 0; 
+    margin-left: auto; 
+    margin-right: auto; 
+    width: 400px;
+  }
+
+  #TLEcontainer
+{
+    z-index : 11;
+    opacity: 0.8;
+    padding-top : 10px;
+    position: absolute; 
+    left: 0; 
+    right: 0; 
+    margin-left: auto; 
+    margin-right: auto; 
+    width: 500px;
+    top: 40%;
+    visibility:  hidden;
+  }
+
+  #TLEListcontainer
+{
+    z-index : 11;
+    opacity: 0.8;
+    padding-top : 10px;
+    position: absolute; 
+    left: 0; 
+    right: 0; 
+    margin-left: auto; 
+    margin-right: auto; 
+    width: 500px;
+    top: 40%;
+    visibility:  hidden;
+  }
+
+  #TLESelectlist
+  {
+    width: 500px;
+  }
+
+  #TLESelectcontainer
+  {
+      z-index : 11;
+      opacity: 0.8;
+      padding-top : 10px;
+      position: absolute; 
+      left: 0; 
+      right: 0; 
+      margin-left: auto; 
+      margin-right: auto; 
+      width: 500px;
+      top: 40%;
+      visibility:  hidden;
+    }
+  
+    a:link 
+    {
+      color: red;
+    }
+    
+    a:visited 
+    {
+      color: red;
+    }
+      
+  #autoCompleteContainer
+{
+    z-index : 11;
+    opacity: 1.0;
+    padding-top : 0px;
+    position: absolute; 
+    left: 20px; 
+    top: 20px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    width: 320px;
+}
+#autoComplete
+{
+    background-color: #111;
+    opacity: 1.0;
+    font-size: 15px;
+    font-family : monospace;
+}
+#sliderContainer
+{ 
+  width: 900px;
+}
+
+#timeRange
+{ 
+  -webkit-appearance: none;
+  appearance: none;
+  z-index : 11;
+  position: absolute; 
+  left: 40px; 
+  bottom: 0px; 
+  outline: none;
+  opacity: 0.5;
+  margin-left: auto; 
+  margin-right: auto; 
+  width: 360px;
+  cursor : pointer;
+  background-color: #303030;
+}
+#buttonPrev
+{ 
+  -webkit-appearance: none;
+  appearance: none;
+  z-index : 11;
+  position: absolute; 
+  left: 20px; 
+  bottom: 0px; 
+  outline: none;
+  border: none; 
+  color: white;
+  opacity: 0.5;
+  margin-left: auto; 
+  margin-right: auto; 
+  width: 20px;
+  cursor : pointer;
+  background-color: #303030;
+}
+#buttonNext
+{ 
+  -webkit-appearance: none;
+  appearance: none;
+  z-index : 11;
+  position: absolute; 
+  left: 400px; 
+  bottom: 0px; 
+  outline: none;
+  border: none; 
+  color: white;
+  opacity: 0.5;
+  margin-left: auto; 
+  margin-right: auto; 
+  width: 20px;
+  cursor : pointer;
+  background-color: #303030;
+}
