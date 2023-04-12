@@ -1,4 +1,7 @@
-import {norm, vecDiff, acosd, sind, cosd, dot, atand} from "./MathUtils.js";
+import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, dot, atand, atan2d} from "./MathUtils.js";
+import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
+import { keplerSolve } from "./Kepler.js";
+import { coordPerIne } from "./Frames.js";
 
 export const planetData = {
     mercury : {
@@ -270,4 +273,167 @@ export function planetRotationParams(planetName, JTut1)
     }
 
     return {alpha_0 : alpha_0, delta_0 : delta_0, W : W};
+}
+
+/**
+ * Convert OSV from Planet-fixed to BCRS frame-
+ * 
+ * @param {*} osv 
+ *     OSV in Planet-fixed frame.
+ * @param {*} rotParams 
+ * @returns 
+ */
+export function coordFixedBCRS(osv, rotParams)
+{
+    const rBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
+        osv.r, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
+    // TODO: This is incorrect.
+    const vBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
+        osv.v, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
+
+    return {r : rBCRS, v : vBCRS, JT : osv.JT};
+}
+
+/**
+ * Convert OSV from BCRS to Planet-fixed frame.
+ * 
+ * @param {*} osv 
+ *      OSV in BCRS frame.
+ * @param {*} rotParams 
+ *      Rotational parameters alpha_0, delta_0 and W in degrees.
+ * @returns OSV in planet-fixed frame.
+ */
+export function coordBCRSFixed(osv, rotParams)
+{
+    const rECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
+        osv.r, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
+    // TODO: This is incorrect.
+    const vECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
+        osv.v, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
+    
+    return {r : rECEF, v : vECEF, JT : osv.JT};
+}
+
+/**
+ * Convert OSV from B1950.0 frame to the J2000.0 frame.
+ * 
+ * @param {*} osv 
+ *      Orbit state vector in B1950.0 frame.
+ * @returns Orbit state vector in J2000.0 frame.
+ */
+export function coordB1950J2000(osv)
+{
+    // Murray - The transformation of coordinates between the systems of B1950.0
+    // and J2000.0, and the principal galactic axes referred to J2000.0.
+    // Equation (25):
+
+    // This is probably somewhat incorrectly applied.
+    const rJ2000x = 0.9999256794956877 * osv.r[0] 
+                  - 0.0111814832204662 * osv.r[1]
+                  - 0.0048590038153592 * osv.r[2];
+    const rJ2000y = 0.0111814832391717 * osv.r[0] 
+                  + 0.9999374848933135 * osv.r[1]
+                  - 0.0000271625947142 * osv.r[2];
+    const rJ2000z = 0.0048590037723143 * osv.r[0] 
+                  - 0.0000271702937440 * osv.r[1]
+                  + 0.9999881946023742 * osv.r[2];
+
+    return {r : [rJ2000x, rJ2000y, rJ2000z], v : [0, 0, 0], JT : osv.JT};
+}
+
+function computeKeplerian(kepler)
+{
+    // (9.17)/(9.50) : Note that the mean anomaly is independent of the plane
+    // since it is determined by the angle w.r.t. perihelion.
+    kepler.M = kepler.L - kepler.P;
+
+    // (9.18) : Solve Kepler's equation with NR iteration.
+    kepler.E = keplerSolve(kepler.M, kepler.e, 1e-6, 20);
+
+    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
+    const rPer = [kepler.a * (cosd(kepler.E) - kepler.e),
+                  kepler.a * Math.sqrt(1 - kepler.e * kepler.e) * sind(kepler.E),
+                  0];
+    const N = kepler.Na + atan2d(sind(kepler.gamma) * sind(kepler.theta), 
+              cosd(kepler.gamma) * sind(kepler.Ja) 
+            + sind(kepler.gamma) * cosd(kepler.Ja) * cosd(kepler.theta));
+    const J = asind(sind(kepler.gamma) * sind(kepler.theta) / sind(N - kepler.Na));
+
+    const EC = atan2d(sind(kepler.Ja)*sind(kepler.theta), 
+                      cosd(kepler.Ja)*sind(kepler.gamma) 
+                    + sind(kepler.Ja)*cosd(kepler.gamma)*cosd(kepler.theta));
+    const CD = kepler.P - kepler.Na - kepler.theta;
+
+    /*console.log(kepler);
+    console.log(rPer);
+    console.log(N);
+    console.log(J);
+    console.log(EC);
+    console.log(CD);
+   */ 
+    const rBCRS = rotateCart3d(rotateCart1d(rotateCart3d(rPer, -EC-CD), -J), -N);
+    const au = 1.495978707e11;
+
+    return vecMul(rBCRS, au);
+}
+
+/**
+ * Compute positions of the moons of Mars. 
+ * This method is based on the section 9.7 of 
+ * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
+ * 
+ * @param {*} JTtdb 
+ *      Julian time (TDB).
+ * @returns BCRS Mars-centric position.
+ *          
+ */
+export function marsSatellites(JTtdb)
+{
+    const phobos = {};
+    const deimos = {};
+
+    // Number of days after 1971-11-11 00:00:00.
+    const d = JTtdb - 2441266.5;
+    // Fractional years of days after 1971-11-11 00:00:00.
+    const y = d / 365.25;
+
+    // Semi-major axis (au).
+    phobos.a = 6.26974e-5;
+    deimos.a = 1.56828e-4;
+    // Mean motion (degrees/day).
+    phobos.n = 1128.844556;
+    deimos.n = 285.161888;
+    // Eccentricity
+    phobos.e = 0.0150;
+    deimos.e = 0.0004;
+    // Inclination (Laplacian plane, degrees).
+    phobos.gamma = 1.10;
+    deimos.gamma = 1.79;
+    // Longitude of the ascending node (Laplacian plane, degrees).
+    phobos.theta = 327.90 - 0.43533 * d;
+    deimos.theta = 240.38 - 0.01801 * d;
+
+    const h = 196.55 - 0.01801 * d;
+    // Mean longitude (Laplacian plane, degrees).
+    phobos.L = 232.41 + phobos.n*d + 0.00124 * y*y;
+    deimos.L = 28.96 + deimos.n*d - 0.27 * sind(h);
+    // Longitude of the Pericenter (Laplacian plane, degrees).
+    phobos.P = 278.96 + 0.43526 * d;
+    deimos.P = 111.7 + 0.01798 * d;
+    // Longitude of the ascending node of the Laplacian plane (Earth equator, degrees).
+    phobos.Na = 47.39 - 0.0014 * y;
+    deimos.Na = 46.37 - 0.0014 * y;
+    // Inclination of the Laplacian plane (Earth equator, degrees).
+    phobos.Ja = 37.27 + 0.0008 * y;
+    deimos.Ja = 36.62 + 0.0008 * y;
+
+    const rPhobos = computeKeplerian(phobos);
+    const rDeimos = computeKeplerian(deimos);
+
+    return {phobos : rPhobos, deimos : rDeimos};
+}
+
+function jupiterSatellite(satelliteName, JTtdb)
+{
+
 }
