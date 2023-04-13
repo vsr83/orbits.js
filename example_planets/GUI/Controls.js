@@ -11,6 +11,7 @@ const timeControls = {};
 
 guiControls = new function()
 {
+    this.lightTime = true;
     this.enableMap = true;
     this.enableGrid = false;
     this.enableEcliptic = true;
@@ -33,6 +34,7 @@ guiControls = new function()
     this.colorOrbit = [127, 127, 127];
     this.colorSubsolar = [255, 255, 255];
     this.colorSublunar = [255, 255, 255];
+    this.deltaTime = 0;
 
     this.enableCaptions = true; 
 
@@ -74,6 +76,9 @@ guiControls = new function()
 
 
 gui = new dat.GUI();
+
+const computationFolder = gui.addFolder('Computation');
+computationFolder.add(guiControls, 'lightTime').name('Light Time');
 
 const observerFolder = gui.addFolder('Observer');
 observerFolder.add(guiControls, 'observerMercury').name('Mercury');
@@ -166,5 +171,6 @@ const timeFolder = gui.addFolder('Time');
 timeControls.warpFactor = timeFolder.add(guiControls, 'warpFactor', -10, 10, 1).name('Warp Factor');
 timeControls.pause = timeFolder.add(guiControls, 'warp').name("Enable Warp");
 timeControls.pause = timeFolder.add(guiControls, 'pause').name("Pause");
+timeControls.deltaTime = timeFolder.add(guiControls, 'deltaTime', -0.5, 0.5, 0.01).name("Delta Time");
 
 gui.add(guiControls, 'GitHub');

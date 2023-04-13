@@ -45,8 +45,7 @@ canvas.addEventListener("mouseleave", function(e) {
 });
 
 canvas.addEventListener("wheel", function(e) {
-    camera.distance *= (e.deltaY * 0.0001 + 1);
-    //cameraControls.distance.setValue(distance);
+    cameraControls.fov.setValue(guiControls.fov * (e.deltaY * 0.001 + 1));
 });
 
 function touchMove(e)

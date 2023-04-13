@@ -306,7 +306,7 @@ function drawScene(time)
     {
         warpFactorNew = Math.pow(10, guiControls.warpFactor - 1);
     }
-    if (guiControls < 0)
+    if (guiControls.warpFactor < 0)
     {
         warpFactorNew = -Math.pow(10, - guiControls.warpFactor - 1);
     }
@@ -347,17 +347,14 @@ function drawScene(time)
         todayJT += deltaTime;
     }
 
+    //todayJT = orbitsjs.timeJulianYmdhms(2018, 5, 6, 2, 58, 0).JT + guiControls.deltaTime;
+
     // Compute the Julian time taking into account the time warp.
     let JT =  todayJT;
     JTprev = JT;
     warpPrev = guiControls.warp;
     warpFactorPrev = warpFactorNew;
     //console.log(JT);
-
-    const timeGreg = orbitsjs.timeGregorian(JT);
-    const dateStr = createTimestamp(JT) + " TT Julian: " + JT.toFixed(6) + "<br>";
-    const dateText = document.getElementById("dateText");
-    dateText.innerHTML = dateStr;    
 
     // Compute nutation parameters.
     let T = (JT - 2451545.0)/36525.0;
@@ -381,11 +378,19 @@ function drawScene(time)
 
     const osvSunTargetEq = orbitsjs.coordEclEq(osvSunTarget);
     const osvObserverTargetEq = orbitsjs.coordEclEq(osvObserverTarget);
+    
+    const distance = orbitsjs.norm(osvObserverTarget.r);
 
-    const rotParams = orbitsjs.planetRotationParams(target, JT - 0*2968/86400);
-    const osvSunTargetEcef = coordBCRSECEF(osvSunTargetEq, rotParams);
-    const osvObserverTargetEcef = coordBCRSECEF(osvObserverTargetEq, rotParams);
-    const upDirECEF = coordBCRSECEF({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, rotParams).r;
+    let lightTimeJulian = 0;
+    if (guiControls.lightTime)
+    {
+        lightTimeJulian = distance / (299792458 * 86400);
+    }
+
+    const rotParams = orbitsjs.planetRotationParams(target, JT - lightTimeJulian);
+    const upDirECEF = orbitsjs.coordBCRSFixed({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, rotParams).r;
+    const osvSunTargetEcef = orbitsjs.coordBCRSFixed(osvSunTargetEq, rotParams);
+    const osvObserverTargetEcef = orbitsjs.coordBCRSFixed(osvObserverTargetEq, rotParams);
     
     //console.log(osvSunJupiterEcef.r);
     //console.log(rotParams);
@@ -424,6 +429,40 @@ function drawScene(time)
     //lineShaders.setGeometry([[0, 0, 0], [1e10, 1e10, 1e10]]);
     //lineShaders.draw(matrix);
 
+    if (target === "mars")
+    {
+        let JTmoons = JT;
+
+        if (guiControls.lightTime)
+        {
+            JTmoons -= lightTimeJulian;
+        }
+        
+        const moons =  orbitsjs.marsSatellites(JTmoons);
+        const rPhobosECEF = orbitsjs.coordBCRSFixed({r : moons.phobos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+        const rDeimosECEF = orbitsjs.coordBCRSFixed({r : moons.deimos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+        pointShaders.setGeometry([rPhobosECEF, rDeimosECEF]);
+        pointShaders.draw(matrix);
+    }
+    if (target === "jupiter")
+    {
+        let JTmoons = JT;
+
+        if (guiControls.lightTime)
+        {
+            JTmoons -= lightTimeJulian;
+        }
+        
+        const moons =  orbitsjs.jupiterSatellites(JTmoons);
+        const rIoECEF = orbitsjs.coordBCRSFixed({r : moons.io, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+        const rEuropaECEF = orbitsjs.coordBCRSFixed({r : moons.europa, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+        const rGanymedeECEF = orbitsjs.coordBCRSFixed({r : moons.ganymede, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+        const rCallistoECEF = orbitsjs.coordBCRSFixed({r : moons.callisto, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+        pointShaders.setGeometry([rIoECEF, rEuropaECEF, rGanymedeECEF, rCallistoECEF]);
+        pointShaders.draw(matrix);
+    }
+
+
     let starInfo = scaleStars(starPoints, orbitsjs.norm(offset), offset);
     const points = starInfo.points;
     const colors = starInfo.colors;
@@ -459,27 +498,89 @@ function drawScene(time)
     // Call drawScene again next frame
     requestAnimationFrame(drawScene);
 
+    const angularDiamEq = 3600 * 2 * orbitsjs.atand(orbitsjs.planetData[target].eqRadius / distance);
+    const angularDiamPolar = 3600 * 2 * orbitsjs.atand(orbitsjs.planetData[target].polarRadius / distance);
+
+    const timeGreg = orbitsjs.timeGregorian(JT);
+    const dateStr = createTimestamp(JT) + " TT Julian: " + JT.toFixed(6) + "<br>";
+    const dateText = document.getElementById("dateText");
+    const au = 1.495978707e11;
+    const distanceAu = (distance / au).toFixed(5);
+    const cameraStr = "Dist: " + distanceAu + " au" + "<br>"
+                    + "FoV : " + guiControls.fov.toFixed(1) + "\"" + "<br>"
+                    + "Size: " + angularDiamEq.toFixed(2) + "\"/" + angularDiamPolar.toFixed(2) + "\" eq/polar";
+    dateText.innerHTML = dateStr;
+
+    const infoText = document.getElementById("infoText");
+    infoText.innerHTML = cameraStr;
+
     drawing = false;
 }
 
+/**
+ * Convert OSV from Planet-fixed to BCRS frame-
+ * 
+ * @param {*} osv 
+ *     OSV in Planet-fixed frame.
+ * @param {*} rotParams 
+ * @returns 
+ */
 function coordECEFBCRS(osv, rotParams)
 {
     const rBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.r, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
+    // TODO: This is incorrect.
     const vBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.v, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
 
     return {r : rBCRS, v : vBCRS, JT : osv.JT};
 }
 
+/**
+ * Convert OSV from BCRS to Planet-fixed frame.
+ * 
+ * @param {*} osv 
+ *      OSV in BCRS frame.
+ * @param {*} rotParams 
+ *      Rotational parameters alpha_0, delta_0 and W in degrees.
+ * @returns OSV in planet-fixed frame.
+ */
 function coordBCRSECEF(osv, rotParams)
 {
     const rECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.r, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
+    // TODO: This is incorrect.
     const vECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.v, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
     
     return {r : rECEF, v : vECEF, JT : osv.JT};
+}
+
+/**
+ * Convert OSV from B1950.0 frame to the J2000.0 frame.
+ * 
+ * @param {*} osv 
+ *      Orbit state vector in B1950.0 frame.
+ * @returns Orbit state vector in J2000.0 frame.
+ */
+function coordB1950J2000(osv)
+{
+    // Murray - The transformation of coordinates between the systems of B1950.0
+    // and J2000.0, and the principal galactic axes referred to J2000.0.
+    // Equation (25):
+
+    // This is probably somewhat incorrectly applied.
+    const rJ2000x = 0.9999256794956877 * osv.r[0] 
+                  - 0.0111814832204662 * osv.r[1]
+                  - 0.0048590038153592 * osv.r[2];
+    const rJ2000y = 0.0111814832391717 * osv.r[0] 
+                  + 0.9999374848933135 * osv.r[1]
+                  - 0.0000271625947142 * osv.r[2];
+    const rJ2000z = 0.0048590037723143 * osv.r[0] 
+                  - 0.0000271702937440 * osv.r[1]
+                  + 0.9999881946023742 * osv.r[2];
+
+    return {r : [rJ2000x, rJ2000y, rJ2000z], v : [0, 0, 0], JT : osv.JT};
 }
 
 /**

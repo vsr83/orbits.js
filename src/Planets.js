@@ -433,7 +433,133 @@ export function marsSatellites(JTtdb)
     return {phobos : rPhobos, deimos : rDeimos};
 }
 
-function jupiterSatellite(satelliteName, JTtdb)
+export function jupiterSatellites(JTtdb)
 {
+    // (9.52)
+    // fractional days after 1976-08-10 00:00:00.
+    const t = JTtdb - 2443000.5;
 
+    // Mean longitudes of satellites 1-4:
+    const L_1 = 106.078590000 + 203.4889553630643 * t;
+    const L_2 = 175.733787000 + 101.3747245566245 * t;
+    const L_3 = 120.561385500 + 50.31760915340462 * t;
+    const L_4 =  84.455823000 + 21.57107087517961 * t;
+
+    const phi_l = 184.415351000 + 0.17356902 * t;
+    // Proper periapses of satellites 1-4.
+    const P_1 = 82.380231000 + 0.16102275 * t;
+    const P_2 = 128.960393000 + 0.04645644 * t;
+    const P_3 = 187.550171000 + 0.00712408 * t;
+    const P_4 = 335.309254000 + 0.00183939 * t;
+    const Pi_J = 13.470395000;
+
+    // Proper nodes of satellites 1-4.
+    const theta_1 = 308.365749000 - 0.13280610 * t;
+    const theta_2 = 100.438938000 - 0.03261535 * t;
+    const theta_3 = 118.908928000 - 0.00717678 * t;
+    const theta_4 = 322.746564000 - 0.00176018 * t;
+    
+    // Longitude of the origin of the coordinates (Jupiter's pole).
+    const Psi = 316.500101000 - 0.00000248 * t;
+    // Mean anomalies of Saturn and Jupiter.
+    const Gdot = 31.9785280244 + 0.033459733896 * t;
+    const G = 30.2380210168 + 0.08309256178969453 * t;
+    const phi_2 = 52.1445966929;
+
+
+    // (9.51)
+    const fac = 1e-7;
+    const xi_1 = fac * (-41279 * cosd(2*L_1 - 2*L_2));
+    const nu_1 = fac * (-5596 * sind(P_3 - P_4) - 2198 * sind(P_1 + P_3 - 2*Pi_J - 2*G)
+               + 1321 * sind(phi_l) - 1157 * sind(L_1 - 2*L_2 + P_4)
+               - 1940 * sind(L_1 - 2*L_2 + P_3) - 791 * sind(L_1 - 2*L_2 + P_2)
+               + 791 * sind(L_1 - 2*L_2 - P_2) + 82363 * sind(2*L_1 - 2*L_2));
+    const zeta_1 = fac * (7038 * sind(L_1 - theta_1) + 1835 * sind(L_1 - theta_2));
+    
+    const xi_2 = fac * (-3187 * cosd(L_2 - P_3) - 1738 * cosd(L_2 - P_4)
+               + 93748 * cosd(L_1 - L_2));
+    const nu_2 = fac * (-1158 * sind(-2*Pi_J + 2*Psi) + 1715 * sind(-2*Pi_J + theta_3 + Psi - 2*G)
+               - 1846 * sind(G) + 2397 * sind(P_3 - P_4) - 3172 * sind(phi_l)
+               - 1993 * sind(L_2 - L_3) + 1844 * sind(L_2 - P_2)
+               + 6394 * sind(L_2 - P_3) + 3451 * sind(L_2 - P_4)
+               + 4159 * sind(L_1 - 2*L_2 + P_4) + 7571 * sind(L_1 - 2*L_2 + P_3)
+               - 1491 * sind(L_1 - 2*L_2 + P_2) - 185640 * sind(L_1 - L_2)
+               - 803 * sind(L_1 - L_3) + 915 * sind(2*L_1 - 2*L_2));
+    const zeta_2 = fac * (81575 * sind(L_2 - theta_2) + 4512 * sind(L_2 - theta_3)
+                 - 3286 * sind(L_2 - Psi));
+    
+    const xi_3 = fac * (-14691 * cosd(L_3 - P_3) - 1758 * cosd(2*L_3 - 2*L_4)
+               + 6333 * cosd(L_2 - L_3) - 7894 * sind(L_3 - P_4));
+    const nu_3 = fac * (-1488 * sind(-2*Pi_J + 2*Psi) + 411 * sind(-theta_3 + Psi)
+               + 346 * sind(-theta_4 + Psi) - 2338 * sind(G)
+               + 6558 * sind(P_3 - P_4) + 523 * sind(P_1 + P_3 - 2*Pi_J - 2*G)
+               + 314 * sind(phi_l) - 943 * sind(L_3 - L_4)
+               + 29387 * sind(L_3 - P_3) + 15800 * sind(L_3 - P_4)
+               + 3218 * sind(2*L_3 - 2*L_4) + 226 * sind(3*L_3 - 2*L_4)
+               - 12038 * sind(L_2 - L_3) - 662 * sind(L_1 - 2*L_2 + P_4)
+               - 1246 * sind(L_1 - 2*L_2 + P_3) + 699 * sind(L_1 - 2*L_2 + P_2)
+               + 217 * sind(L_1 - L_3));
+    const zeta_3 = fac * (-2793 * sind(L_3 - theta_2) + 32387 * sind(L_3 - theta_3)
+               + 6871 * sind(L_3 - theta_4) - 16876 * sind(L_3 - Psi));
+    
+    const xi_4 = fac * (1656 * cosd(L_4 - P_3) - 73328 * cosd(L_4 - P_4)
+               + 182 * cosd(L_4 - Pi_J) - 541 * cosd(L_4 + P_4 - 2*Pi_J - 2*G)
+               - 269 * cosd(2*L_4 - 2*P_4) + 974 * cosd(L_3 - L_4));
+    const nu_4 = fac * (-407 * sind(-2*P_4 + 2*Psi) + 309 * sind(-2*P_4 + theta_4 + Psi)
+               - 4840 * sind(-2*Pi_J + 2*Psi) + 2074 * sind(-theta_4 + Psi)
+               - 5605 * sind(G) - 204 * sind(2*G)
+               - 495 * sind(5*Gdot - 2*G + phi_2) + 234 * sind(P_4 - Pi_J)
+               - 6112 * sind(P_3 - P_4) - 3318 * sind(L_4 - P_3)
+               + 146673 * sind(L_4 - P_4) + 178 * sind(L_4 - Pi_J - G)
+               - 363 * sind(L_4 - Pi_J) + 1085 * sind(L_4 + P_4 - 2*Pi_J - 2*G)
+               + 672 * sind(2*L_4 - 2*P_4) + 218 * sind(2*L_4 - 2*Pi_J - 2*G)
+               + 167 * sind(2*L_4 - theta_4 - Psi) - 142 * sind(2*L_4 - 2*Psi)
+               + 148 * sind(L_3 - 2*L_4 + P_4) - 390 * sind(L_3 - L_4)
+               - 195 * sind(2*L_3 - 2*L_4) + 185 * sind(3*L_3 - 7*L_4 + 4*P_4));
+    const zeta_4 = fac * (773 * sind(L_4 - 2*Pi_J + Psi - 2*G) - 5075 * sind(L_4 - theta_3)
+                 + 44300 * sind(L_4 - theta_4) - 76493 * sind(L_4 - Psi));
+
+    const au = 1.495978707e11;
+    const a_1 = 0.002819347 * au;
+    const a_2 = 0.004485872 * au;
+    const a_3 = 0.007155352 * au;
+    const a_4 = 0.012585436 * au;
+
+    // Positions in moving Jovian frame (9.53):
+    const r_1 = [a_1 * (1 + xi_1) * cosd(L_1 - Psi + nu_1),
+                 a_1 * (1 + xi_1) * sind(L_1 - Psi + nu_1),
+                 a_1 * zeta_1];
+    const r_2 = [a_2 * (1 + xi_2) * cosd(L_2 - Psi + nu_2),
+                 a_2 * (1 + xi_2) * sind(L_2 - Psi + nu_2),
+                 a_2 * zeta_2];
+    const r_3 = [a_3 * (1 + xi_3) * cosd(L_3 - Psi + nu_3),
+                 a_3 * (1 + xi_3) * sind(L_3 - Psi + nu_3),
+                 a_3 * zeta_3];
+    const r_4 = [a_4 * (1 + xi_4) * cosd(L_4 - Psi + nu_4),
+                 a_4 * (1 + xi_4) * sind(L_4 - Psi + nu_4),
+                 a_4 * zeta_4];
+
+    const eps = 23.44578888888889;
+    const Omega = 99.99754;
+    const J = 1.30691;
+    const Phi = Psi - Omega;
+    const I = 3.10401;
+
+    function rotateToBcrs1950(r, eps, Omega, J, Phi, I)
+    {
+        return rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
+            rotateCart1d(r, -I), -Phi), -J), -Omega), -eps);
+    }
+    const rBcrs1950_1 = rotateToBcrs1950(r_1, eps, Omega, J, Phi, I);
+    const rBcrs1950_2 = rotateToBcrs1950(r_2, eps, Omega, J, Phi, I);
+    const rBcrs1950_3 = rotateToBcrs1950(r_3, eps, Omega, J, Phi, I);
+    const rBcrs1950_4 = rotateToBcrs1950(r_4, eps, Omega, J, Phi, I);
+
+    const rBcrsJ2000_1 = coordB1950J2000({r : rBcrs1950_1, v : [0, 0, 0], JT : JTtdb}).r;
+    const rBcrsJ2000_2 = coordB1950J2000({r : rBcrs1950_2, v : [0, 0, 0], JT : JTtdb}).r;
+    const rBcrsJ2000_3 = coordB1950J2000({r : rBcrs1950_3, v : [0, 0, 0], JT : JTtdb}).r;
+    const rBcrsJ2000_4 = coordB1950J2000({r : rBcrs1950_4, v : [0, 0, 0], JT : JTtdb}).r;
+
+    return {io : rBcrsJ2000_1, europa : rBcrsJ2000_2, ganymede : rBcrsJ2000_3, 
+        callisto : rBcrsJ2000_4};
 }
