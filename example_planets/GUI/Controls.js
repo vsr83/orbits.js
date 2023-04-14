@@ -165,7 +165,8 @@ appearanceControls.colorSubsolar = appearanceFolder.addColor(guiControls, 'color
 appearanceControls.colorSublunar = appearanceFolder.addColor(guiControls, 'colorSublunar').name('Sublunar Point');
 
 const cameraFolder = gui.addFolder('Camera');
-cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 200, 0.1).name('Field of View');
+cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 1000, 0.1).name('Field of View');
+
 
 const timeFolder = gui.addFolder('Time');
 timeControls.warpFactor = timeFolder.add(guiControls, 'warpFactor', -10, 10, 1).name('Warp Factor');
