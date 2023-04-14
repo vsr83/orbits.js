@@ -463,37 +463,41 @@ function drawScene(time)
         lineShaders.draw(matrix);
     }
 
-    if (target === "mars")
+    pointShaders.colorPoint = guiControls.colorMoons;
+    if (guiControls.enableMoons)
     {
-        let JTmoons = JT;
-
-        if (guiControls.lightTime)
+        if (target === "mars")
         {
-            JTmoons -= lightTimeJulian;
-        }
-        
-        const moons =  orbitsjs.marsSatellites(JTmoons);
-        const rPhobosECEF = orbitsjs.coordBCRSFixed({r : moons.phobos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-        const rDeimosECEF = orbitsjs.coordBCRSFixed({r : moons.deimos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-        pointShaders.setGeometry([rPhobosECEF, rDeimosECEF]);
-        pointShaders.draw(matrix);
-    }
-    if (target === "jupiter")
-    {
-        let JTmoons = JT;
+            let JTmoons = JT;
 
-        if (guiControls.lightTime)
-        {
-            JTmoons -= lightTimeJulian;
+            if (guiControls.lightTime)
+            {
+                JTmoons -= lightTimeJulian;
+            }
+            
+            const moons =  orbitsjs.marsSatellites(JTmoons);
+            const rPhobosECEF = orbitsjs.coordBCRSFixed({r : moons.phobos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rDeimosECEF = orbitsjs.coordBCRSFixed({r : moons.deimos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            pointShaders.setGeometry([rPhobosECEF, rDeimosECEF]);
+            pointShaders.draw(matrix);
         }
-        
-        const moons =  orbitsjs.jupiterSatellites(JTmoons);
-        const rIoECEF = orbitsjs.coordBCRSFixed({r : moons.io, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-        const rEuropaECEF = orbitsjs.coordBCRSFixed({r : moons.europa, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-        const rGanymedeECEF = orbitsjs.coordBCRSFixed({r : moons.ganymede, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-        const rCallistoECEF = orbitsjs.coordBCRSFixed({r : moons.callisto, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-        pointShaders.setGeometry([rIoECEF, rEuropaECEF, rGanymedeECEF, rCallistoECEF]);
-        pointShaders.draw(matrix);
+        if (target === "jupiter")
+        {
+            let JTmoons = JT;
+
+            if (guiControls.lightTime)
+            {
+                JTmoons -= lightTimeJulian;
+            }
+            
+            const moons =  orbitsjs.jupiterSatellites(JTmoons);
+            const rIoECEF = orbitsjs.coordBCRSFixed({r : moons.io, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rEuropaECEF = orbitsjs.coordBCRSFixed({r : moons.europa, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rGanymedeECEF = orbitsjs.coordBCRSFixed({r : moons.ganymede, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rCallistoECEF = orbitsjs.coordBCRSFixed({r : moons.callisto, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            pointShaders.setGeometry([rIoECEF, rEuropaECEF, rGanymedeECEF, rCallistoECEF]);
+            pointShaders.draw(matrix);
+        }
     }
 
     if (guiControls.enableStars)

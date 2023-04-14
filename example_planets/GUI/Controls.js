@@ -16,6 +16,7 @@ guiControls = new function()
     this.enableEcliptic = true;
     this.enableEquator = true;
     this.enableConstellations = false;
+    this.enableMoons = true;
 
     this.enableTextures = true; 
     this.enableSubsolar = true;
@@ -36,6 +37,7 @@ guiControls = new function()
     this.colorSubsolar = [255, 255, 255];
     this.colorSublunar = [255, 255, 255];
     this.colorStars = [255, 255, 255];
+    this.colorMoons = [255, 255, 255];
     this.colorConstellations = [80, 80, 80];
     this.deltaTime = 0;
 
@@ -104,6 +106,7 @@ targetFolder.add(guiControls, 'targetUranus').name('Uranus');
 targetFolder.add(guiControls, 'targetNeptune').name('Neptune');
 
 const visibilityFolder = gui.addFolder('Visibility');
+displayControls.enableMoons = visibilityFolder.add(guiControls, 'enableMoons').name('Moons');
 displayControls.enableGrid = visibilityFolder.add(guiControls, 'enableGrid').name('Grid Lines');
 displayControls.enableEcliptic = visibilityFolder.add(guiControls, 'enableEcliptic').name('Ecliptic');
 displayControls.enableEquator = visibilityFolder.add(guiControls, 'enableEquator').name('Equator');
@@ -168,6 +171,7 @@ appearanceControls.colorText = appearanceFolder.addColor(guiControls, 'colorText
 appearanceControls.colorOrbit = appearanceFolder.addColor(guiControls, 'colorOrbit').name('Orbits');
 appearanceControls.colorSubsolar = appearanceFolder.addColor(guiControls, 'colorSubsolar').name('Subsolar Point');
 appearanceControls.colorSublunar = appearanceFolder.addColor(guiControls, 'colorSublunar').name('Sublunar Point');
+appearanceControls.colorMoons = appearanceFolder.addColor(guiControls, 'colorMoons').name('Moons');
 appearanceControls.colorStars = appearanceFolder.addColor(guiControls, 'colorStars').name('Stars');
 appearanceControls.colorConstellations = appearanceFolder.addColor(guiControls, 'colorConstellations').name('Constellations');
 
