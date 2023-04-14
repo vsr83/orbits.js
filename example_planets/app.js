@@ -455,10 +455,13 @@ function drawScene(time)
         osvMoonEfi.r, 
         osvSunTargetEcef.r);
 
-    lineShaders.colorOrbit = [80, 80, 80];
     const offset = osvObserverTargetEcef.r;
-    lineShaders.setGeometry(scaleConstellations(constellationLines, orbitsjs.norm(offset), offset, rotParams, JT));
-    lineShaders.draw(matrix);
+    if (guiControls.enableConstellations)
+    {
+        lineShaders.colorOrbit = guiControls.colorConstellations;
+        lineShaders.setGeometry(scaleConstellations(constellationLines, orbitsjs.norm(offset), offset, rotParams, JT));
+        lineShaders.draw(matrix);
+    }
 
     if (target === "mars")
     {
@@ -493,15 +496,16 @@ function drawScene(time)
         pointShaders.draw(matrix);
     }
 
-
-    let starInfo = scaleStars(starPoints, orbitsjs.norm(offset), offset, rotParams, JT);
-    const points = starInfo.points;
-    const colors = starInfo.colors;
-
-    pointShaders.colorPoint = [255, 255, 255];
-    pointShaders.setGeometry(points);
-    pointShaders.setColors();
-    pointShaders.draw(matrix);
+    if (guiControls.enableStars)
+    {
+        let starInfo = scaleStars(starPoints, orbitsjs.norm(offset), offset, rotParams, JT);
+        const points = starInfo.points;
+        const colors = starInfo.colors;
+        pointShaders.colorPoint = guiControls.colorStars;
+        pointShaders.setGeometry(points);
+        pointShaders.setColors();
+        pointShaders.draw(matrix);
+    }
 
    // console.log(scaleConstellations(constellationBoundaries, orbitsjs.norm(osvSunTargetEcef.r)));
 

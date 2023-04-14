@@ -8,7 +8,6 @@ const cameraControls = {};
 const frameControls = {};
 const timeControls = {};
 
-
 guiControls = new function()
 {
     this.lightTime = true;
@@ -21,6 +20,8 @@ guiControls = new function()
     this.enableTextures = true; 
     this.enableSubsolar = true;
     this.enableSublunar = true; 
+    this.enableStars = false;
+    this.enableConstellations = false;
 
     this.drawClock = true; 
     this.drawTitle = true;
@@ -34,6 +35,8 @@ guiControls = new function()
     this.colorOrbit = [127, 127, 127];
     this.colorSubsolar = [255, 255, 255];
     this.colorSublunar = [255, 255, 255];
+    this.colorStars = [255, 255, 255];
+    this.colorConstellations = [80, 80, 80];
     this.deltaTime = 0;
 
     this.enableCaptions = true; 
@@ -108,6 +111,8 @@ displayControls.enableConstellations = visibilityFolder.add(guiControls, 'enable
 displayControls.enableTextures = visibilityFolder.add(guiControls, 'enableTextures').name('Textures'); 
 displayControls.enableSubsolar = visibilityFolder.add(guiControls, 'enableSubsolar').name('Subsolar point');
 displayControls.enableSublunar = visibilityFolder.add(guiControls, 'enableSublunar').name('Sublunar point'); 
+displayControls.enableConstellations = visibilityFolder.add(guiControls, 'enableConstellations').name('Constellations'); 
+displayControls.enableStars = visibilityFolder.add(guiControls, 'enableStars').name('Stars'); 
 displayControls.drawClock = visibilityFolder.add(guiControls, 'drawClock').name('Clock')
     .onChange(function() 
     {
@@ -163,9 +168,12 @@ appearanceControls.colorText = appearanceFolder.addColor(guiControls, 'colorText
 appearanceControls.colorOrbit = appearanceFolder.addColor(guiControls, 'colorOrbit').name('Orbits');
 appearanceControls.colorSubsolar = appearanceFolder.addColor(guiControls, 'colorSubsolar').name('Subsolar Point');
 appearanceControls.colorSublunar = appearanceFolder.addColor(guiControls, 'colorSublunar').name('Sublunar Point');
+appearanceControls.colorStars = appearanceFolder.addColor(guiControls, 'colorStars').name('Stars');
+appearanceControls.colorConstellations = appearanceFolder.addColor(guiControls, 'colorConstellations').name('Constellations');
+
 
 const cameraFolder = gui.addFolder('Camera');
-cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 1000, 0.1).name('Field of View');
+cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 100000, 0.1).name('Field of View');
 
 
 const timeFolder = gui.addFolder('Time');
