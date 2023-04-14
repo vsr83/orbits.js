@@ -1,20 +1,14 @@
 "use strict";
 
 var gl = null;
-var earthShaders = null;
-var lineShaders = null;
-var pointShaders = null;
-
-// Semi-major and semi-minor axes of the WGS84 ellipsoid.
-//var a = 6378.1370;
-//var b = 6356.75231414;
-//let fov = 1;
+var planetShaders = null;
 
 gl = canvas.getContext("webgl2");
 if (!gl) 
 {
     console.log("Failed to initialize GL.");
 }
+
 //var canvasJs = document.getElementById("canvasJs");
 //var contextJs = canvasJs.getContext("2d");
 
@@ -29,11 +23,9 @@ const planetTextures = {
     'neptune' : {day : 'textures/2k_neptune.jpg',          night : 'textures/darkside.jpg'}
 };
 
-let target = 'mars';
+//let target = 'mars';
+let target = null;
 let observer = 'earth';
-const a = orbitsjs.planetData[target].eqRadius;
-const b = orbitsjs.planetData[target].polarRadius;
-let fov = 10/3600;
 
 // Current state of the camera.
 const camera = {
@@ -41,13 +33,16 @@ const camera = {
     rotY : 0,
     rotZ : 0,
     fovRad : orbitsjs.deg2Rad(30),
-    distance : 10.0 * a,
+    distance : 10.0,
     zFar : 1000000000
 };
 
-
-let planetShaders = {};
-
+/**
+ * Set visual target.
+ * 
+ * @param {*} planetName
+ *      Name of the target planet. 
+ */
 function setTarget(planetName)
 {
     if (planetName === observer)
@@ -58,15 +53,18 @@ function setTarget(planetName)
     const a = orbitsjs.planetData[planetName].eqRadius;
     const b = orbitsjs.planetData[planetName].polarRadius;
 
-    planetShaders[planetName] = new PlanetShaders(gl, 50, 50, a, b, 15, 15);
-    planetShaders[planetName].init(planetTextures[planetName].day, planetTextures[planetName].night);
-
     target = planetName;
     // Create and initialize shaders.
-    earthShaders = new PlanetShaders(gl, 50, 50, a, b, 15, 15);
-    earthShaders.init(planetTextures[target].day, planetTextures[target].night);
+    planetShaders = new PlanetShaders(gl, 50, 50, a, b, 15, 15);
+    planetShaders.init(planetTextures[target].day, planetTextures[target].night);
 }
 
+/**
+ * Set oberver location.
+ * 
+ * @param {*} planetName
+ *      Name of the observer planet. 
+ */
 function setObserver(planetName)
 {
     if (planetName === target)
@@ -80,10 +78,10 @@ function setObserver(planetName)
 
 setTarget('mars');
 
-lineShaders = new LineShaders(gl);
+const lineShaders = new LineShaders(gl);
 lineShaders.init();
 
-pointShaders = new PointShaders(gl);
+const pointShaders = new PointShaders(gl);
 pointShaders.init();
 
 let JTstart = orbitsjs.timeJulianTs(new Date()).JT;
@@ -152,6 +150,11 @@ function createStarPoints()
     return starPoints;
 }
 
+/**
+ * Create constellation boundary lines in BCRS frame.
+ * 
+ * @returns Object with array of points on unit sphere for each constellation.
+ */
 function createConstellationBoundaries()
 {
     const constellationBoundaries = {};
@@ -176,6 +179,11 @@ function createConstellationBoundaries()
     return constellationBoundaries;
 }
 
+/**
+ * Create constellation lines in BCRS frame.
+ * 
+ * @returns Object with array of points on unit sphere for each constellation.
+ */
 function createConstellationLines()
 {
     const constellationLines = {};
@@ -230,7 +238,17 @@ function createConstellationLines()
     return constellationLines;
 }
 
-function scaleConstellations(linesIn, scale, offset)
+/**
+ * Scale and rotate constellations.
+ * 
+ * @param {*} linesIn 
+ * @param {*} scale 
+ * @param {*} offset 
+ * @param {*} rotParams 
+ * @param {*} JT 
+ * @returns 
+ */
+function scaleConstellations(linesIn, scale, offset, rotParams, JT)
 {
     const lines = [];
 
@@ -239,6 +257,7 @@ function scaleConstellations(linesIn, scale, offset)
         for (let indValue = 0; indValue < value.length; indValue++)
         {
             let vector = value[indValue];
+            vector = orbitsjs.coordBCRSFixed({r : vector, v : [0, 0, 0], JT : JT}, rotParams).r;
             lines.push([vector[0] * scale + offset[0], vector[1] * scale + offset[1], vector[2] * scale + offset[2]]);
         }
     }
@@ -246,7 +265,17 @@ function scaleConstellations(linesIn, scale, offset)
     return lines;
 }
 
-function scaleStars(stars, scale, offset)
+/**
+ * Scale and rotate star points.
+ * 
+ * @param {*} stars 
+ * @param {*} scale 
+ * @param {*} offset 
+ * @param {*} rotParams 
+ * @param {*} JT 
+ * @returns 
+ */
+function scaleStars(stars, scale, offset, rotParams, JT)
 {
     const points = [];
     const colors = [];
@@ -255,7 +284,11 @@ function scaleStars(stars, scale, offset)
     {
         const value = stars[indStar];
         let vector = value.point;
-        points.push([vector[0] * scale + offset[0], vector[1] * scale + offset[1], vector[2] * scale + offset[2]]);
+
+        vector = orbitsjs.coordBCRSFixed({r : vector, v : [0, 0, 0], JT : JT}, rotParams).r;
+        const r = [vector[0] * scale + offset[0], vector[1] * scale + offset[1], vector[2] * scale + offset[2]];
+                
+        points.push(r);
         colors.push([255, 255, 255]);
     }
 
@@ -276,7 +309,7 @@ const starPoints = createStarPoints();
 function drawScene(time) 
 {
     // Do not draw the scene before the textures have been loaded.
-    if (earthShaders.numTextures < 2)
+    if (planetShaders.numTextures < 2)
     {
         requestAnimationFrame(drawScene);
         return;
@@ -292,7 +325,7 @@ function drawScene(time)
     //canvasJs.width = document.documentElement.clientWidth;
     //canvasJs.height = document.documentElement.clientHeight;
 
-    gl.useProgram(earthShaders.program);
+    gl.useProgram(planetShaders.program);
 
     // Compute Julian time corresponding to the (hardware) clock.
     let dateNow = new Date();
@@ -365,20 +398,23 @@ function drawScene(time)
 
     const osvEclObserver = orbitsjs.vsop87(observer, JT);
     const osvEclTarget = orbitsjs.vsop87(target, JT);
+
+    // OSV of the Sun w.r.t. target (ecliptic).
     const osvSunTarget = {
         r : orbitsjs.vecMul(osvEclTarget.r, -1), 
         v : orbitsjs.vecMul(osvEclTarget.v, -1),
         JT : JT 
     };
+    // OSV of the observer w.r.t. target (ecliptic).
     const osvObserverTarget = {
         r : orbitsjs.vecDiff(osvEclObserver.r, osvEclTarget.r), 
         v : orbitsjs.vecDiff(osvEclObserver.v, osvEclTarget.v),
         JT : JT 
     };
 
+    // OSV of the Sun and the observer (equatorial).
     const osvSunTargetEq = orbitsjs.coordEclEq(osvSunTarget);
     const osvObserverTargetEq = orbitsjs.coordEclEq(osvObserverTarget);
-    
     const distance = orbitsjs.norm(osvObserverTarget.r);
 
     let lightTimeJulian = 0;
@@ -388,12 +424,12 @@ function drawScene(time)
     }
 
     const rotParams = orbitsjs.planetRotationParams(target, JT - lightTimeJulian);
+
+    // Equatorial up direction of the observer in target frame. 
+    // TODO: Take into account the up direction when the observer is not on Earth.
     const upDirECEF = orbitsjs.coordBCRSFixed({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, rotParams).r;
     const osvSunTargetEcef = orbitsjs.coordBCRSFixed(osvSunTargetEq, rotParams);
     const osvObserverTargetEcef = orbitsjs.coordBCRSFixed(osvObserverTargetEq, rotParams);
-    
-    //console.log(osvSunJupiterEcef.r);
-    //console.log(rotParams);
 
     // Clear the canvas
     gl.clearColor(0, 0, 0, 0);
@@ -405,16 +441,12 @@ function drawScene(time)
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
 
-    //const angularDiam = 2 * orbitsjs.atand(orbitsjs.planetData[target].eqRadius / orbitsjs.norm(osvObserverTargetEcef.r));
-    //const fov = angularDiam * 1.5;
-    //cameraControls.fov.setValue(fov * 3600);
-
     // The view matrix.
     const matrix = createViewMatrix(orbitsjs.vecMul(osvObserverTargetEcef.r, 1), upDirECEF, 
         orbitsjs.planetData[target].eqRadius);
-    //console.log(orbitsjs.vecMul(osvEarthTargetEcef.r, 5e-6));
-    // Draw the Earth.
-    earthShaders.draw(matrix, 
+    
+    // Draw the planet.
+    planetShaders.draw(matrix, 
         guiControls.enableTextures, 
         guiControls.enableGrid, 
         false, 
@@ -423,11 +455,10 @@ function drawScene(time)
         osvMoonEfi.r, 
         osvSunTargetEcef.r);
 
-    lineShaders.colorOrbit = [255, 255, 255];
+    lineShaders.colorOrbit = [80, 80, 80];
     const offset = osvObserverTargetEcef.r;
-    lineShaders.setGeometry(scaleConstellations(constellationLines, orbitsjs.norm(offset), offset));
-    //lineShaders.setGeometry([[0, 0, 0], [1e10, 1e10, 1e10]]);
-    //lineShaders.draw(matrix);
+    lineShaders.setGeometry(scaleConstellations(constellationLines, orbitsjs.norm(offset), offset, rotParams, JT));
+    lineShaders.draw(matrix);
 
     if (target === "mars")
     {
@@ -463,7 +494,7 @@ function drawScene(time)
     }
 
 
-    let starInfo = scaleStars(starPoints, orbitsjs.norm(offset), offset);
+    let starInfo = scaleStars(starPoints, orbitsjs.norm(offset), offset, rotParams, JT);
     const points = starInfo.points;
     const colors = starInfo.colors;
 
@@ -473,27 +504,6 @@ function drawScene(time)
     pointShaders.draw(matrix);
 
    // console.log(scaleConstellations(constellationBoundaries, orbitsjs.norm(osvSunTargetEcef.r)));
-
-    // Draw the Sun and the Moon and lines to the subsolar and sublunar points.
-    /*lineShaders.colorOrbit = "#ffffff";
-    drawDistant(osvSunEfi.r, 695700000.0 * 2.0, matrix, guiControls.enableSubsolar,
-        guiControls.enableSubsolarLine);
-    lineShaders.colorOrbit = "#ffffff";
-    drawDistant(osvMoonEfi.r, 1737400.0 * 2.0, matrix, guiControls.enableSublunar,
-        guiControls.enableSublunarLine);
-        */
-
-    /*contextJs.beginPath();
-    contextJs.strokeStyle = "#ffffff";
-    contextJs.moveTo(0, 0);
-    contextJs.lineTo(canvasJs.width, canvasJs.height);
-    contextJs.stroke();
-
-    
-    contextJs.font = "12px Arial";
-    contextJs.textBaseline = "top"
-    contextJs.fillStyle = "#ffff00";
-    contextJs.strokeText("69°22'33.2\"", 0, 0);*/
 
     // Call drawScene again next frame
     requestAnimationFrame(drawScene);
@@ -518,72 +528,6 @@ function drawScene(time)
 }
 
 /**
- * Convert OSV from Planet-fixed to BCRS frame-
- * 
- * @param {*} osv 
- *     OSV in Planet-fixed frame.
- * @param {*} rotParams 
- * @returns 
- */
-function coordECEFBCRS(osv, rotParams)
-{
-    const rBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
-        osv.r, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
-    // TODO: This is incorrect.
-    const vBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
-        osv.v, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
-
-    return {r : rBCRS, v : vBCRS, JT : osv.JT};
-}
-
-/**
- * Convert OSV from BCRS to Planet-fixed frame.
- * 
- * @param {*} osv 
- *      OSV in BCRS frame.
- * @param {*} rotParams 
- *      Rotational parameters alpha_0, delta_0 and W in degrees.
- * @returns OSV in planet-fixed frame.
- */
-function coordBCRSECEF(osv, rotParams)
-{
-    const rECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
-        osv.r, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
-    // TODO: This is incorrect.
-    const vECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
-        osv.v, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
-    
-    return {r : rECEF, v : vECEF, JT : osv.JT};
-}
-
-/**
- * Convert OSV from B1950.0 frame to the J2000.0 frame.
- * 
- * @param {*} osv 
- *      Orbit state vector in B1950.0 frame.
- * @returns Orbit state vector in J2000.0 frame.
- */
-function coordB1950J2000(osv)
-{
-    // Murray - The transformation of coordinates between the systems of B1950.0
-    // and J2000.0, and the principal galactic axes referred to J2000.0.
-    // Equation (25):
-
-    // This is probably somewhat incorrectly applied.
-    const rJ2000x = 0.9999256794956877 * osv.r[0] 
-                  - 0.0111814832204662 * osv.r[1]
-                  - 0.0048590038153592 * osv.r[2];
-    const rJ2000y = 0.0111814832391717 * osv.r[0] 
-                  + 0.9999374848933135 * osv.r[1]
-                  - 0.0000271625947142 * osv.r[2];
-    const rJ2000z = 0.0048590037723143 * osv.r[0] 
-                  - 0.0000271702937440 * osv.r[1]
-                  + 0.9999881946023742 * osv.r[2];
-
-    return {r : [rJ2000x, rJ2000y, rJ2000z], v : [0, 0, 0], JT : osv.JT};
-}
-
-/**
  * Create view matrix taking into account the rotation.
  * 
  * @returns The view matrix.
@@ -600,9 +544,7 @@ function createViewMatrix(cameraPosition, up, eqRadius)
     const zFar = orbitsjs.norm(cameraPosition) * 1.1;
     const projectionMatrix = m4.perspective(camera.fovRad, aspect, zNear, zFar);
 
-    // Camera position in the clip space.
-    //const cameraPosition = [0, 0, camera.distance];
-    //const up = [0, 0, 1];
+    // Planet is always placed at the center.
     const target = [0, 0, 0];
 
     // Compute the camera's matrix using look at.
@@ -617,6 +559,8 @@ function createViewMatrix(cameraPosition, up, eqRadius)
     //cameraControls.lat.setValue( 90 + orbitsjs.rad2Deg(camera.rotX));
     //cameraControls.distance.setValue(camera.distance);
 
+    // Since the app simulated fixed views between centers of planets, the rotations are 
+    // always zero.
     camera.rotX = 0;
     camera.rotY = 0;
     camera.rotZ = 0;
