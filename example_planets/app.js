@@ -64,7 +64,7 @@ function setTarget(planetName)
 
     if (target === "saturn")
     {
-        ringShaders = new RingShaders(gl, 50, 5, 74500e3, 136780e3);
+        ringShaders = new RingShaders(gl, 50, 5, 74500e3, 136780e3, orbitsjs.planetData[planetName].eqRadius);
         ringShaders.init("textures/2k_saturn_ring_alpha.png", "textures/darkside.jpg");
     }
 }

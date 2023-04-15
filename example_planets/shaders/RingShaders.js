@@ -12,16 +12,19 @@ class RingShaders
      *      Number of longitude divisions.
      * @param {*} nRad 
      *      Number of radial divisions.
-     * @param {*} a 
+     * @param {*} ringInner
      *      Ring inner radius.
-     * @param {*} b
+     * @param {*} ringOuter
      *      Ring outer radius.
+     * @param {*} planetRadius
+     *      Planet radius.
      */
-    constructor(gl, nLon, nRad, a, b)
+    constructor(gl, nLon, nRad, ringInner, ringOuter, planetRadius)
     {
         this.gl = gl;
-        this.a = a;
-        this.b = b;
+        this.ringInner = ringInner;
+        this.ringOuter = ringOuter;
+        this.planetRadius = planetRadius;
         this.nRad = nRad;
         this.nLon = nLon;
  
@@ -52,8 +55,6 @@ class RingShaders
         
         precision highp float;
         #define PI 3.1415926538
-        #define R_EARTH 6371000.0
-        #define R_MOON 1737400.0
         
         // Passed in from the vertex shader.
         in vec2 v_texcoord;
@@ -68,18 +69,15 @@ class RingShaders
         uniform bool u_grayscale;
         uniform float u_texture_brightness;
 
+        uniform float u_ring_inner_radius;
+        uniform float u_ring_outer_radius;
+        uniform float u_planet_radius;
+
         // ECEF coordinates for the Moon and the Sun. The Sun vector has been scaled
         // to have length of 1 to avoid issues with the arithmetic.
-        uniform float u_moon_x;
-        uniform float u_moon_y;
-        uniform float u_moon_z;
         uniform float u_sun_x;
         uniform float u_sun_y;
         uniform float u_sun_z;
-
-        // Angular diameter of the Sun. It seems tha the shader arithmetic is not
-        // accurate enough to compute this.
-        uniform float u_sun_diam;
 
         // we need to declare an output for the fragment shader
         out vec4 outColor;
@@ -104,55 +102,6 @@ class RingShaders
             return sin(deg2rad(deg));
         }
 
-        highp vec3 coordWgs84Efi(in highp float lat, in highp float lon, in highp float h)
-        {
-            // Semi-major axis:
-            highp float a = 6378137.0;
-            //  Eccentricity sqrt(1 - (b*b)/(a*a))
-            highp float ecc = 0.081819190842966;
-            highp float ecc2 = ecc*ecc;
-            
-            highp float N = a / sqrt(1.0 - pow(ecc * sind(lat), 2.0));
-            highp vec3 r = vec3((N + h) * cosd(lat)*cosd(lon),
-                          (N + h) * cosd(lat)*sind(lon),
-                          ((1.0 - ecc2) * N + h) * sind(lat));
-            return r;
-        }
-
-        highp vec3 rotateCart1d(in highp vec3 p, in highp float angle)
-        {
-            return vec3(p.x, 
-                        cosd(angle) * p.y + sind(angle) * p.z,
-                       -sind(angle) * p.y + cosd(angle) * p.z);
-        }
-        
-        highp vec3 rotateCart3d(in highp vec3 p, in highp float angle)
-        {
-            return vec3(cosd(angle) * p.x + sind(angle) * p.y, 
-                       -sind(angle) * p.x + cosd(angle) * p.y,
-                        p.z);
-        }
-        
-        highp vec3 coordEfiEnu(in highp vec3 pos, highp float lat, highp float lon, highp float h, bool transl)
-        {
-            highp vec3 rObs = coordWgs84Efi(lat, lon, h);
-
-            if (transl)
-            {
-                highp vec3 rDiff = pos - rObs;
-                highp vec3 rEnu2 = rotateCart3d(rDiff, 90.0 + lon);
-                highp vec3 rEnu = rotateCart1d(rEnu2, 90.0 - lat);
-
-                return rEnu;
-            }
-            else 
-            {
-                highp vec3 rEnu2 = rotateCart3d(pos, 90.0 + lon);
-                highp vec3 rEnu = rotateCart1d(rEnu2, 90.0 - lat);
-
-                return rEnu;
-            }
-        }
         vec4 toGrayscale(in vec4 rgb)
         {
             float g =  0.3 * rgb.x + 0.59 * rgb.y + 0.11 * rgb.z;
@@ -164,37 +113,31 @@ class RingShaders
         void main() 
         {
             vec3 coordECEFSun = vec3(u_sun_x, u_sun_y, u_sun_z);
-            vec3 coordECEFMoon = vec3(u_moon_x, u_moon_y, u_moon_z);
 
             float lon = 2.0 * PI * (v_texcoord.y - 0.5);
             float lat = PI * (0.5 - v_texcoord.x);
-            float longitude = rad2deg(lon);
-            float latitude  = rad2deg(lat);
     
-            // Surface coordinates.
-            vec3 obsECEF = coordWgs84Efi(latitude, longitude, 0.0);
-            vec3 coordSunENU = coordEfiEnu(coordECEFSun, latitude, longitude, 0.0, false);
-            //float altitude = rad2deg(asin(coordSunENU.z / length(coordSunENU)));
+            // Radial coordinate of the current point.
+            float radius = u_ring_inner_radius + v_texcoord.x * (u_ring_outer_radius - u_ring_inner_radius);
 
-            //74500e3, 136780e3
+            // Find out whether line-sphere intersection occurs on a line from current 
+            // point to the Sun:
             float distSun = length(coordECEFSun);
             vec3 dirSun = vec3(coordECEFSun.x / distSun, coordECEFSun.y / distSun, coordECEFSun.z / distSun);
-            float rSaturn = 60268000.0;
-            float radius = 74500000.0 + v_texcoord.x * (136780000.0 - 74500000.0);
             vec3 pos = vec3(radius * cos(lon), radius * sin(lon), 0.0);
-            float nabla = pow(dot(dirSun, pos), 2.0) - (pow(length(pos), 2.0) - rSaturn * rSaturn);
-            float altitude = 1.0;
+            float nabla = pow(dot(dirSun, pos), 2.0) - (pow(length(pos), 2.0) - u_planet_radius * u_planet_radius);
+        
+            bool inShadow = false;
             float dummy = dot(dirSun, pos);
 
             if (nabla > 0.0 && dummy < 0.0)
             {
-                altitude = 0.0;
+                inShadow = true;
             }
 
             if (u_draw_texture)
-            {    
-
-                if (altitude > 0.0)
+            {
+                if (!inShadow)
                 {
                     // Day. 
                     outColor = u_texture_brightness * texture(u_imageDay, v_texcoord);
@@ -202,7 +145,7 @@ class RingShaders
                 else
                 {
                     // Night.
-                    outColor = texture(u_imageNight, v_texcoord);
+                    outColor = texture(u_imageDay, v_texcoord)*0.3;
                 }
             }
 
@@ -210,8 +153,6 @@ class RingShaders
             {
                 outColor = toGrayscale(outColor);
             }
-
-            //outColor = vec4(0.5, 0.5, 0.5, 0.5);
         }
         `;
     }
@@ -233,7 +174,6 @@ class RingShaders
         this.posAttrLocation = gl.getAttribLocation(this.program, "a_position");
         this.texAttrLocation = gl.getAttribLocation(this.program, "a_texcoord");
         this.matrixLocation = gl.getUniformLocation(this.program, "u_matrix");
-
 
         this.vertexArrayPlanet = gl.createVertexArray();
         gl.bindVertexArray(this.vertexArrayPlanet);
@@ -380,8 +320,10 @@ class RingShaders
 
             for (let radStep = 0; radStep <= this.nRad-1; radStep++)
             {
-                const rad     = this.a + (this.b - this.a) * (radStep / this.nRad);
-                const radNext = this.a + (this.b - this.a) * ((radStep + 1) / this.nRad);
+                const rad     = this.ringInner + (this.ringOuter - this.ringInner) 
+                              * (radStep / this.nRad);
+                const radNext = this.ringInner + (this.ringOuter - this.ringInner) 
+                              * ((radStep + 1) / this.nRad);
                 const indTri = radStep + lonStep * this.nRad;
                 this.insertRectGeo(positions, indTri, lon, lonNext, rad, radNext, 1);
             }  
@@ -411,8 +353,8 @@ class RingShaders
         const indStart  = indRect * 2 * 6;
         const uLonStart = (lonStart / (2 * Math.PI)) + 0.5;
         const uLonEnd   = (lonEnd / (2 * Math.PI)) + 0.5;
-        const uRadStart = (rStart - this.a)/(this.b - this.a);
-        const uRadEnd   = (rEnd - this.a)/(this.b - this.a);
+        const uRadStart = (rStart - this.ringInner)/(this.ringOuter - this.ringInner);
+        const uRadEnd   = (rEnd - this.ringInner)/(this.ringOuter - this.ringInner);
 
         this.insertBufferFloat32(buffer, indStart, 
             [uRadStart, uLonStart, uRadEnd, uLonStart, uRadEnd,   uLonEnd,
@@ -436,8 +378,10 @@ class RingShaders
 
             for (let radStep = 0; radStep <= this.nRad; radStep++)
             {
-                const rad     = this.a + (this.b - this.a) * (radStep / this.nRad);
-                const radNext = this.a + (this.b - this.a) * ((radStep + 1) / this.nRad);
+                const rad     = this.ringInner + (this.ringOuter - this.ringInner) 
+                              * (radStep / this.nRad);
+                const radNext = this.ringInner + (this.ringOuter - this.ringInner) 
+                              * ((radStep + 1) / this.nRad);
                 const indTri = radStep + lonStep * this.nRad;
 
                 this.insertRectTex(positions, indTri, lon, lonNext, rad, radNext);
@@ -481,9 +425,6 @@ class RingShaders
         //gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         const drawTextureLocation = gl.getUniformLocation(this.program, "u_draw_texture");
 
-        const moonXLocation = gl.getUniformLocation(this.program, "u_moon_x");
-        const moonYLocation = gl.getUniformLocation(this.program, "u_moon_y");
-        const moonZLocation = gl.getUniformLocation(this.program, "u_moon_z");
         const sunXLocation = gl.getUniformLocation(this.program, "u_sun_x");
         const sunYLocation = gl.getUniformLocation(this.program, "u_sun_y");
         const sunZLocation = gl.getUniformLocation(this.program, "u_sun_z");
@@ -491,6 +432,14 @@ class RingShaders
         const showEclipseLocation = gl.getUniformLocation(this.program, "u_show_eclipse");
         const grayscaleLocation = gl.getUniformLocation(this.program, "u_grayscale");
         const brightnessLocation = gl.getUniformLocation(this.program, "u_texture_brightness");
+
+        const ringInnerLocation = gl.getUniformLocation(this.program, "u_ring_inner_radius");
+        const ringOuterLocation = gl.getUniformLocation(this.program, "u_ring_outer_radius");
+        const planetRadiusLocation = gl.getUniformLocation(this.program, "u_planet_radius");
+
+        gl.uniform1f(ringInnerLocation, this.ringInner);
+        gl.uniform1f(ringOuterLocation, this.ringOuter);
+        gl.uniform1f(planetRadiusLocation, this.planetRadius);
 
         if (drawTexture)
         {
@@ -519,17 +468,6 @@ class RingShaders
             gl.uniform1f(sunDiamLocation, diamAngSun);
         }
 
-        if (showEclipse)
-        {
-            gl.uniform1f(moonXLocation, rECEFMoon[0]);
-            gl.uniform1f(moonYLocation, rECEFMoon[1]);
-            gl.uniform1f(moonZLocation, rECEFMoon[2]);
-            gl.uniform1f(showEclipseLocation, 1);
-        }
-        else
-        {
-            gl.uniform1f(showEclipseLocation, 0);            
-        }
         gl.uniform1f(brightnessLocation, 0.8);
 
 
