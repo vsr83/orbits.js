@@ -2,6 +2,7 @@
 
 var gl = null;
 var planetShaders = null;
+var ringShaders = null;
 
 gl = canvas.getContext("webgl2");
 if (!gl) 
@@ -57,6 +58,12 @@ function setTarget(planetName)
     // Create and initialize shaders.
     planetShaders = new PlanetShaders(gl, 50, 50, a, b, 15, 15);
     planetShaders.init(planetTextures[target].day, planetTextures[target].night);
+
+    if (target === "saturn")
+    {
+        ringShaders = new RingShaders(gl, 50, 5, 74500e3, 136780e3);
+        ringShaders.init("textures/2k_saturn_ring_alpha.png", "textures/darkside.jpg");
+    }
 }
 
 /**
@@ -454,6 +461,19 @@ function drawScene(time)
         true,
         osvMoonEfi.r, 
         osvSunTargetEcef.r);
+
+    if (target === "saturn")
+    {
+        ringShaders.draw(matrix, 
+            guiControls.enableTextures, 
+            guiControls.enableGrid, 
+            false, 
+            false, 
+            true,
+            osvMoonEfi.r, 
+            osvSunTargetEcef.r);
+    
+    }
 
     const offset = osvObserverTargetEcef.r;
     if (guiControls.enableConstellations)
