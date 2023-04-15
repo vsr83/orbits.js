@@ -4,7 +4,10 @@ var gl = null;
 var planetShaders = null;
 var ringShaders = null;
 
-gl = canvas.getContext("webgl2");
+//gl = canvas.getContext("webgl2");
+gl = canvas.getContext("webgl2", {
+    premultipliedAlpha: false  // Ask for non-premultiplied alpha
+  });
 if (!gl) 
 {
     console.log("Failed to initialize GL.");

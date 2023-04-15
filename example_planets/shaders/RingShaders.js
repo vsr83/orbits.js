@@ -174,30 +174,30 @@ class RingShaders
             // Surface coordinates.
             vec3 obsECEF = coordWgs84Efi(latitude, longitude, 0.0);
             vec3 coordSunENU = coordEfiEnu(coordECEFSun, latitude, longitude, 0.0, false);
-            float altitude = rad2deg(asin(coordSunENU.z / length(coordSunENU)));
+            //float altitude = rad2deg(asin(coordSunENU.z / length(coordSunENU)));
+
+            //74500e3, 136780e3
+            float distSun = length(coordECEFSun);
+            vec3 dirSun = vec3(coordECEFSun.x / distSun, coordECEFSun.y / distSun, coordECEFSun.z / distSun);
+            float rSaturn = 60268000.0;
+            float radius = 74500000.0 + v_texcoord.x * (136780000.0 - 74500000.0);
+            vec3 pos = vec3(radius * cos(lon), radius * sin(lon), 0.0);
+            float nabla = pow(dot(dirSun, pos), 2.0) - (pow(length(pos), 2.0) - rSaturn * rSaturn);
+            float altitude = 1.0;
+            float dummy = dot(dirSun, pos);
+
+            if (nabla > 0.0 && dummy < 0.0)
+            {
+                altitude = 0.0;
+            }
 
             if (u_draw_texture)
             {    
-                altitude = 0.5;
+
                 if (altitude > 0.0)
                 {
                     // Day. 
                     outColor = u_texture_brightness * texture(u_imageDay, v_texcoord);
-                }
-                else if (altitude > -6.0)
-                {
-                    // Civil twilight.
-                    outColor = mix(texture(u_imageNight, v_texcoord), u_texture_brightness * texture(u_imageDay, v_texcoord), 0.2);
-                }
-                else if (altitude > -12.0)
-                {
-                    // Nautical twilight.
-                    outColor = mix(texture(u_imageNight, v_texcoord), u_texture_brightness * texture(u_imageDay, v_texcoord), 0.15);
-                }
-                else if (altitude > -18.0)
-                {
-                    // Astronomical twilight.
-                    outColor = mix(texture(u_imageNight, v_texcoord), u_texture_brightness * texture(u_imageDay, v_texcoord), 0.1);
                 }
                 else
                 {
@@ -476,7 +476,9 @@ class RingShaders
         gl.uniformMatrix4fv(this.matrixLocation, false, viewMatrix);
 
         gl.disable(gl.CULL_FACE);
-
+        //gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        //gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         const drawTextureLocation = gl.getUniformLocation(this.program, "u_draw_texture");
 
         const moonXLocation = gl.getUniformLocation(this.program, "u_moon_x");
