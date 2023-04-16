@@ -57,6 +57,8 @@ guiControls = new function()
         window.open("https://github.com/vsr83/orbits.js");
     };
     this.fov = 10;
+    this.fixSize = false;
+    this.fillPercentage = 60;
 
     this.observerMercury = function() {setObserver('mercury');}
     this.observerVenus   = function() {setObserver('venus');}
@@ -177,7 +179,9 @@ appearanceControls.colorConstellations = appearanceFolder.addColor(guiControls, 
 
 
 const cameraFolder = gui.addFolder('Camera');
-cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 100000, 0.1).name('Field of View');
+cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 100000, 0.01).name('Field of View');
+cameraControls.fixSize = cameraFolder.add(guiControls, 'fixSize').name('Fix Visual Size');
+cameraControls.fillPercentage = cameraFolder.add(guiControls, 'fillPercentage', 1, 200, 1).name('Percentage');
 
 
 const timeFolder = gui.addFolder('Time');

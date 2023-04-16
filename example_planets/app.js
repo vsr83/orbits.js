@@ -64,7 +64,8 @@ function setTarget(planetName)
 
     if (target === "saturn")
     {
-        ringShaders = new RingShaders(gl, 50, 5, 74500e3, 136780e3, orbitsjs.planetData[planetName].eqRadius);
+        ringShaders = new RingShaders(gl, 50, 5, 74500e3, 136780e3, 
+            orbitsjs.planetData[planetName].eqRadius, orbitsjs.planetData[planetName].polarRadius);
         ringShaders.init("textures/2k_saturn_ring_alpha.png", "textures/darkside.jpg");
     }
 }
@@ -390,7 +391,7 @@ function drawScene(time)
         todayJT += deltaTime;
     }
 
-    //todayJT = orbitsjs.timeJulianYmdhms(2018, 5, 6, 2, 58, 0).JT + guiControls.deltaTime;
+    todayJT = orbitsjs.timeJulianYmdhms(2016, 4, 25, 2, 58, 0).JT + guiControls.deltaTime;
 
     // Compute the Julian time taking into account the time warp.
     let JT =  todayJT;
@@ -551,6 +552,12 @@ function drawScene(time)
                     + "FoV : " + guiControls.fov.toFixed(1) + "\"" + "<br>"
                     + "Size: " + angularDiamEq.toFixed(2) + "\"/" + angularDiamPolar.toFixed(2) + "\" eq/polar";
     dateText.innerHTML = dateStr;
+
+    if (guiControls.fixSize)
+    {
+        const newFov = angularDiamPolar / (guiControls.fillPercentage * 0.01);
+        cameraControls.fov.setValue(newFov);
+    }
 
     const infoText = document.getElementById("infoText");
     infoText.innerHTML = cameraStr;
