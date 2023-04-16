@@ -1,7 +1,6 @@
 import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, dot, atand, atan2d} from "./MathUtils.js";
 import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
 import { keplerSolve } from "./Kepler.js";
-import { coordPerIne } from "./Frames.js";
 
 export const planetData = {
     mercury : {
@@ -342,49 +341,6 @@ export function coordB1950J2000(osv)
 }
 
 /**
- * Compute J2000 position w.r.t. center of Mars from Keplerian elements.
- * 
- * @param {*} kepler 
- *      Object with the Keplerian elements.
- * @returns Position vector.
- */
-function computeKeplerian(kepler)
-{
-    // (9.17)/(9.50) : Note that the mean anomaly is independent of the plane
-    // since it is determined by the angle w.r.t. perihelion.
-    kepler.M = kepler.L - kepler.P;
-
-    // (9.18) : Solve Kepler's equation with NR iteration.
-    kepler.E = keplerSolve(kepler.M, kepler.e, 1e-6, 20);
-
-    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
-    const rPer = [kepler.a * (cosd(kepler.E) - kepler.e),
-                  kepler.a * Math.sqrt(1 - kepler.e * kepler.e) * sind(kepler.E),
-                  0];
-    const N = kepler.Na + atan2d(sind(kepler.gamma) * sind(kepler.theta), 
-              cosd(kepler.gamma) * sind(kepler.Ja) 
-            + sind(kepler.gamma) * cosd(kepler.Ja) * cosd(kepler.theta));
-    const J = asind(sind(kepler.gamma) * sind(kepler.theta) / sind(N - kepler.Na));
-
-    const EC = atan2d(sind(kepler.Ja)*sind(kepler.theta), 
-                      cosd(kepler.Ja)*sind(kepler.gamma) 
-                    + sind(kepler.Ja)*cosd(kepler.gamma)*cosd(kepler.theta));
-    const CD = kepler.P - kepler.Na - kepler.theta;
-
-    /*console.log(kepler);
-    console.log(rPer);
-    console.log(N);
-    console.log(J);
-    console.log(EC);
-    console.log(CD);
-   */ 
-    const rBCRS = rotateCart3d(rotateCart1d(rotateCart3d(rPer, -EC-CD), -J), -N);
-    const au = 1.495978707e11;
-
-    return vecMul(rBCRS, au);
-}
-
-/**
  * Compute positions of the moons of Mars. 
  * This method is based on the section 9.7 of 
  * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
@@ -396,6 +352,50 @@ function computeKeplerian(kepler)
  */
 export function marsSatellites(JTtdb)
 {
+    /**
+     * Compute J2000 position w.r.t. center of Mars from Keplerian elements.
+     * 
+     * @param {*} kepler 
+     *      Object with the Keplerian elements.
+     * @returns Position vector.
+     */
+    function computeKeplerian(kepler)
+    {
+        // (9.17)/(9.50) : Note that the mean anomaly is independent of the plane
+        // since it is determined by the angle w.r.t. perihelion.
+        kepler.M = kepler.L - kepler.P;
+
+        // (9.18) : Solve Kepler's equation with NR iteration.
+        kepler.E = keplerSolve(kepler.M, kepler.e, 1e-6, 20);
+
+        // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
+        const rPer = [kepler.a * (cosd(kepler.E) - kepler.e),
+                    kepler.a * Math.sqrt(1 - kepler.e * kepler.e) * sind(kepler.E),
+                    0];
+        const N = kepler.Na + atan2d(sind(kepler.gamma) * sind(kepler.theta), 
+                cosd(kepler.gamma) * sind(kepler.Ja) 
+                + sind(kepler.gamma) * cosd(kepler.Ja) * cosd(kepler.theta));
+        const J = asind(sind(kepler.gamma) * sind(kepler.theta) / sind(N - kepler.Na));
+
+        const EC = atan2d(sind(kepler.Ja)*sind(kepler.theta), 
+                        cosd(kepler.Ja)*sind(kepler.gamma) 
+                        + sind(kepler.Ja)*cosd(kepler.gamma)*cosd(kepler.theta));
+        const CD = kepler.P - kepler.Na - kepler.theta;
+
+        /*console.log(kepler);
+        console.log(rPer);
+        console.log(N);
+        console.log(J);
+        console.log(EC);
+        console.log(CD);
+        */ 
+        const rBCRS = rotateCart3d(rotateCart1d(rotateCart3d(rPer, -EC-CD), -J), -N);
+        const au = 1.495978707e11;
+
+        return vecMul(rBCRS, au);
+    }
+
+
     const phobos = {};
     const deimos = {};
 
@@ -443,6 +443,8 @@ export function marsSatellites(JTtdb)
 /**
  * Compute positions of the Galilean satellites of Jupiter in Jupiter-centric 
  * J2000 frame.
+ * This method is based on the section 9.8 of 
+ * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
  * 
  * @param {*} JTtdb 
  *      Julian time (TDB).
@@ -577,4 +579,154 @@ export function jupiterSatellites(JTtdb)
 
     return {io : rBcrsJ2000_1, europa : rBcrsJ2000_2, ganymede : rBcrsJ2000_3, 
         callisto : rBcrsJ2000_4};
+}
+
+/**
+ * Compute positions of the 
+ * This method is based on the section 9.9 of 
+ * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
+ * 
+ * @param {*} JTtdb 
+ *      Julian time (TDB).
+ * @returns Position vector for each satellite.
+ */
+export function saturnSatellites(JTtdb)
+{
+    // (9.56)-(9.68)
+    // fractional days after 1889-03-31 12:00:00.
+    const d = JTtdb - 2411093.0;
+    const t = d/365.25;
+
+    const T = 5.0616 * ((JTtdb - 2433282.423) / 365.25 + 1950.0 - 1866.06);
+    
+    // Astronomical unit:
+    const au = 1.495978707e11;
+
+    // Semi-major axis (m) (9.65-9.68)
+    const a_1 = 0.00124171 * au;
+    const a_2 = 0.00158935 * au;
+    const a_3 = 0.00197069 * au;
+    const a_4 = 0.00252413 * au;
+
+    // Mean motion (degrees / day) (9.65-9.68)
+    const n_1 = 381.994516;
+    const n_2 = 262.7319052;
+    const n_3 = 190.697920278;
+    const n_4 = 131.534920026;
+
+    // Eccentricity (9.65-9.68)
+    const e_1 = 0.01986;
+    const e_2 = 0.00532;
+    const e_3 = 0.000212;
+    const e_4 = 0.001715;
+
+    // Inclination of the orbit w.r.t. equatorial plane of Saturn (degrees) (9.65-9.68).
+    const gamma_1 = 1.570;
+    const gamma_2 = 0.036;
+    const gamma_3 = 1.1121;
+    const gamma_4 = 0.0289;
+
+    // Longitude of the ascending node (degrees) (9.65-9.68).
+    const theta_1_1 = 49.4 - 365.025 * t;
+    const theta_1_2 = 145.0 - 152.7 * t;
+    const theta_1_3 = 111.41 - 72.24754 * t;
+    const theta_1_4 = 228.0 - 30.6197 * t;
+
+    // Mean longitude (degrees) (9.65-9.68).
+    const L_1_1 = 128.839 + n_1 * d 
+                - 43.415 * sind(T) 
+                -  0.714 * sind(3.0*T) 
+                -  0.020 * sind(5.0*T);
+    const L_1_2 = 200.155 + n_2 * d 
+                + (15.38 / 60.0) * sind(59.4 + 32.72*t) 
+                + (13.04 / 60.0) * sind(119.2 + 93.18*t);
+    const L_1_3 = 284.9982 + n_3 * d
+                + 2.0751 * sind(T)
+                + 0.0341 * sind(3.0*T)
+                + 0.0010 * sind(5.0*T);
+    const L_1_4 = 255.1183 + n_4 * d
+                - (0.88 / 60.0) * sind(59.4 + 32.73*t)
+                - (0.75 / 60.0) * sind(119.2 + 93.18*t);
+
+    // Longitude of the pericenter w.r.t. vernal equinox (degrees) (9.65-9.68).
+    const P_1 = 107.0 + 365.560 * t;
+    const P_2 = 312.7 +  123.42 * t;
+    const P_3 =  97.0 +   72.29 * t;
+    const P_4 = 173.6 + 30.8381 * t;
+
+    // This is for J2000.0 epoch, which is probably incorrect.
+    const eps = 23.439279444444445;
+
+    // Angle along ecliptic between the vernal equinox and the corresponding 
+    // point on the equatorial plane of Saturn (degrees) (Figure 9.13).
+    const Omega_e = 168.8387;
+
+    // Obliquity of ecliptic for Saturn (degrees) (Figure 9.13).
+    const i_e = 28.0653;
+
+    function positionBcrs(a, e, gamma, theta_1, L_1, P)
+    {
+        // This is for J2000.0 epoch, which is probably incorrect.
+        const eps = 23.439279444444445;
+
+        const Omega_e = 168.8387;
+        const i_e = 28.0653;
+
+        // Distance between the intersection of equatorial and ecliptic planes and the ecliptic
+        // node of the satellite (9.69)
+        const BF = atan2d(sind(gamma)*sind(theta_1 - Omega_e), 
+                          cosd(gamma)*sind(i_e) + sind(gamma)*cosd(i_e)*cosd(theta_1 - Omega_e));
+        // Inclination of the satellite orbits w.r.t. ecliptic.
+        const i = asind((sind(gamma) * sind(theta_1 - Omega_e)) / sind(BF));
+        // Equation (9.70)
+        const FC = atan2d(sind(theta_1 - Omega_e)*sind(i_e),
+                         cosd(i_e)*sind(gamma) + sind(i_e)*cosd(gamma)*cosd(theta_1 - Omega_e));
+        // Angle between the vernal equinox and the node of the satellite orbit w.r.t. the equator
+        // of Earth (9.71).
+        const N = atan2d(sind(i)*sind(Omega_e + BF), 
+                         cosd(i)*cosd(eps) + sind(i)*cosd(eps)*cosd(Omega_e + BF));
+        // Inclination of the satellite orbits w.r.t. Earth equator.
+        const J = asind(sind(i)*sind(Omega_e + BF) / sind(N));
+
+        // Angle between satellite orbit nodes w.r.t. Earth and Ecliptic (9.72).
+        const EF = atan2d(sind(Omega_e + BF)*sind(eps), 
+                          cosd(eps)*sind(i) + sind(eps)*cosd(i)*cosd(Omega_e + BF));
+
+        // Angle between intersections of the equatorial plane of Saturn with the ecliptic 
+        // and Earth equator planes (9.74).
+        const AB = atan2d(sind(eps)*sind(Omega_e), 
+                          cosd(eps)*sind(i_e) + sind(eps)*cosd(i_e)*cosd(Omega_e));
+        const J_e = asind(sind(eps)*sind(Omega_e) / sind(AB));
+        
+        // Angle from the intersection of the orbital plane with the equator of Saturn
+        // to the pericenter.
+        const CD = P - theta_1;
+
+        // Mean anomaly (9.75).
+        const M = L_1 - P;
+
+        // Solve eccentric anomaly.
+        const E = keplerSolve(M, e, 1e-6, 20);
+    
+        // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
+        const rPer = [a * (cosd(E) - e),
+                      a * Math.sqrt(1 - e * e) * sind(E),
+                      0];
+
+        // B1950.0 Earth equatorial coordinates.
+        const rBcrs1950 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer,
+                            -FC - CD), -i), -Omega_e - BF), -eps);
+        // J2000.0 equatorial.
+        const rBcrsJ2000 = coordB1950J2000({r : rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
+
+        return rBcrsJ2000;
+    }
+
+    // Compute positions
+    const rBcrsJ2000_1 = positionBcrs(a_1, e_1, gamma_1, theta_1_1, L_1_1, P_1);
+    const rBcrsJ2000_2 = positionBcrs(a_2, e_2, gamma_2, theta_1_2, L_1_2, P_2);
+    const rBcrsJ2000_3 = positionBcrs(a_3, e_3, gamma_3, theta_1_3, L_1_3, P_3);
+    const rBcrsJ2000_4 = positionBcrs(a_4, e_4, gamma_4, theta_1_4, L_1_4, P_4);
+    
+    return {mimas : rBcrsJ2000_1, enceladus : rBcrsJ2000_2, tethys : rBcrsJ2000_3, dione : rBcrsJ2000_4};
 }
