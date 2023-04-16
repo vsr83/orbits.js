@@ -34,3 +34,8 @@ Click below to execute an example of a simple application using most features of
 Click below for an example drawing constellations.
 [![Screenshot.](example_constellations/scrshot.png)](https://vsr83.github.io/orbits.js/example_constellations/index.html)
 
+Click below for an example for visualization of Solar Eclipses.
+[![Screenshot.](scrshot_Bessel3d.png)](https://github.com/vsr83/Bessel3d)
+
+Click below to execute an example of a simple application drawing visual appearance of planets.
+[![Screenshot.](example_planets/scrshot.png)](https://vsr83.github.io/orbits.js/example_planets/index.html)

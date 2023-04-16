@@ -391,7 +391,7 @@ function drawScene(time)
         todayJT += deltaTime;
     }
 
-    todayJT = orbitsjs.timeJulianYmdhms(2016, 4, 25, 2, 58, 0).JT + guiControls.deltaTime;
+    //todayJT = orbitsjs.timeJulianYmdhms(2016, 4, 25, 2, 58, 0).JT + guiControls.deltaTime;
 
     // Compute the Julian time taking into account the time warp.
     let JT =  todayJT;
