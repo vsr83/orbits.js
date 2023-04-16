@@ -16,15 +16,18 @@ class RingShaders
      *      Ring inner radius.
      * @param {*} ringOuter
      *      Ring outer radius.
-     * @param {*} planetRadius
-     *      Planet radius.
+     * @param {*} planetRadiusEq
+     *      Planet equator radius.
+     * @param {*} planetRadiusPolar
+     *      Planet polar radius.
      */
-    constructor(gl, nLon, nRad, ringInner, ringOuter, planetRadius)
+    constructor(gl, nLon, nRad, ringInner, ringOuter, planetRadiusEq, planetRadiusPolar)
     {
         this.gl = gl;
         this.ringInner = ringInner;
         this.ringOuter = ringOuter;
-        this.planetRadius = planetRadius;
+        this.planetRadiusEq = planetRadiusEq;
+        this.planetRadiusPolar = planetRadiusPolar;
         this.nRad = nRad;
         this.nLon = nLon;
  
@@ -71,7 +74,8 @@ class RingShaders
 
         uniform float u_ring_inner_radius;
         uniform float u_ring_outer_radius;
-        uniform float u_planet_radius;
+        uniform float u_planet_radius_eq;
+        uniform float u_planet_radius_polar;
 
         // ECEF coordinates for the Moon and the Sun. The Sun vector has been scaled
         // to have length of 1 to avoid issues with the arithmetic.
@@ -120,12 +124,16 @@ class RingShaders
             // Radial coordinate of the current point.
             float radius = u_ring_inner_radius + v_texcoord.x * (u_ring_outer_radius - u_ring_inner_radius);
 
+            // Scale point -> Sun ray in order to take into account the flattening of the poles.
+            // TODO: Re-check this in detail!
+            coordECEFSun.z = coordECEFSun.z * u_planet_radius_eq / u_planet_radius_polar;
+
             // Find out whether line-sphere intersection occurs on a line from current 
             // point to the Sun:
             float distSun = length(coordECEFSun);
             vec3 dirSun = vec3(coordECEFSun.x / distSun, coordECEFSun.y / distSun, coordECEFSun.z / distSun);
             vec3 pos = vec3(radius * cos(lon), radius * sin(lon), 0.0);
-            float nabla = pow(dot(dirSun, pos), 2.0) - (pow(length(pos), 2.0) - u_planet_radius * u_planet_radius);
+            float nabla = pow(dot(dirSun, pos), 2.0) - (pow(length(pos), 2.0) - u_planet_radius_eq * u_planet_radius_eq);
         
             bool inShadow = false;
             float dummy = dot(dirSun, pos);
@@ -435,11 +443,13 @@ class RingShaders
 
         const ringInnerLocation = gl.getUniformLocation(this.program, "u_ring_inner_radius");
         const ringOuterLocation = gl.getUniformLocation(this.program, "u_ring_outer_radius");
-        const planetRadiusLocation = gl.getUniformLocation(this.program, "u_planet_radius");
+        const planetRadiusEqLocation = gl.getUniformLocation(this.program, "u_planet_radius_eq");
+        const planetRadiusPolarLocation = gl.getUniformLocation(this.program, "u_planet_radius_polar");
 
         gl.uniform1f(ringInnerLocation, this.ringInner);
         gl.uniform1f(ringOuterLocation, this.ringOuter);
-        gl.uniform1f(planetRadiusLocation, this.planetRadius);
+        gl.uniform1f(planetRadiusEqLocation, this.planetRadiusEq);
+        gl.uniform1f(planetRadiusPolarLocation, this.planetRadiusPolar);
 
         if (drawTexture)
         {
