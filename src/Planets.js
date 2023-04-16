@@ -1,4 +1,4 @@
-import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, dot, atand, atan2d} from "./MathUtils.js";
+import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, tand, dot, atand, atan2d} from "./MathUtils.js";
 import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
 import { keplerSolve } from "./Kepler.js";
 
@@ -582,7 +582,7 @@ export function jupiterSatellites(JTtdb)
 }
 
 /**
- * Compute positions of the 
+ * Compute positions of the major moons of Saturn.
  * This method is based on the section 9.9 of 
  * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
  * 
@@ -727,6 +727,50 @@ export function saturnSatellites(JTtdb)
     const rBcrsJ2000_2 = positionBcrs(a_2, e_2, gamma_2, theta_1_2, L_1_2, P_2);
     const rBcrsJ2000_3 = positionBcrs(a_3, e_3, gamma_3, theta_1_3, L_1_3, P_3);
     const rBcrsJ2000_4 = positionBcrs(a_4, e_4, gamma_4, theta_1_4, L_1_4, P_4);
-    
-    return {mimas : rBcrsJ2000_1, enceladus : rBcrsJ2000_2, tethys : rBcrsJ2000_3, dione : rBcrsJ2000_4};
+
+    // (9.76) - (9.77)
+    const a_5 = 0.003524 * au;
+    const n_5 = 79.6900400700;
+    const gamma_0_5 = 0.3305;
+    const pi_5 = 305.0 + 10.2077 * t;
+    const omega_T_5 = 276.49 + 0.5219 * (JTtdb - 2411368.0) / 365.25;
+    const N_T_5 = 44.5 - 0.5219 * (JTtdb - 2411368.0) / 365.25;
+    const kappa = 57.29578;
+    const e_sin_omega_5 = 0.000210 * sind(pi_5) + 0.00100 * sind(omega_T_5);
+    const e_cos_omega_5 = 0.000210 * cosd(pi_5) + 0.00100 * cosd(omega_T_5);
+
+    // e^2 * sin^2 x + e^2 * cos^2 x = e^2
+    const e_5 = Math.sqrt(e_sin_omega_5*e_sin_omega_5 + e_cos_omega_5*e_cos_omega_5);
+    const omega_5 = atan2d(e_sin_omega_5, e_cos_omega_5) / e_5;
+
+    const lambda_5 = 359.4727 + n_5 * d 
+                   + kappa * sind(gamma_0_5) * tand(0.5 * i_e) * sind(356.87 - 10.2077*t);
+    const i_5 = i_e - 0.0455 
+              + kappa * sind(gamma_0_5) * cosd(356.87 - 10.2077*t)
+              + 0.0201 * cosd(N_T_5);
+    const Omega_5 = Omega_e - 0.0078 
+                  + (kappa * sind(gamma_0_5) * sind(356.87 - 10.2077*t)
+                  +  0.0201 * sind(N_T_5)) / sind(i_e);
+
+    const M_5 = lambda_5 - omega_5;
+    const E_5 = keplerSolve(M_5, e_5, 1e-6, 20);
+
+    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
+    const rPer_5 = [a_5 * (cosd(E_5) - e_5),
+                    a_5 * Math.sqrt(1 - e_5 * e_5) * sind(E_5),
+                    0];
+
+    // B1950.0 Earth equatorial coordinates.
+    const rBcrs1950_5 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_5,
+                        Omega_5 - omega_5), -i_5), -Omega_5), -eps);
+    // J2000.0 equatorial.
+    const rBcrsJ2000_5 = coordB1950J2000({r : rBcrs1950_5, v : [0, 0, 0], JT : JTtdb}).r;
+
+    return {
+        mimas     : rBcrsJ2000_1, 
+        enceladus : rBcrsJ2000_2, 
+        tethys    : rBcrsJ2000_3, 
+        dione     : rBcrsJ2000_4,
+        rhea      : rBcrsJ2000_5
+    };
 }
