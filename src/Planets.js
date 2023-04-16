@@ -341,6 +341,13 @@ export function coordB1950J2000(osv)
     return {r : [rJ2000x, rJ2000y, rJ2000z], v : [0, 0, 0], JT : osv.JT};
 }
 
+/**
+ * Compute J2000 position w.r.t. center of Mars from Keplerian elements.
+ * 
+ * @param {*} kepler 
+ *      Object with the Keplerian elements.
+ * @returns Position vector.
+ */
 function computeKeplerian(kepler)
 {
     // (9.17)/(9.50) : Note that the mean anomaly is independent of the plane
@@ -433,6 +440,14 @@ export function marsSatellites(JTtdb)
     return {phobos : rPhobos, deimos : rDeimos};
 }
 
+/**
+ * Compute positions of the Galilean satellites of Jupiter in Jupiter-centric 
+ * J2000 frame.
+ * 
+ * @param {*} JTtdb 
+ *      Julian time (TDB).
+ * @returns Position vector for each satellite.
+ */
 export function jupiterSatellites(JTtdb)
 {
     // (9.52)
