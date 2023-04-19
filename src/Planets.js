@@ -896,6 +896,16 @@ export function saturnSatellites(JTtdb)
     };
 }
 
+/**
+ * Compute positions of the major satellites of Saturn.
+ * 
+ * This method was originally based on the section 9.9 of 
+ * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
+ * Due to issues with implementation, the method was rewritten to be based on 
+ * Harper, Taylor - The orbits of major satellites of Saturn, Astronomy and Astrophysics, 1993.
+ * 
+ * @param {*} JTtdb 
+ */
 export function saturnSatellites3(JTtdb)
 {
     // Longitude of ascending node in the orbit of Saturn w.r.t. B1950.0 ecliptic.
@@ -990,12 +1000,12 @@ export function saturnSatellites3(JTtdb)
         a_0  : 0.02381170,
         lambda_0 : 216.99743,
         e_0  : 0.0288367,
-        omega_0 : 357.824,
+        varpi_0 : 357.824,
         i_0  : 18.02066,
         Omega_0 : 141.475,
         n    : 4.53795165,
         Omega_dot : -3.7119,
-        omega_dot : 12.285
+        varpi_dot : 12.285
     };
 
     const d = JTtdb - JT0;
@@ -1123,11 +1133,12 @@ export function saturnSatellites3(JTtdb)
     titan.Theta = titan.Theta_dot + titan.Omega_s;
     titan.L_s = titan.lambda_s - (titan.Theta - titan.Omega_s) - titan.Omega_s;
 
-    console.log(cosd(titan.Gamma)+ " " + (cosd(titan.i_s)*cosd(titan.i_a) + sind(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s)));
-    console.log(sind(titan.Gamma)*sind(titan.Psi) + " " + sind(titan.i_s)*sind(titan.Omega_a - titan.Omega_s));
-    console.log((sind(titan.Gamma)*cosd(titan.Psi)) + " " + (cosd(titan.i_s)*sind(titan.i_a) - sind(titan.i_s)*cosd(titan.i_a)* cosd(titan.Omega_a - titan.Omega_s)));
-    console.log(sind(titan.Gamma)*sind(titan.Theta_dot) + " " + sind(titan.i_a)*sind(titan.Omega_a - titan.Omega_s));
-    console.log(sind(titan.Gamma)*cosd(titan.Theta_dot) + " " + (-sind(titan.i_s)*cosd(titan.i_a) + cosd(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s)));
+    // Consistency check:
+    //console.log(cosd(titan.Gamma)+ " " + (cosd(titan.i_s)*cosd(titan.i_a) + sind(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s)));
+    //console.log(sind(titan.Gamma)*sind(titan.Psi) + " " + sind(titan.i_s)*sind(titan.Omega_a - titan.Omega_s));
+    //console.log((sind(titan.Gamma)*cosd(titan.Psi)) + " " + (cosd(titan.i_s)*sind(titan.i_a) - sind(titan.i_s)*cosd(titan.i_a)* cosd(titan.Omega_a - titan.Omega_s)));
+    //console.log(sind(titan.Gamma)*sind(titan.Theta_dot) + " " + sind(titan.i_a)*sind(titan.Omega_a - titan.Omega_s));
+    //console.log(sind(titan.Gamma)*cosd(titan.Theta_dot) + " " + (-sind(titan.i_s)*cosd(titan.i_a) + cosd(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s)));
 
     titan.varpi_a = titan.varpi_0 + titan.varpi_dot * t;
     titan.g = titan.varpi_a - titan.Omega_a - titan.Psi;
@@ -1150,16 +1161,6 @@ export function saturnSatellites3(JTtdb)
     titan.b = titan.a * Math.sqrt(1 - titan.e * titan.e);
     titan.osvPeri = keplerPerifocal(titan.a, titan.b, titan.E, planetData['saturn'].mu, JTtdb);
 
-   
-    /*titan.osvBcrs1950 = { 
-        r: rotateCart3d(rotateCart1d(rotateCart3d(
-            titan.osvPeri.r,
-        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0),
-        v: rotateCart3d(rotateCart1d(rotateCart3d(
-            titan.osvPeri.v,
-        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0),
-        JT : titan.osvPeri.JT
-    }*/
     titan.osvBcrs1950 = { 
         r: rotateCart3d(rotateCart1d(rotateCart3d(
             titan.osvPeri.r,
@@ -1183,7 +1184,6 @@ export function saturnSatellites3(JTtdb)
                         rhea.e_0 * cosd(rhea.pi) + 0.001 * cosd(rhea.varpi_6));
     rhea.e = Math.sqrt(Math.pow(rhea.e_0 * sind(rhea.pi) + 0.001 * sind(rhea.varpi_6), 2.0),
                        Math.pow(rhea.e_0 * cosd(rhea.pi) + 0.001 * cosd(rhea.varpi_6), 2.0));
-
     rhea.i = i_e - 0.0455 
            + kappa * sind(rhea.gamma_0)*cosd(rhea.N)
            + 0.02007 * cosd(rhea.N_6);
@@ -1206,7 +1206,128 @@ export function saturnSatellites3(JTtdb)
         JT : titan.osvPeri.JT
     }
 
+    // Periodic perturbations for Iapetus:
+    iapetus.eDot = 0.001156;
+    iapetus.i_a = -1.0125;
+    iapetus.i_b = -0.0648;
+    iapetus.i_c =  0.0054;
+    iapetus.Omega_b = 0.127;
+    iapetus.Omega_c = 0.008;
 
+    iapetus.a = iapetus.a_0 * au;
+    iapetus.lambda = iapetus.lambda_0 + iapetus.n * d;
+    iapetus.e = iapetus.e_0 + iapetus.eDot * T;
+    iapetus.varpi = iapetus.varpi_0 + iapetus.varpi_dot * T;
+    iapetus.i = iapetus.i_0 
+              + iapetus.i_a * T 
+              + iapetus.i_b * T*T 
+              + iapetus.i_c * T*T*T;
+    iapetus.Omega = iapetus.Omega_0 
+                  + iapetus.Omega_dot * T
+                  + iapetus.Omega_b * T*T
+                  + iapetus.Omega_c * T*T*T; 
+
+    iapetus.lambda_s = 267.263 + 1221.114 * T_s;
+    iapetus.varpi_s =  91.796 + 0.562 * T_s;
+    iapetus.theta   =   4.367 - 0.195 * T_s;
+    iapetus.Theta   = 146.819 - 3.918 * T_s; 
+    iapetus.lambda_T= 261.319 + 22.576974 * (JTtdb - 2411368.0);
+    iapetus.varpi_T = 277.102 + 0.001389 * (JTtdb - 2411368);
+    iapetus.phi     =  60.470 + 1.521 * T_s;
+    iapetus.Phi     = 205.055 - 2.091 * T_s;
+
+    iapetus.l =   iapetus.lambda   - iapetus.varpi;
+    iapetus.g =   iapetus.varpi    - iapetus.Omega - iapetus.phi;
+    iapetus.g_1 = iapetus.varpi    - iapetus.Omega - iapetus.phi;
+    iapetus.l_s = iapetus.lambda_s - iapetus.varpi_s;
+    iapetus.g_s = iapetus.varpi_s  - iapetus.Theta;
+    iapetus.l_T = iapetus.lambda_T - iapetus.varpi_T;
+    iapetus.g_T = iapetus.varpi_T  - iapetus.Phi;
+
+    iapetus.delta_a = 1e-5 * iapetus.a_0 * au * (
+          7.87 * cosd(2.0*(iapetus.l + iapetus.g - iapetus.l_s - iapetus.g_s))
+       + 98.79 * cosd(iapetus.l + iapetus.g_1 - iapetus.l_T - iapetus.g_T)
+    );
+    iapetus.delta_lambda = -0.04299 * sind(iapetus.l + iapetus.g_1 - iapetus.l_T - iapetus.g_T)
+                           -0.00356 * sind(5.0*iapetus.l - iapetus.l_T + 5.0*iapetus.g_1 - iapetus.g_T)
+                           -0.00087 * sind(5.0*iapetus.l - iapetus.l_T + 5.0*iapetus.g_1 - 3.0*iapetus.g_T)
+                           +0.00519 * sind(5.0*iapetus.l - iapetus.l_T + 4.0*iapetus.g_1 - 2.0*iapetus.g_T)
+                           -0.00794 * sind(5.0*iapetus.l - iapetus.l_T + 3.0*iapetus.g_1 - iapetus.g_T)
+                           -0.00789 * sind(2.0*(iapetus.l + iapetus.g - iapetus.l_s - iapetus.g_s))
+                           -0.06312 * sind(iapetus.l_s)
+                           -0.00295 * sind(2.0 * iapetus.l_s)
+                           -0.02231 * sind(2.0*iapetus.l_s + 2.0*iapetus.g_s)
+                           +0.00650 * sind(2.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta);
+    iapetus.delta_e = 1e-5 * (
+        -140.97 * cosd(iapetus.g_1 - iapetus.g_T)
+        + 24.08 * cosd(iapetus.l)
+        + 37.33 * cosd(2.0 * iapetus.l_s + 2.0 * iapetus.g_s - 2.0 * iapetus.g)
+        +  0.50 * cosd(3.0 * iapetus.l_s + 2.0 * iapetus.g_s - 2.0 * iapetus.g)
+        + 11.80 * cosd(iapetus.l + 2.0 * iapetus.g - 2.0 * iapetus.l_s - 2.0 * iapetus.g_s)
+        + 28.49 * cosd(2.0 * iapetus.l + iapetus.g_1 - iapetus.l_T - iapetus.g_T)
+        + 61.90 * cosd(iapetus.l_T + iapetus.g_T - iapetus.g_1)
+    );
+    iapetus.delta_varpi = iapetus.e * (
+          0.08077 * sind(iapetus.g_1 - iapetus.g_T)
+        + 0.02139 * sind(2.0*iapetus.l_s + 2.0*iapetus.g_s - 2.0*iapetus.g)
+        + 0.00028 * sind(3.0*iapetus.l_s + 2.0*iapetus.g_s - 2.0*iapetus.g)
+        - 0.00676 * sind(iapetus.l + 2.0*iapetus.g - 2.0*iapetus.l_s - 2.0*iapetus.g_s)
+        + 0.01380 * sind(iapetus.l)
+        + 0.01632 * sind(2.0*iapetus.l + iapetus.g_1 - iapetus.l_T - iapetus.g_T)
+        + 0.03547 * sind(iapetus.l_T + iapetus.g_T - iapetus.g_1)
+    );
+    iapetus.delta_i = 0.00106 * cosd(iapetus.l_s)
+                    - 0.00242 * cosd(iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+                    + 0.04204 * cosd(2.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+                    + 0.00565 * cosd(3.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+                    + 0.00057 * cosd(4.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+                    + 0.00035 * cosd(2.0*iapetus.l_s + 2.0*iapetus.g_s + 2.0*iapetus.g + iapetus.theta)
+                    + 0.00235 * cosd(iapetus.l + iapetus.g_1 + iapetus.l_T + iapetus.g_T + iapetus.phi)
+                    + 0.00360 * cosd(iapetus.l + iapetus.g_1 - iapetus.l_T - iapetus.g_T - iapetus.phi);
+
+    iapetus.delta_Omega = (
+        -0.01449 * sind(iapetus.l_s)
+        -0.00060 * sind(2.0*iapetus.l_s)
+        +0.00242 * sind(iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+        +0.04204 * sind(2.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+        +0.00565 * sind(3.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+        +0.00057 * sind(4.0*iapetus.l_s + 2.0*iapetus.g_s + iapetus.theta)
+        +0.00035 * sind(2.0*iapetus.l_s + 2.0*iapetus.g_s + 2.0*iapetus.g + iapetus.theta)
+        +0.00235 * sind(iapetus.l_s + iapetus.g_1 + iapetus.l_T + iapetus.g_T + iapetus.theta)
+        +0.00358 * sind(iapetus.l_s + iapetus.g_1 - iapetus.l_T - iapetus.g_T - iapetus.theta)
+    ) / sind(iapetus.i);
+
+
+    /*iapetus.a += iapetus.delta_a;
+    iapetus.lambda += iapetus.delta_lambda;
+    iapetus.e += iapetus.delta_e;
+    iapetus.varpi += iapetus.delta_varpi;
+    iapetus.i += iapetus.delta_i;
+    iapetus.Omega += iapetus.delta_Omega;*/
+
+    iapetus.M = (iapetus.lambda - iapetus.varpi) % 360.0;
+    iapetus.E = keplerSolve(iapetus.M, iapetus.e, 1e-6, 20);
+    iapetus.b = iapetus.a * Math.sqrt(1 - iapetus.e * iapetus.e);
+    iapetus.osvPeri = keplerPerifocal(iapetus.a, iapetus.b, iapetus.E, planetData['saturn'].mu, JTtdb);
+
+    iapetus.osvBcrs1950 = { 
+        r: rotateCart3d(rotateCart1d(rotateCart3d(
+            iapetus.osvPeri.r,
+        -(iapetus.varpi - iapetus.Omega)), -iapetus.i), -iapetus.Omega),
+        v: rotateCart3d(rotateCart1d(rotateCart3d(
+            iapetus.osvPeri.v,
+        -(iapetus.varpi - iapetus.Omega)), -iapetus.i), -iapetus.Omega),
+        JT : iapetus.osvPeri.JT
+    }
+
+
+    /**
+     * Rotate perifocal to BCRS frame. This is used for Mimas, Enceladus, Tethys
+     * and Dione.
+     * 
+     * @param {*} satellite 
+     *      Object with perifocal coordinates and required Keplerian elements.
+     */
     function rotateToBcrs2000(satellite)
     {
         // To compute B1950.0 Earth equatorial coordinates, compute rotations:
@@ -1239,6 +1360,7 @@ export function saturnSatellites3(JTtdb)
     console.log(dione);
     console.log(titan);
     console.log(rhea);
+    console.log(iapetus);
 }
 
 export function saturnSatellites2(JTtdb) 
