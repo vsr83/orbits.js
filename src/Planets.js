@@ -1,55 +1,63 @@
 import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, tand, dot, atand, atan2d} from "./MathUtils.js";
 import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
-import { keplerSolve } from "./Kepler.js";
+import { keplerSolve, keplerPerifocal } from "./Kepler.js";
 
 export const planetData = {
     mercury : {
         diameter    : 4879400,
         polarRadius : 2439700,
         eqRadius    : 2439700,
-        mass        : 3.285e23
+        mass        : 3.285e23,
+        mu          : 2.2032e13
     },
     venus : {
         diameter    : 12104000,
         polarRadius : 6051800,
         eqRadius    : 6051800,
-        mass        : 4.867e24
+        mass        : 4.867e24,
+        mu          : 3.24859e14
     },
     earth : {
         diameter    : 12742000,
         polarRadius : 6356752,
         eqRadius    : 6378137,
-        mass        : 5.972e24
+        mass        : 5.972e24,
+        mu          : 3.986004418e14
     },
     mars : {
         diameter    : 6779000,
         polarRadius : 3376200,
         eqRadius    : 3396200,
-        mass        : 6.39e23
+        mass        : 6.39e23,
+        mu          : 4.282837e13
     },
     jupiter : {
         diameter    : 139820000,
         polarRadius : 66854000,
         eqRadius    : 71492000,
-        mass        : 1.898e27
+        mass        : 1.898e27,
+        mu          : 1.26686534e17
     },
     saturn : {
         diameter    : 116460000,
         polarRadius : 54364000,
         eqRadius    : 60268000,
-        mass        : 5.683e26
+        mass        : 5.683e26,
+        mu          : 3.7931187e16
     },
     uranus : {
         diameter    : 50724000,
         polarRadius : 24973000,
         eqRadius    : 25559000,
-        mass        : 8.681e25
+        mass        : 8.681e25,
+        mu          : 5.793939e15
     },
     neptune : {
         diameter    : 49244000,
         polarRadius : 24341000,
         eqRadius    : 24764000,
-        mass        : 1.024e26
+        mass        : 1.024e26,
+        mu          : 6.836529e15
     },
     sun : {
         diameter : 1.3927e9,
@@ -713,6 +721,8 @@ export function saturnSatellites(JTtdb)
                       a * Math.sqrt(1 - e * e) * sind(E),
                       0];
 
+        console.log(rPer);
+
         // B1950.0 Earth equatorial coordinates.
         const rBcrs1950 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer,
                             -FC - CD), -i), -Omega_e - BF), -eps);
@@ -766,11 +776,535 @@ export function saturnSatellites(JTtdb)
     // J2000.0 equatorial.
     const rBcrsJ2000_5 = coordB1950J2000({r : rBcrs1950_5, v : [0, 0, 0], JT : JTtdb}).r;
 
+    const T_6 = (JTtdb - 2415020.0) / 36525.0;
+    const l_s_6 = 175.4762 + 1221.5515 * T_6;
+    const i_s_6 = 2.489139 + 0.002435 * T_6;
+    const Omega_s_6 = 113.350 - 0.2597 * T_6;
+
+    const lambda_s_6 = 267.2635 + 1222.1136 * T_6;
+    const t_6 = (JTtdb - 2411368.0) / 365.25;
+    const gamma_0_6 = 0.2990;
+    const i_a_6 = i_e - 0.6204 + kappa * sind(gamma_0_6) * cosd(41.28 - 0.5219 * t_6);
+    const Omega_a_6 = Omega_e - 0.1418 + kappa * sind(gamma_0_6) * sind(41.28 - 0.5219 * t_6) / sind(i_e);
+    const omega_a_6 = 275.837 + 0.5219 * t_6;
+
+    const Psi_6 = atan2d(sind(i_s_6)*sind(Omega_a_6 - Omega_s_6),
+                         cosd(i_s_6)*sind(i_a_6) - sind(i_s_6)*cosd(i_a_6)*cosd(Omega_a_6 - Omega_s_6));
+    const Gamma_6 = atan2d(sind(i_s_6)*sind(Omega_a_6 - Omega_s_6) / sind(Psi_6),
+                           cosd(i_s_6)*cosd(i_a_6) + sind(i_s_6)*sind(i_a_6)*cosd(Omega_a_6 - Omega_s_6));
+
+    const theta_Omega_s_6 = atan2d(sind(i_a_6)*sind(Omega_a_6 - Omega_s_6),
+                                  -sind(i_s_6)*cosd(i_a_6) + cosd(i_s_6)*sind(i_a_6)*cosd(Omega_a_6 - Omega_s_6));
+    const theta_6 = theta_Omega_s_6 + Omega_s_6;
+    const L_s_6 = lambda_s_6 - theta_6;
+    const g_6 = omega_a_6 - Omega_a_6 - Psi_6;
+
+    const a_6 = 0.00816765 * au;
+    const n_6 = 22.57697385;
+    const e_6 = 0.028815 - 0.000184 * cosd(2*g_6) + 0.000073 * cosd(2*(L_s_6 - g_6));
+    const omega_6 = omega_a_6 + kappa * (0.00630 * sind(2*g_6) + 0.00250 * sind(2*(L_s_6 - g_6)));
+    const lambda_6 = 261.3121 + n_6 * d
+                   + kappa * (sind(gamma_0_6) * tand(0.5*i_e) * sind(41.28 - 0.5219*t)
+                   - 0.000176 * sind(l_s_6) - 0.000215 * sind(2 * L_s_6) 
+                   + 0.000057 * sind(2*L_s_6 + Psi_6));
+    const i_6 = i_a_6 + 0.000232 * kappa * cosd(2*L_s_6 + Psi_6);
+    const Omega_6 = Omega_a_6 + 0.000503 * kappa * sind(2*L_s_6 + Psi_6);
+    const M_6 = lambda_6 - omega_6;
+    const E_6 = keplerSolve(M_6, e_6, 1e-6, 20);
+
+    console.log("Psi " + Psi_6);
+    console.log("Gamma_6 " + Gamma_6);
+    console.log("g_6 " + g_6);
+    console.log("lambda_6 " + lambda_6%360);
+
+    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
+    const rPer_6 = [a_6 * (cosd(E_6) - e_6),
+                    a_6 * Math.sqrt(1 - e_6 * e_6) * sind(E_6),
+                    0];
+
+    // B1950.0 Earth equatorial coordinates.
+    //const rBcrs1950_6 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_6,
+    //    Omega_6 - omega_6), -i_6), -Omega_6), -eps);
+    const rBcrs1950_6 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_6,
+        Omega_6 - omega_6), -i_6), -Omega_6), -eps);
+        // J2000.0 equatorial.
+    const rBcrsJ2000_6 = coordB1950J2000({r : rBcrs1950_6, v : [0, 0, 0], JT : JTtdb}).r;
+
+    const d_7 = JTtdb - 2415020.0;
+    const T_7 = (JTtdb - 2433282.42345905) / 365.2422 + 50.0;
+    const tau_7 = 93.13 + 0.562039 * d_7;
+    const zeta_7 = 148.72 - 19.184 * T_7;
+    const a_7 = (0.0099040 - 0.00003422 * cosd(tau_7)) * au;
+    const n_7 = 16.9199514;
+    const e_7 = 0.10441 
+              - 0.00401 * cosd(tau_7) 
+              + 0.00009 * cosd(zeta_7 - tau_7)
+              + 0.02321 * cosd(zeta_7)
+              - 0.00009 * cosd(zeta_7 + tau_7 )
+              - 0.00110 * cosd(2.0 * zeta_7)
+              + 0.00013 * cosd(31.9 + 61.7524 * T_7);
+    const i_7 = i_e - 0.747 + 0.62 * cosd(105.31 - 2.392 * T_7)
+              + 0.315 * sind(38.73 - 0.5353 * T_7)
+              - 0.018 * cosd(13.00 + 24.44 * T_7);
+    const Omega_7 = Omega_e + ((-0.061 + 0.6200 * sind(105.31 - 2.392*T))
+                  + 0.315 * sind(38.73 - 0.5353 * T_7)
+                  - 0.018 * sind(13.0 + 24.44 * T_7)) / sind(i_e - 0.747);
+    const lambda_7 = 176.7481 + n_7 * d_7 
+                   + 0.1507 * sind(105.31 - 2.392*T_7)
+                   + 9.089 * sind(tau_7) 
+                   + 0.007 * sind(2.0*tau_7)
+                   - 0.014 * sind(3.0*tau_7) 
+                   + 0.192 * sind(zeta_7 - tau_7)
+                   - 0.091 * sind(zeta_7)
+                   + 0.211 * sind(zeta_7 + tau_7)
+                   - 0.013 * sind(176.0 + 12.22 * T)
+                   + 0.017 * sind(8.0 + 24.44 * T_7);
+    const omega_7 = 69.993 - 18.6702 * T_7 
+                  + 0.1507 * sind(105.31 - 2.392 * T_7)
+                  - 0.47 * sind(tau_7)
+                  - 13.36 * sind(zeta_7)
+                  + 2.16 * sind(2.0*zeta_7)
+                  + 0.07 * sind(31.9 + 61.7524 * T_7);
+
+    const M_7 = lambda_7 - omega_7;
+    const E_7 = keplerSolve(M_7, e_7, 1e-6, 20);
+
+    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
+    const rPer_7 = [a_7 * (cosd(E_7) - e_7),
+                    a_7 * Math.sqrt(1 - e_7 * e_7) * sind(E_7),
+                    0];
+
+    // B1950.0 Earth equatorial coordinates.
+    const rBcrs1950_7 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_7,
+                        Omega_7 - omega_7), -i_7), -Omega_7), -0*eps);
+    // J2000.0 equatorial.
+    const rBcrsJ2000_7 = coordB1950J2000({r : rBcrs1950_7, v : [0, 0, 0], JT : JTtdb}).r;
+             
+    console.log("theta_1 " + theta_1_1 % 360);
+    console.log("P_1 " + P_1 % 360);
+    console.log("L_1 " + L_1_1 % 360);
+    console.log("M_1 " + (L_1_1 - P_1) % 360.0);
+    
     return {
         mimas     : rBcrsJ2000_1, 
         enceladus : rBcrsJ2000_2, 
         tethys    : rBcrsJ2000_3, 
         dione     : rBcrsJ2000_4,
-        rhea      : rBcrsJ2000_5
+        rhea      : rBcrsJ2000_5,
+        titan     : rBcrsJ2000_6,
+        hyperion  : rBcrsJ2000_7
     };
+}
+
+export function saturnSatellites3(JTtdb)
+{
+    // Longitude of ascending node in the orbit of Saturn w.r.t. B1950.0 ecliptic.
+    const Omega_e = 168.8387;
+    // Inclination of the orbit of Saturn w.r.t. B1950.0 ecliptic.
+    const i_e = 28.0653;
+    // Mimas - Tethys libration:
+    const A_1 = -43.635;
+    const x_13 = 0.09539;
+    const nu_13 = 5.0866;
+    const tau_0 = 1866.261;
+    // Enceladus-Dione libration:
+    const p_2 = 0.297;
+    const p_4 = -0.0262;
+    const mu_24 = 314.3;
+    const nu_24 = 32.567;
+    // Conversion factor from radians to degrees:
+    const kappa = 57.29578;
+
+    // Astronomical unit:
+    const au = 1.495978707e11;
+    // This is for J2000.0 epoch, which is probably inaccurate for B1950.0.
+    const eps = 23.439279444444445;
+
+    // Epoch (January 24 0h 1930 Ephemeris time)
+    const JT0 = 2426000.5;
+
+    // Table 2a, 2b:
+    const mimas = {
+        a_0  :  0.00124151,
+        L_0  :  230.894,
+        e_0  :  0.02014,
+        P_0  :  266.73,
+        gamma_0 : 1.585,
+        N_0  :  272.85,
+        n    :  381.9945087,
+        Ndot : -365.063,
+        Pdot :  365.532
+    };
+    const enceladus = {
+        a_0  : 0.00159263,
+        L_0  : 76.1250,
+        e_0  : 0.004795,
+        P_0  : 307.3348,
+        gamma_0 : 0.016,
+        N_0  : 310.0,
+        n    : 262.73190058,
+        Ndot : -151.43
+    };
+    const tethys = {
+        a_0  : 0.00197195,
+        L_0  : 194.4419,
+        e_0  : 0.0001,
+        P_0  : 56.0,
+        gamma_0 : 1.0895,
+        N_0  : 42.75,
+        n    : 190.69791196,
+        Ndot : -72.2351,
+        Pdot : 70.03
+    };
+    const dione = {
+        a_0  : 0.00252486,
+        L_0  : 191.7299,
+        e_0  : 0.002147,
+        P_0  : 353.0,
+        gamma_0 : 0.0126,
+        N_0  : 38.0,
+        n    : 131.53493186,
+        Ndot : -30.30,
+        Pdot : 30.887
+    };
+    const rhea = {
+        a_0  : 0.00352559,
+        lambda_0 : 338.6372,
+        e_0  : 0.000172,
+        pi_0 : 42.0,
+        gamma_0 : 0.3472,
+        N_0  : 294.00,
+        n    : 79.69004687
+    };
+    const titan = {
+        a_0  : 0.00817006,
+        lambda_0 : 138.8328,
+        e_0  : 0.028905,
+        varpi_0 : 297.278,
+        gamma_0 : 0.2949,
+        N_0  : 19.56,
+        n    : 22.57697682,
+        varpi_dot : 0.51273
+    };
+    const iapetus = {
+        a_0  : 0.02381170,
+        lambda_0 : 216.99743,
+        e_0  : 0.0288367,
+        omega_0 : 357.824,
+        i_0  : 18.02066,
+        Omega_0 : 141.475,
+        n    : 4.53795165,
+        Omega_dot : -3.7119,
+        omega_dot : 12.285
+    };
+
+    const d = JTtdb - JT0;
+    const t = d / 365.25;
+    const T = d / 36525.0;
+
+    // (2)
+    mimas.tau = 1950.0 + (JTtdb - 2433282.423) / 365.2422;
+    mimas.psi = nu_13 * (mimas.tau - tau_0);
+
+    mimas.deltaL = A_1 * sind(mimas.psi)
+                 - 0.72 * sind(3.0 * mimas.psi)
+                 - 0.02144 * sind(5.0 * mimas.psi);
+
+    // (1) 
+    mimas.a = au * mimas.a_0;
+    mimas.lambda = (mimas.L_0 + mimas.n * d + mimas.deltaL) % 360.0;
+    mimas.e = mimas.e_0;
+    mimas.P = (mimas.P_0 + mimas.Pdot * t) % 360.0;
+    mimas.gamma = mimas.gamma_0;
+    mimas.N = (mimas.N_0 + mimas.Ndot * t) % 360.0;
+
+    mimas.M = (mimas.lambda - mimas.P) % 360.0;
+    mimas.E = keplerSolve(mimas.M, mimas.e, 1e-6, 20);
+
+    mimas.b = mimas.a * Math.sqrt(1 - mimas.e * mimas.e);
+    mimas.osvPeri = keplerPerifocal(mimas.a, mimas.b, mimas.E, planetData['saturn'].mu, JTtdb);
+
+    // (4)
+
+    // Here the second term is from [].
+    // According to [1], 
+    //  \lambda_2 =  76.1250 + 262.73190058 * d
+    //  \lambda_4 = 191.7299 + 131.53493186 * d
+    //  P_2 = 2*lambda_4 - lambda_2
+    //      = 307.3348 + 123.441036885 * t
+    // [2] contains the expression
+    //  P_2 = 312.7 + 123.42 * (JT - 2411093) / 365.25,
+    // which may yield error of ~2 degrees around 2040.
+
+    enceladus.P = (307.3348 + 123.441036885 * t) % 360.0;
+
+    // The second Enceladus-Dione libration term in [1] is written in terms of mean longitudes
+    // and longitude of pericenter:
+    //   12.53' * sin(2 \lambda_4 - \lambda_2 - \varpi_4)
+    // = 12.53' * sin(314.3348 + 92.55404 * t),
+    // where 
+    // P_4 = 353.0 + 30.887 * t
+    // The libration term angle seems to differ around 40-50 degrees from [2], which
+    // uses the term
+    //   13.04' * sind(119.2 + 93.18 * (JT - 2411093) / 365.25).
+
+    enceladus.deltaL = p_2 * sind(nu_24 * t + mu_24) 
+                     + (12.53/60.0) * sind(314.3348 + 92.55404 * t);
+
+    // (3) Model for Enceladus:
+    enceladus.a = au * enceladus.a_0;
+    enceladus.lambda = (enceladus.L_0 + enceladus.n * d + enceladus.deltaL) % 360.0;
+    enceladus.e = enceladus.e_0;
+    enceladus.gamma = enceladus.gamma_0;
+    enceladus.N = (enceladus.N_0 + enceladus.Ndot * t) % 360.0;
+
+    enceladus.M = (enceladus.lambda - enceladus.P) % 360.0;
+    enceladus.E = keplerSolve(enceladus.M, enceladus.e, 1e-6, 20);
+
+    enceladus.b = enceladus.a * Math.sqrt(1 - enceladus.e * enceladus.e);
+    enceladus.osvPeri = keplerPerifocal(enceladus.a, enceladus.b, enceladus.E, planetData['saturn'].mu, JTtdb);
+
+    // (4)
+    tethys.tau = 1950.0 + (JTtdb - 2433282.423) / 365.2422;
+    tethys.psi = nu_13 * (tethys.tau - tau_0);
+    tethys.deltaL = -x_13 * (A_1 * sind(tethys.psi) - 0.72 * sind(3*tethys.psi) - 0.02144 * sind(5*tethys.psi));
+
+    // (5)
+    tethys.a = au * tethys.a_0;
+    tethys.lambda = (tethys.L_0 + tethys.n * d + tethys.deltaL) % 360.0;
+    tethys.e = tethys.e_0;
+    tethys.P = (tethys.P_0 + tethys.Pdot * t) % 360.0;
+    tethys.gamma = tethys.gamma_0;
+    tethys.N = (tethys.N_0 + tethys.Ndot * t) % 360.0;
+
+    tethys.M = (tethys.lambda - tethys.P) % 360.0;
+    tethys.E = keplerSolve(tethys.M, tethys.e, 1e-6, 20);
+    tethys.b = tethys.a * Math.sqrt(1 - tethys.e * tethys.e);
+    tethys.osvPeri = keplerPerifocal(tethys.a, tethys.b, tethys.E, planetData['saturn'].mu, JTtdb);
+
+    // (8)
+    dione.deltaL = p_4 * sind(nu_24 * t + mu_24) - (1.04 / 60.0) * sind(314.3348 + 92.55404 * t);
+    dione.a = au * dione.a_0;
+    dione.lambda = (dione.L_0 + dione.n * d + dione.deltaL) % 360.0;
+    dione.e = dione.e_0;
+    dione.P = (dione.P_0 + dione.Pdot * t) % 360.0;
+    dione.gamma = dione.gamma_0;
+    dione.N = (dione.N_0 + dione.Ndot * t) % 360.0;
+
+    dione.M = (dione.lambda - dione.P) % 360.0;
+    dione.E = keplerSolve(dione.M, dione.e, 1e-6, 20);
+    dione.b = dione.a * Math.sqrt(1 - dione.e * dione.e);
+    dione.osvPeri = keplerPerifocal(dione.a, dione.b, dione.E, planetData['saturn'].mu, JTtdb);
+
+
+    // (12)
+    titan.a = au * titan.a_0;
+    titan.Ndot = -titan.varpi_dot;
+    titan.N = titan.N_0 + titan.Ndot * t;
+    titan.Omega_a = Omega_e - 0.1418 + kappa * sind(titan.gamma_0) * sind(titan.N) / sind(i_e);
+    titan.i_a = i_e - 0.6204 + kappa * sind(titan.gamma_0) * cosd(titan.N);
+
+    // (14)
+    const T_s = (JTtdb - 2415020.0) / 36525.0;
+    titan.l_s      = 175.4762 + 1221.5515 * T_s - 0.0005 * T_s*T_s;
+    titan.lambda_s = 267.2635 + 1222.1136 * T_s;
+    titan.i_s      = 2.489139 + 0.0024350 * T_s - 0.000034 * T_s*T_s;
+    titan.Omega_s =113.349952 - 0.2596790 * T_s - 0.000038 * T_s*T_s;
+
+    titan.Psi = atan2d(sind(titan.i_s)*sind(titan.Omega_a - titan.Omega_s),
+                       cosd(titan.i_s)*sind(titan.i_a) 
+                     - sind(titan.i_s)*cosd(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s));
+    titan.Gamma = atan2d(sind(titan.i_s)*sind(titan.Omega_a - titan.Omega_s)/sind(titan.Psi),
+                         cosd(titan.i_s)*cosd(titan.i_a) 
+                       + sind(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s));
+    titan.Theta_dot = atan2d(sind(titan.i_a)*sind(titan.Omega_a - titan.Omega_s),
+                           - sind(titan.i_s)*cosd(titan.i_a) 
+                           + cosd(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s));
+    titan.Theta = titan.Theta_dot + titan.Omega_s;
+    titan.L_s = titan.lambda_s - (titan.Theta - titan.Omega_s) - titan.Omega_s;
+
+    console.log(cosd(titan.Gamma)+ " " + (cosd(titan.i_s)*cosd(titan.i_a) + sind(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s)));
+    console.log(sind(titan.Gamma)*sind(titan.Psi) + " " + sind(titan.i_s)*sind(titan.Omega_a - titan.Omega_s));
+    console.log((sind(titan.Gamma)*cosd(titan.Psi)) + " " + (cosd(titan.i_s)*sind(titan.i_a) - sind(titan.i_s)*cosd(titan.i_a)* cosd(titan.Omega_a - titan.Omega_s)));
+    console.log(sind(titan.Gamma)*sind(titan.Theta_dot) + " " + sind(titan.i_a)*sind(titan.Omega_a - titan.Omega_s));
+    console.log(sind(titan.Gamma)*cosd(titan.Theta_dot) + " " + (-sind(titan.i_s)*cosd(titan.i_a) + cosd(titan.i_s)*sind(titan.i_a)*cosd(titan.Omega_a - titan.Omega_s)));
+
+    titan.varpi_a = titan.varpi_0 + titan.varpi_dot * t;
+    titan.g = titan.varpi_a - titan.Omega_a - titan.Psi;
+
+    titan.lambda = (titan.lambda_0 + titan.n * d
+                 + kappa * (sind(titan.gamma_0)*tand(0.5*i_e)*sind(titan.N)
+                 - 0.0001757 * sind(titan.l_s)
+                 - 0.0002151 * sind(2.0 * titan.L_s)
+                 + 0.0000567 * sind(2.0 * titan.L_s + titan.Psi))) % 360.0;
+    titan.e = titan.e_0 
+            - 0.0001841 * cosd(2.0 * titan.g) 
+            + 0.0000731 * cosd(2.0 * (titan.L_s - titan.g));
+    titan.varpi = titan.varpi_a + kappa * (0.0063044 * sind(2.0 * titan.g)
+                + 0.0025027 * sind(2.0 * (titan.L_s - titan.g)));
+    titan.i = titan.i_a + 0.0002320 * kappa * cosd(2.0 * titan.L_s + titan.Psi);
+    titan.Omega = titan.Omega_a + 0.0005034 * kappa * sind(2.0 * titan.L_s + titan.Psi);
+    titan.M = (titan.lambda - titan.varpi) % 360.0;
+
+    titan.E = keplerSolve(titan.M, titan.e, 1e-6, 20);
+    titan.b = titan.a * Math.sqrt(1 - titan.e * titan.e);
+    titan.osvPeri = keplerPerifocal(titan.a, titan.b, titan.E, planetData['saturn'].mu, JTtdb);
+
+   
+    /*titan.osvBcrs1950 = { 
+        r: rotateCart3d(rotateCart1d(rotateCart3d(
+            titan.osvPeri.r,
+        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0),
+        v: rotateCart3d(rotateCart1d(rotateCart3d(
+            titan.osvPeri.v,
+        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0),
+        JT : titan.osvPeri.JT
+    }*/
+    titan.osvBcrs1950 = { 
+        r: rotateCart3d(rotateCart1d(rotateCart3d(
+            titan.osvPeri.r,
+        -(titan.g + titan.Psi)), -titan.i_a), -titan.Omega_a),
+        v: rotateCart3d(rotateCart1d(rotateCart3d(
+            titan.osvPeri.v,
+        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0),
+        JT : titan.osvPeri.JT
+    }
+
+    // (10)
+    rhea.pi = rhea.pi_0 + 10.057 * t;
+    rhea.N = rhea.N_0 - 10.057 * t;
+    rhea.varpi_6 = titan.varpi_0 + titan.varpi_dot * t;
+    rhea.N_6 = titan.N_0 + titan.Ndot * t;
+
+    rhea.a = au * rhea.a_0;
+    rhea.lambda = rhea.lambda_0 + rhea.n * d 
+                + kappa * sind(rhea.gamma_0)*tand(0.5*i_e)*sind(rhea.N);
+    rhea.varpi = atan2d(rhea.e_0 * sind(rhea.pi) + 0.001 * sind(rhea.varpi_6),
+                        rhea.e_0 * cosd(rhea.pi) + 0.001 * cosd(rhea.varpi_6));
+    rhea.e = Math.sqrt(Math.pow(rhea.e_0 * sind(rhea.pi) + 0.001 * sind(rhea.varpi_6), 2.0),
+                       Math.pow(rhea.e_0 * cosd(rhea.pi) + 0.001 * cosd(rhea.varpi_6), 2.0));
+
+    rhea.i = i_e - 0.0455 
+           + kappa * sind(rhea.gamma_0)*cosd(rhea.N)
+           + 0.02007 * cosd(rhea.N_6);
+    rhea.Omega = Omega_e - 0.007792
+               + (kappa * sind(rhea.gamma_0)*sind(rhea.N) + 0.02007*sind(rhea.N_6))
+               / sind(i_e);
+    rhea.M = (rhea.lambda - rhea.varpi) % 360.0;
+
+    rhea.E = keplerSolve(rhea.M, rhea.e, 1e-6, 20);
+    rhea.b = rhea.a * Math.sqrt(1 - rhea.e * rhea.e);
+    rhea.osvPeri = keplerPerifocal(rhea.a, rhea.b, rhea.E, planetData['saturn'].mu, JTtdb);
+           
+    rhea.osvBcrs1950 = { 
+        r: rotateCart3d(rotateCart1d(rotateCart3d(
+            rhea.osvPeri.r,
+        -(rhea.varpi - rhea.Omega)), -rhea.i), -rhea.Omega),
+        v: rotateCart3d(rotateCart1d(rotateCart3d(
+            rhea.osvPeri.v,
+        -(rhea.varpi - rhea.Omega)), -rhea.i), -rhea.Omega),
+        JT : titan.osvPeri.JT
+    }
+
+
+    function rotateToBcrs2000(satellite)
+    {
+        // To compute B1950.0 Earth equatorial coordinates, compute rotations:
+        // - From pericenter to satellite node w.r.t. the equator of Saturn (z).
+        // - From the plane of the satellite to the equatorial plane of Saturn (x).
+        // - From the node of the satellite to the node of Saturn's orbit w.r.t the ecliptic (z).
+        // - From the equatorial plane of Saturn to the plane of the ecliptic (x).
+        // - From the node of the orbit to the B1950.0 vernal equinox (z).
+        // - From the plane of the ecliptic to the B1950 equatorial plane of Earth (x).
+        satellite.osvBcrs1950 = { 
+            r: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
+                satellite.osvPeri.r,
+            -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -0*eps),
+            v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
+                satellite.osvPeri.v,
+            -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -0*eps),
+            JT : satellite.osvPeri.JT
+        }
+        // J2000.0 equatorial.
+        satellite.rBcrsJ2000 = coordB1950J2000(satellite.osvBcrs1950).r;
+    }
+
+    rotateToBcrs2000(mimas);
+    rotateToBcrs2000(enceladus);
+    rotateToBcrs2000(tethys);
+    rotateToBcrs2000(dione);
+    console.log(mimas);
+    console.log(enceladus);
+    console.log(tethys);
+    console.log(dione);
+    console.log(titan);
+    console.log(rhea);
+}
+
+export function saturnSatellites2(JTtdb) 
+{
+    const t_1 = JTtdb - 2411093.0;
+    const t_2 = t_1 / 365.25;
+    const t_3 = (JTtdb - 2433282.423) / 365.25 + 1950.0;
+    const t_4 = JTtdb - 2411368.0;
+    const t_5 = t_4 / 365.25;
+    const t_6 = JTtdb - 2415020.0;
+    const t_7 = t_6 / 36525.0;
+    const t_8 = t_6 / 365.25;
+    const t_9 = (JTtdb - 244200.5) / 365.25;
+    const t_10 = JTtdb - 2409786.0;
+    const t_11 = t_10 / 36525.0;
+
+    const W_0 = 5.095 * (t_3 - 1866.39);
+    const W_1 = 74.4     + 32.39 * t_2;
+    const W_2 = 134.3    + 92.62 * t_2;
+    const W_3 = 42.0     - 0.5118 * t_5;
+    const W_4 = 276.59   + 0.5118 * t_5;
+    const W_5 = 267.2635 + 1222.1136 * t_7;
+    const W_6 = 175.4762 + 1221.5515 * t_7;
+    const W_7 = 2.4891   + 0.002435 * t_7;
+    const W_8 = 113.35   - 0.2597 * t_7;
+
+    const sl = sind(28.0817);
+    const cl = cosd(28.0817);
+    const s2 = sind(168.8112);
+    const c2 = cosd(168.8112);
+    const e_1 = 0.05589 - 0.000346 * t_7;
+
+    // Mimas (satellite I)
+    const L_1 = 127.64 + 381.994497 * t_1 
+              - 43.57 * sind(W_0)
+              - 0.720 * sind(3*W_0)
+              - 0.02144 * sind(5*W_0);
+    const p_1 = 106.1 + 365.549 * t_2;
+    const M_1 = L_1 - p_1;
+    const C_1 = 2.18287 * sind(M_1) + 0.025988 * sind(2*M_1) + 0.00043 * sind(3*M_1);
+    const lambda_1 = L_1 + C_1;
+    const rr_1 = 3.06879 / (1 + 0.01905 * cosd(M_1 + C_1));
+    const gamma_1 = 1.563;
+    const Omega_1 = 54.5 - 365.072 * t_2;
+
+    const u_1 = lambda_1 - Omega_1;
+    const w_1 = Omega_1 - 168.8112;
+
+    const R_1 = planetData['saturn'].eqRadius * rr_1;
+    const r_1 = [rr_1 * (cosd(u_1)*cosd(w_1) - sind(u_1)*cosd(gamma_1)*sind(w_1)),
+                 rr_1 * (sind(u_1)*cosd(w_1)*cosd(gamma_1) + cosd(u_1)*sind(w_1)),
+                 rr_1 * sind(u_1)*sind(gamma_1)];
+
+    const r_1_2 = [r_1[0], cl * r_1[1] - sl * r_1[2], sl * r_1[1] + cl * r_1[2]];
+    const r_1_3 = [c2 * r_1_2[0] - s2 * r_1_2[1],
+                   s2 * r_1_2[0] + c2 * r_1_2[1],
+                   r_1_2[2]]
+                   console.log(r_1_2);
+                   console.log(r_1_3);
+
+    console.log("L_1 " + L_1 % 360);
+    console.log("p_1 " + p_1 % 360);
+    console.log("M_1 " + M_1 % 360);
+    console.log("C_1 " + C_1 % 360);
+    console.log("lambda_1 " + lambda_1 % 360);
+    console.log("r_1 " + r_1);
+    console.log("gamma_1 " + gamma_1 % 360);
+    console.log("Omega_1 " + Omega_1 % 360);
 }
