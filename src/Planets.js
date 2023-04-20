@@ -598,7 +598,7 @@ export function jupiterSatellites(JTtdb)
  *      Julian time (TDB).
  * @returns Position vector for each satellite.
  */
-export function saturnSatellites(JTtdb)
+export function saturnSatellitesOld(JTtdb)
 {
     // (9.56)-(9.68)
     // fractional days after 1889-03-31 12:00:00.
@@ -906,7 +906,7 @@ export function saturnSatellites(JTtdb)
  * 
  * @param {*} JTtdb 
  */
-export function saturnSatellites3(JTtdb)
+export function saturnSatellites(JTtdb)
 {
     // Longitude of ascending node in the orbit of Saturn w.r.t. B1950.0 ecliptic.
     const Omega_e = 168.8387;
@@ -1162,12 +1162,12 @@ export function saturnSatellites3(JTtdb)
     titan.osvPeri = keplerPerifocal(titan.a, titan.b, titan.E, planetData['saturn'].mu, JTtdb);
 
     titan.osvBcrs1950 = { 
-        r: rotateCart3d(rotateCart1d(rotateCart3d(
+        r: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             titan.osvPeri.r,
-        -(titan.g + titan.Psi)), -titan.i_a), -titan.Omega_a),
-        v: rotateCart3d(rotateCart1d(rotateCart3d(
+        -(titan.g + titan.Psi)), -titan.i_a), -titan.Omega_a), -eps),
+        v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             titan.osvPeri.v,
-        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0),
+        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0), -eps),
         JT : titan.osvPeri.JT
     }
 
@@ -1197,12 +1197,12 @@ export function saturnSatellites3(JTtdb)
     rhea.osvPeri = keplerPerifocal(rhea.a, rhea.b, rhea.E, planetData['saturn'].mu, JTtdb);
            
     rhea.osvBcrs1950 = { 
-        r: rotateCart3d(rotateCart1d(rotateCart3d(
+        r: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             rhea.osvPeri.r,
-        -(rhea.varpi - rhea.Omega)), -rhea.i), -rhea.Omega),
-        v: rotateCart3d(rotateCart1d(rotateCart3d(
+        -(rhea.varpi - rhea.Omega)), -rhea.i), -rhea.Omega), -eps),
+        v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             rhea.osvPeri.v,
-        -(rhea.varpi - rhea.Omega)), -rhea.i), -rhea.Omega),
+        -(rhea.varpi - rhea.Omega)), -rhea.i), -rhea.Omega), -eps),
         JT : titan.osvPeri.JT
     }
 
@@ -1311,12 +1311,12 @@ export function saturnSatellites3(JTtdb)
     iapetus.osvPeri = keplerPerifocal(iapetus.a, iapetus.b, iapetus.E, planetData['saturn'].mu, JTtdb);
 
     iapetus.osvBcrs1950 = { 
-        r: rotateCart3d(rotateCart1d(rotateCart3d(
+        r: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             iapetus.osvPeri.r,
-        -(iapetus.varpi - iapetus.Omega)), -iapetus.i), -iapetus.Omega),
-        v: rotateCart3d(rotateCart1d(rotateCart3d(
+        -(iapetus.varpi - iapetus.Omega)), -iapetus.i), -iapetus.Omega), -eps),
+        v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             iapetus.osvPeri.v,
-        -(iapetus.varpi - iapetus.Omega)), -iapetus.i), -iapetus.Omega),
+        -(iapetus.varpi - iapetus.Omega)), -iapetus.i), -iapetus.Omega), -eps),
         JT : iapetus.osvPeri.JT
     }
 
@@ -1340,93 +1340,40 @@ export function saturnSatellites3(JTtdb)
         satellite.osvBcrs1950 = { 
             r: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
                 satellite.osvPeri.r,
-            -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -0*eps),
+            -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -eps),
             v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
                 satellite.osvPeri.v,
-            -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -0*eps),
+            -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -eps),
             JT : satellite.osvPeri.JT
         }
         // J2000.0 equatorial.
-        satellite.rBcrsJ2000 = coordB1950J2000(satellite.osvBcrs1950).r;
+        satellite.osvBcrsJ2000 = coordB1950J2000(satellite.osvBcrs1950);
     }
 
     rotateToBcrs2000(mimas);
     rotateToBcrs2000(enceladus);
     rotateToBcrs2000(tethys);
     rotateToBcrs2000(dione);
-    console.log(mimas);
+    rhea.osvBcrsJ2000 = coordB1950J2000(rhea.osvBcrs1950);
+    titan.osvBcrsJ2000 = coordB1950J2000(titan.osvBcrs1950);
+    iapetus.osvBcrsJ2000 = coordB1950J2000(iapetus.osvBcrs1950);
+
+    /*console.log(mimas);
     console.log(enceladus);
     console.log(tethys);
     console.log(dione);
     console.log(titan);
     console.log(rhea);
-    console.log(iapetus);
+    console.log(iapetus);*/
+
+    return {
+        mimas : mimas.osvBcrsJ2000,
+        enceladus : enceladus.osvBcrsJ2000,
+        tethys : tethys.osvBcrsJ2000,
+        dione : dione.osvBcrsJ2000,
+        rhea : rhea.osvBcrsJ2000,
+        titan : titan.osvBcrsJ2000,
+        iapetus : iapetus.osvBcrsJ2000
+    }
 }
 
-export function saturnSatellites2(JTtdb) 
-{
-    const t_1 = JTtdb - 2411093.0;
-    const t_2 = t_1 / 365.25;
-    const t_3 = (JTtdb - 2433282.423) / 365.25 + 1950.0;
-    const t_4 = JTtdb - 2411368.0;
-    const t_5 = t_4 / 365.25;
-    const t_6 = JTtdb - 2415020.0;
-    const t_7 = t_6 / 36525.0;
-    const t_8 = t_6 / 365.25;
-    const t_9 = (JTtdb - 244200.5) / 365.25;
-    const t_10 = JTtdb - 2409786.0;
-    const t_11 = t_10 / 36525.0;
-
-    const W_0 = 5.095 * (t_3 - 1866.39);
-    const W_1 = 74.4     + 32.39 * t_2;
-    const W_2 = 134.3    + 92.62 * t_2;
-    const W_3 = 42.0     - 0.5118 * t_5;
-    const W_4 = 276.59   + 0.5118 * t_5;
-    const W_5 = 267.2635 + 1222.1136 * t_7;
-    const W_6 = 175.4762 + 1221.5515 * t_7;
-    const W_7 = 2.4891   + 0.002435 * t_7;
-    const W_8 = 113.35   - 0.2597 * t_7;
-
-    const sl = sind(28.0817);
-    const cl = cosd(28.0817);
-    const s2 = sind(168.8112);
-    const c2 = cosd(168.8112);
-    const e_1 = 0.05589 - 0.000346 * t_7;
-
-    // Mimas (satellite I)
-    const L_1 = 127.64 + 381.994497 * t_1 
-              - 43.57 * sind(W_0)
-              - 0.720 * sind(3*W_0)
-              - 0.02144 * sind(5*W_0);
-    const p_1 = 106.1 + 365.549 * t_2;
-    const M_1 = L_1 - p_1;
-    const C_1 = 2.18287 * sind(M_1) + 0.025988 * sind(2*M_1) + 0.00043 * sind(3*M_1);
-    const lambda_1 = L_1 + C_1;
-    const rr_1 = 3.06879 / (1 + 0.01905 * cosd(M_1 + C_1));
-    const gamma_1 = 1.563;
-    const Omega_1 = 54.5 - 365.072 * t_2;
-
-    const u_1 = lambda_1 - Omega_1;
-    const w_1 = Omega_1 - 168.8112;
-
-    const R_1 = planetData['saturn'].eqRadius * rr_1;
-    const r_1 = [rr_1 * (cosd(u_1)*cosd(w_1) - sind(u_1)*cosd(gamma_1)*sind(w_1)),
-                 rr_1 * (sind(u_1)*cosd(w_1)*cosd(gamma_1) + cosd(u_1)*sind(w_1)),
-                 rr_1 * sind(u_1)*sind(gamma_1)];
-
-    const r_1_2 = [r_1[0], cl * r_1[1] - sl * r_1[2], sl * r_1[1] + cl * r_1[2]];
-    const r_1_3 = [c2 * r_1_2[0] - s2 * r_1_2[1],
-                   s2 * r_1_2[0] + c2 * r_1_2[1],
-                   r_1_2[2]]
-                   console.log(r_1_2);
-                   console.log(r_1_3);
-
-    console.log("L_1 " + L_1 % 360);
-    console.log("p_1 " + p_1 % 360);
-    console.log("M_1 " + M_1 % 360);
-    console.log("C_1 " + C_1 % 360);
-    console.log("lambda_1 " + lambda_1 % 360);
-    console.log("r_1 " + r_1);
-    console.log("gamma_1 " + gamma_1 % 360);
-    console.log("Omega_1 " + Omega_1 % 360);
-}
