@@ -392,6 +392,8 @@ function drawScene(time)
     }
 
     //todayJT = orbitsjs.timeJulianYmdhms(2016, 4, 25, 2, 58, 0).JT + guiControls.deltaTime;
+    //todayJT = orbitsjs.timeJulianYmdhms(2022, 8, 6, 22, 34, 0).JT + guiControls.deltaTime;
+    //todayJT = orbitsjs.timeJulianYmdhms(2022, 11, 24, 4, 33, 0).JT + guiControls.deltaTime;
 
     // Compute the Julian time taking into account the time warp.
     let JT =  todayJT;
@@ -520,6 +522,44 @@ function drawScene(time)
             const rGanymedeECEF = orbitsjs.coordBCRSFixed({r : moons.ganymede, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
             const rCallistoECEF = orbitsjs.coordBCRSFixed({r : moons.callisto, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
             pointShaders.setGeometry([rIoECEF, rEuropaECEF, rGanymedeECEF, rCallistoECEF]);
+            pointShaders.draw(matrix);
+        }
+        if (target === "saturn")
+        {
+            let JTmoons = JT;
+
+            if (guiControls.lightTime)
+            {
+                JTmoons -= lightTimeJulian;
+            }
+            
+            const moons =  orbitsjs.saturnSatellites(JTmoons);
+            const rMimasEcef = orbitsjs.coordBCRSFixed({r : moons.mimas.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rEnceladusEcef= orbitsjs.coordBCRSFixed({r : moons.enceladus.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rTethysEcef = orbitsjs.coordBCRSFixed({r : moons.tethys.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rDioneEcef = orbitsjs.coordBCRSFixed({r : moons.dione.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rRheaEcef = orbitsjs.coordBCRSFixed({r : moons.rhea.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rTitanEcef = orbitsjs.coordBCRSFixed({r : moons.titan.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rIapetusEcef = orbitsjs.coordBCRSFixed({r : moons.iapetus.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            pointShaders.setGeometry([rMimasEcef, rEnceladusEcef, rTethysEcef, rDioneEcef, rRheaEcef, rTitanEcef, rIapetusEcef]);
+            pointShaders.draw(matrix);
+        }
+        if (target === "uranus")
+        {
+            let JTmoons = JT;
+
+            if (guiControls.lightTime)
+            {
+                JTmoons -= lightTimeJulian;
+            }
+            
+            const moons =  orbitsjs.uranusSatellites(JTmoons);
+            const rMirandaECEF = orbitsjs.coordBCRSFixed({r : moons.miranda, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rArielECEF   = orbitsjs.coordBCRSFixed({r : moons.ariel,   v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rUmbrielECEF = orbitsjs.coordBCRSFixed({r : moons.umbriel, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rTitaniaECEF = orbitsjs.coordBCRSFixed({r : moons.titania, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rOberonECEF  = orbitsjs.coordBCRSFixed({r : moons.oberon,  v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            pointShaders.setGeometry([rMirandaECEF, rArielECEF, rUmbrielECEF, rTitaniaECEF, rOberonECEF]);
             pointShaders.draw(matrix);
         }
     }
