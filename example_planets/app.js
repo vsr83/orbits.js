@@ -13,8 +13,8 @@ if (!gl)
     console.log("Failed to initialize GL.");
 }
 
-//var canvasJs = document.getElementById("canvasJs");
-//var contextJs = canvasJs.getContext("2d");
+var canvasJs = document.getElementById("canvasJs");
+var contextJs = canvasJs.getContext("2d");
 
 const planetTextures = {
     'mercury' : {day : 'textures/2k_mercury.jpg',          night : 'textures/darkside.jpg'},
@@ -275,6 +275,32 @@ function scaleConstellations(linesIn, scale, offset, rotParams, JT)
 
     return lines;
 }
+/**
+ * Draw caption.
+ * 
+ * @param {*} rTarget 
+ *      Position of the target in ECEF frame.
+ * @param {*} caption 
+ *      Caption.
+ * @param {*} matrix
+ *      View Matrix.
+ */
+function drawCaption(rTarget, caption, matrix)
+{
+    contextJs.fillStyle = "white";
+    contextJs.textAlign = "center";
+    contextJs.textBaseline = "bottom";
+    contextJs.textAlign = "right";
+
+    const clipSpace = m4.transformVector(matrix, [rTarget[0], rTarget[1], rTarget[2], 1]);
+    clipSpace[0] /= clipSpace[3];
+    clipSpace[1] /= clipSpace[3];
+    const pixelX = (clipSpace[0] *  0.5 + 0.5) * gl.canvas.width;
+    const pixelY = (clipSpace[1] * -0.5 + 0.5) * gl.canvas.height;
+    contextJs.fillText(caption + "    ", pixelX, pixelY); 
+
+    //console.log(pixelX + " " + pixelY);
+}
 
 /**
  * Scale and rotate star points.
@@ -333,8 +359,8 @@ function drawScene(time)
 
     canvas.width = document.documentElement.clientWidth;
     canvas.height = document.documentElement.clientHeight;
-    //canvasJs.width = document.documentElement.clientWidth;
-    //canvasJs.height = document.documentElement.clientHeight;
+    canvasJs.width = document.documentElement.clientWidth;
+    canvasJs.height = document.documentElement.clientHeight;
 
     gl.useProgram(planetShaders.program);
 
@@ -468,6 +494,7 @@ function drawScene(time)
         osvMoonEfi.r, 
         osvSunTargetEcef.r);
 
+
     if (target === "saturn")
     {
         ringShaders.draw(matrix, 
@@ -492,6 +519,30 @@ function drawScene(time)
     pointShaders.colorPoint = guiControls.colorMoons;
     if (guiControls.enableMoons)
     {
+        if (target === "earth")
+        {
+            let JTmoons = JT;
+
+            if (guiControls.lightTime)
+            {
+                JTmoons -= lightTimeJulian;
+            }
+
+            let moonPosEq = orbitsjs.elp2000(JTmoons);
+            const osvJ2000 = orbitsjs.coordEclEq({r : moonPosEq, v : [0, 0, 0], JT : JT});
+            const osvMod = orbitsjs.coordJ2000Mod(osvJ2000);
+            const osvTod = orbitsjs.coordModTod(osvMod);
+            const osvPef = orbitsjs.coordTodPef(osvTod);
+            const osvEcef = orbitsjs.coordPefEfi(osvPef, 0, 0);
+
+            pointShaders.setGeometry([osvEcef.r]);
+            pointShaders.draw(matrix);
+
+            if (guiControls.enableMoonCaptions)
+            {
+                drawCaption(osvEcef.r, "Moon", matrix);
+            }
+        }
         if (target === "mars")
         {
             let JTmoons = JT;
@@ -506,6 +557,12 @@ function drawScene(time)
             const rDeimosECEF = orbitsjs.coordBCRSFixed({r : moons.deimos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
             pointShaders.setGeometry([rPhobosECEF, rDeimosECEF]);
             pointShaders.draw(matrix);
+
+            if (guiControls.enableMoonCaptions)
+            {
+                drawCaption(rPhobosECEF, "Phobos", matrix);
+                drawCaption(rDeimosECEF, "Deimos", matrix);
+            }
         }
         if (target === "jupiter")
         {
@@ -523,6 +580,14 @@ function drawScene(time)
             const rCallistoECEF = orbitsjs.coordBCRSFixed({r : moons.callisto, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
             pointShaders.setGeometry([rIoECEF, rEuropaECEF, rGanymedeECEF, rCallistoECEF]);
             pointShaders.draw(matrix);
+
+            if (guiControls.enableMoonCaptions)
+            {
+                drawCaption(rIoECEF, "Io", matrix);
+                drawCaption(rEuropaECEF, "Europa", matrix);
+                drawCaption(rGanymedeECEF, "Ganymede", matrix);
+                drawCaption(rCallistoECEF, "Callisto", matrix);
+            }
         }
         if (target === "saturn")
         {
@@ -543,6 +608,17 @@ function drawScene(time)
             const rIapetusEcef = orbitsjs.coordBCRSFixed({r : moons.iapetus.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
             pointShaders.setGeometry([rMimasEcef, rEnceladusEcef, rTethysEcef, rDioneEcef, rRheaEcef, rTitanEcef, rIapetusEcef]);
             pointShaders.draw(matrix);
+
+            if (guiControls.enableMoonCaptions)
+            {
+                drawCaption(rMimasEcef, "Mimas", matrix);
+                drawCaption(rEnceladusEcef, "Enceladus", matrix);
+                drawCaption(rTethysEcef, "Tethys", matrix);
+                drawCaption(rDioneEcef, "Dione", matrix);
+                drawCaption(rRheaEcef, "Rhea", matrix);
+                drawCaption(rTitanEcef, "Titan", matrix);
+                drawCaption(rIapetusEcef, "Iapetus", matrix);
+            }
         }
         if (target === "uranus")
         {
@@ -561,6 +637,15 @@ function drawScene(time)
             const rOberonECEF  = orbitsjs.coordBCRSFixed({r : moons.oberon,  v : [0, 0, 0], JT : JTmoons}, rotParams).r;
             pointShaders.setGeometry([rMirandaECEF, rArielECEF, rUmbrielECEF, rTitaniaECEF, rOberonECEF]);
             pointShaders.draw(matrix);
+
+            if (guiControls.enableMoonCaptions)
+            {
+                drawCaption(rMirandaECEF, "Miranda", matrix);
+                drawCaption(rArielECEF, "Ariel", matrix);
+                drawCaption(rUmbrielECEF, "Umbriel", matrix);
+                drawCaption(rTitaniaECEF, "Titania", matrix);
+                drawCaption(rOberonECEF, "Oberon", matrix);
+            }
         }
     }
 

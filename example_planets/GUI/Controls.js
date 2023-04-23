@@ -23,6 +23,7 @@ guiControls = new function()
     this.enableSublunar = true; 
     this.enableStars = false;
     this.enableConstellations = false;
+    this.enableMoonCaptions = true;
 
     this.drawClock = true; 
     this.drawTitle = true;
@@ -109,6 +110,7 @@ targetFolder.add(guiControls, 'targetNeptune').name('Neptune');
 
 const visibilityFolder = gui.addFolder('Visibility');
 displayControls.enableMoons = visibilityFolder.add(guiControls, 'enableMoons').name('Moons');
+displayControls.enableMoonCaptions = visibilityFolder.add(guiControls, 'enableMoonCaptions').name('Moon Captions');
 displayControls.enableGrid = visibilityFolder.add(guiControls, 'enableGrid').name('Grid Lines');
 displayControls.enableEcliptic = visibilityFolder.add(guiControls, 'enableEcliptic').name('Ecliptic');
 displayControls.enableEquator = visibilityFolder.add(guiControls, 'enableEquator').name('Equator');
