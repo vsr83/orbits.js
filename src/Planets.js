@@ -1,6 +1,7 @@
-import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, tand, dot, atand, atan2d} from "./MathUtils.js";
+import {norm, vecDiff, vecMul, acosd, asind, sind, cosd, tand, dot, atand, atan2d, deg2Rad, rad2Deg} from "./MathUtils.js";
 import { rotateCart1d, rotateCart2d, rotateCart3d } from "./Rotations.js";
 import { keplerSolve, keplerPerifocal } from "./Kepler.js";
+import { coordEqEcl } from "./Frames.js";
 
 export const planetData = {
     mercury : {
@@ -1377,3 +1378,466 @@ export function saturnSatellites(JTtdb)
     }
 }
 
+export function uranusSatellites(JTtdb)
+{
+    // Section 2.1.
+    const T = JTtdb - 2444239.5;
+    const DPI = Math.PI * 2;
+    const DGRAD = Math.PI / 180.0;
+    const ANJ = 365.25;
+    const SEJ = 86400.0;
+    const SEJ2 = SEJ*SEJ;
+
+    // Gravitational parameter (mu) of Uranus + satellites (km^3/s^2):
+    const GMSU = 5794554.5;
+    // Gravitational parameters (mu) of the satellites (km^3/s^2):
+    const GMS = [4.4, 86.1, 84.0, 230.0, 200.0];
+    const GMU = 5794554.5 - GMS[0] - GMS[1] - GMS[2] - GMS[3] - GMS[4];
+    const RMU = [GMU + GMS[0], GMU + GMS[1], GMU + GMS[2], GMU + GMS[3], GMU + GMS[4]];
+
+    
+    // Table 5 - Other derived quantities of GUST86.
+    const mRel = [0.075e-5, 1.49e-5, 1.45e-5, 3.97e-5, 3.45e-5];
+
+    // Table 2a - Frequency c_i for E_1, .., E_5, I_1, .., I_5.
+    const FQE = [ 20.082,  6.217,  2.865,  2.078,  0.386];
+    const FQI = [-20.309, -6.288, -2.836, -1.843, -0.259];
+
+    // Table 2b - Other parameters determined by Voyager and Earth based data (FQN, PHN) 
+    // N_i (rad/day), lambda_0i (rad).
+    const FQN = [4445190.550e-6, 2492952.519e-6, 1516148.111e-6, 721718.509e-6, 466692.120e-6];
+    const PHN = [-238051e-6, 3098046e-6, 2285402.0e-6, 856359.0e-6, -915592.0e-6];
+
+    // Table 4 - phi_i for E_i and I_i
+    const PHE = [0.611392, 2.408974, 2.067774, 0.735131, 0.426767];
+    const PHI = [5.702313, 0.395757, 0.589326, 1.746237, 4.206896];
+
+    const AN = [];
+    const AE = [];
+    const AI = [];
+    for (let i = 0; i < 5; i++)
+    {
+        AN.push((FQN[i] * T + PHN[i]) % DPI);
+        AE.push((FQE[i] * (DGRAD/ANJ) * T + PHE[i]) % DPI);
+        AI.push((FQI[i] * (DGRAD/ANJ) * T + PHI[i]) % DPI);
+    }
+
+    const n_0 = [4443522.67e-6,  2492542.57e-6,  1515954.90e-6,  721663.16e-6,  466580.54e-6];
+    const a_0 = [129872.0e3, 190945.0e3, 265998.0e3, 436298.0e3, 583519.0e3];
+
+    const miranda = {
+        RN :  4443522.67e-6
+           -       37.92e-6 * Math.cos(      AN[0] - 3.0 * AN[1] + 2.0 * AN[2])
+           +        8.47e-6 * Math.cos(2.0 * AN[0] - 6.0 * AN[1] + 4.0 * AN[2])
+           +        1.31e-6 * Math.cos(3.0 * AN[0] - 9.0 * AN[1] + 6.0 * AN[2])
+           -       52.28e-6 * Math.cos(      AN[0] -       AN[1])
+           -      136.65e-6 * Math.cos(2.0 * AN[0] - 2.0 * AN[1]),
+        RL :  -238051.58e-6
+           +  4445190.55e-6 * T
+           +    25472.17e-6 * Math.sin(      AN[0] - 3.0  * AN[1] + 2.0 * AN[2])
+           -     3088.31e-6 * Math.sin(2.0 * AN[0] - 6.0  * AN[1] + 4.0 * AN[2])
+           -      318.10e-6 * Math.sin(3.0 * AN[0] - 9.0  * AN[1] + 6.0 * AN[2])
+           -       37.49e-6 * Math.sin(4.0 * AN[0] - 12.0 * AN[1] + 8.0 * AN[2])
+           -       57.85e-6 * Math.sin(      AN[0] -        AN[1])
+           -       62.32e-6 * Math.sin(2.0 * AN[0] - 2.0  * AN[1])
+           -       27.95e-6 * Math.sin(3.0 * AN[0] - 3.0  * AN[1]),
+        RK :     1312.38e-6 * Math.cos(AE[0])
+           +       71.81e-6 * Math.cos(AE[1])
+           +       69.77e-6 * Math.cos(AE[2])
+           +        6.75e-6 * Math.cos(AE[3])
+           +        6.27e-6 * Math.cos(AE[4])
+           -      123.31e-6 * Math.cos(-AN[0]+2.0*AN[1])
+           +       39.52e-6 * Math.cos(-2.0*AN[0]+3.0*AN[1])
+           +      194.10e-6 * Math.cos(AN[0]),
+        RH :     1312.38e-6 * Math.sin(AE[0])
+           +       71.81e-6 * Math.sin(AE[1])
+           +       69.77e-6 * Math.sin(AE[2])
+           +        6.75e-6 * Math.sin(AE[3])
+           +        6.27e-6 * Math.sin(AE[4])
+           -      123.31e-6 * Math.sin(-AN[0]+2.0*AN[1])
+           +       39.52e-6 * Math.sin(-2.0*AN[0]+3.0*AN[1])
+           +      194.10e-6 * Math.sin(AN[0]),
+        RQ :    37871.71e-6 * Math.cos(AI[0])
+           +       27.01e-6 * Math.cos(AI[1])
+           +       30.76e-6 * Math.cos(AI[2])
+           +       12.18e-6 * Math.cos(AI[3])
+           +        5.37e-6 * Math.cos(AI[4]),
+        RP :    37871.71e-6 * Math.sin(AI[0])
+           +       27.01e-6 * Math.sin(AI[1])
+           +       30.76e-6 * Math.sin(AI[2])
+           +       12.18e-6 * Math.sin(AI[3])
+           +        5.37e-6 * Math.sin(AI[4])
+    };
+
+    const ariel = {
+        RN :  2492542.57e-6
+           +        2.55e-6 * Math.cos(AN[0] - 3.0 * AN[1] + 2.0 * AN[2])
+           -       42.16e-6 * Math.cos(              AN[1] -       AN[2])
+           -      102.56e-6 * Math.cos(        2.0 * AN[1] - 2.0 * AN[2]),
+        RL :  3098046.41e-6
+           +  2492952.52e-6 * T
+           -     1860.50e-6 * Math.sin(      AN[0] -  3.0 * AN[1] + 2.0 * AN[2])
+           +      219.99e-6 * Math.sin(2.0 * AN[0] -  6.0 * AN[1] + 4.0 * AN[2])
+           +       23.10e-6 * Math.sin(3.0 * AN[0] -  9.0 * AN[1] + 6.0 * AN[2])
+           +        4.30e-6 * Math.sin(4.0 * AN[0] - 12.0 * AN[1] + 8.0 * AN[2])
+           -       90.11e-6 * Math.sin(                     AN[1] -       AN[2])
+           -       91.07e-6 * Math.sin(               2.0 * AN[1] - 2.0 * AN[2])
+           -       42.75e-6 * Math.sin(               3.0 * AN[1] - 3.0 * AN[2])
+           -       16.49e-6 * Math.sin(               2.0 * AN[1]               - 2.0 * AN[3]),
+        RK :       -3.35e-6 * Math.cos(AE[0])
+           +     1187.63e-6 * Math.cos(AE[1])
+           +      861.59e-6 * Math.cos(AE[2])
+           +       71.50e-6 * Math.cos(AE[3])
+           +       55.59e-6 * Math.cos(AE[4])
+           -       84.60e-6 * Math.cos(      -AN[1] + 2.0 * AN[2])
+           +       91.81e-6 * Math.cos(-2.0 * AN[1] + 3.0 * AN[2])
+           +       20.03e-6 * Math.cos(      -AN[1] + 2.0 * AN[3])
+           +       89.77e-6 * Math.cos(       AN[1]),
+        RH :       -3.35e-6 * Math.sin(AE[0])
+           +     1187.63e-6 * Math.sin(AE[1])
+           +      861.59e-6 * Math.sin(AE[2])
+           +       71.50e-6 * Math.sin(AE[3])
+           +       55.59e-6 * Math.sin(AE[4])
+           -       84.60e-6 * Math.sin(      -AN[1] + 2.0 * AN[2])
+           +       91.81e-6 * Math.sin(-2.0 * AN[1] + 3.0 * AN[2])
+           +       20.03e-6 * Math.sin(      -AN[1] + 2.0 * AN[3])
+           +       89.77e-6 * Math.sin(       AN[1]),
+        RQ :     -121.75e-6 * Math.cos(AI[0])
+           +      358.25e-6 * Math.cos(AI[1])
+           +      290.08e-6 * Math.cos(AI[2])
+           +       97.78e-6 * Math.cos(AI[3])
+           +       33.97e-6 * Math.cos(AI[4]),      
+        RP :     -121.75e-6 * Math.sin(AI[0])
+           +      358.25e-6 * Math.sin(AI[1])
+           +      290.08e-6 * Math.sin(AI[2])
+           +       97.78e-6 * Math.sin(AI[3])
+           +       33.97e-6 * Math.sin(AI[4])    
+        };
+
+    const umbriel = {
+        RN :  1515954.90e-6
+          +         9.74e-6 * Math.cos(                    AN[2] - 2.0 * AN[3] + AE[2])
+          -       106.00e-6 * Math.cos(      AN[1] -       AN[2])
+          +        54.16e-6 * Math.cos(2.0 * AN[1] - 2.0 * AN[2])
+          -        23.59e-6 * Math.cos(                    AN[2]  -      AN[3])
+          -        70.70e-6 * Math.cos(              2.0 * AN[2] - 2.0 * AN[3])
+          -        36.28e-6 * Math.cos(              3.0 * AN[2] - 3.0 * AN[3]),
+        RL :  2285401.69e-6
+           +  1516148.11e-6 * T
+           +      660.57e-6 * Math.sin(      AN[0] -  3.0 * AN[1] + 2.0 * AN[2])
+           -       76.51e-6 * Math.sin(2.0 * AN[0] -  6.0 * AN[1] + 4.0 * AN[2])
+           -        8.96e-6 * Math.sin(3.0 * AN[0] -  9.0 * AN[1] + 6.0 * AN[2])
+           -        2.53e-6 * Math.sin(4.0 * AN[0] - 12.0 * AN[1] + 8.0 * AN[2])
+           -       52.91e-6 * Math.sin(                                   AN[2] - 4.0 * AN[3] + 3.0 * AN[4])
+           -        7.34e-6 * Math.sin(                                   AN[2] - 2.0 * AN[3]       + AE[4])
+           -        1.83e-6 * Math.sin(                                   AN[2] - 2.0 * AN[3]       + AE[3])
+           +      147.91e-6 * Math.sin(                                   AN[2] - 2.0 * AN[3] +       AE[2])
+           -        7.77e-6 * Math.sin(                                   AN[2] - 2.0 * AN[3]       + AE[1])
+           +       97.76e-6 * Math.sin(                     AN[1] -       AN[2])
+           +       73.13e-6 * Math.sin(               2.0 * AN[1] - 2.0 * AN[2])
+           +       34.71e-6 * Math.sin(               3.0 * AN[1] - 3.0 * AN[2])
+           +       18.89e-6 * Math.sin(               4.0 * AN[1] - 4.0 * AN[2])
+           -       67.89e-6 * Math.sin(                                   AN[2] -       AN[3])
+           -       82.86e-6 * Math.sin(                             2.0 * AN[2] - 2.0 * AN[3])
+           -       33.81e-6 * Math.sin(                             3.0 * AN[2] - 3.0 * AN[3])
+           -       15.79e-6 * Math.sin(                             4.0 * AN[2] - 4.0 * AN[3])
+           -       10.21e-6 * Math.sin(                                   AN[2]               -       AN[4])
+           -       17.08e-6 * Math.sin(                             2.0 * AN[2]               - 2.0 * AN[4]),
+        RK :       -0.21e-6 * Math.cos(AE[0])
+           -      227.95e-6 * Math.cos(AE[1])
+           +     3904.69e-6 * Math.cos(AE[2])
+           +      309.17e-6 * Math.cos(AE[3])
+           +      221.92e-6 * Math.cos(AE[4])
+           +       29.34e-6 * Math.cos(AN[1])
+           +       26.20e-6 * Math.cos(AN[2])
+           +       51.19e-6 * Math.cos(      -AN[1] + 2.0 * AN[2])
+           -      103.86e-6 * Math.cos(-2.0 * AN[1] + 3.0 * AN[2])
+           -       27.16e-6 * Math.cos(-3.0 * AN[2] + 4.0 * AN[2])
+           -       16.22e-6 * Math.cos(                                   AN[3])
+           +      549.23e-6 * Math.cos(                    -AN[2] + 2.0 * AN[3])
+           +       34.70e-6 * Math.cos(              -2.0 * AN[2] + 3.0 * AN[3])
+           +       12.81e-6 * Math.cos(              -3.0 * AN[2] + 4.0 * AN[3])
+           +       21.81e-6 * Math.cos(                    -AN[2]                + 2.0 * AN[4])
+           +       46.25e-6 * Math.cos(                     AN[2]),
+        RH :       -0.21e-6 * Math.sin(AE[0])
+           -      227.95e-6 * Math.sin(AE[1])
+           +     3904.69e-6 * Math.sin(AE[2])
+           +      309.17e-6 * Math.sin(AE[3])
+           +      221.92e-6 * Math.sin(AE[4])
+           +       29.34e-6 * Math.sin(AN[1])
+           +       26.20e-6 * Math.sin(AN[2])
+           +       51.19e-6 * Math.sin(      -AN[1] + 2.0 * AN[2])
+           -      103.86e-6 * Math.sin(-2.0 * AN[1] + 3.0 * AN[2])
+           -       27.16e-6 * Math.sin(-3.0 * AN[2] + 4.0 * AN[2])
+           -       16.22e-6 * Math.sin(                                   AN[3])
+           +      549.23e-6 * Math.sin(                    -AN[2] + 2.0 * AN[3])
+           +       34.70e-6 * Math.sin(              -2.0 * AN[2] + 3.0 * AN[3])
+           +       12.81e-6 * Math.sin(              -3.0 * AN[2] + 4.0 * AN[3])
+           +       21.81e-6 * Math.sin(                    -AN[2]                + 2.0 * AN[4])
+           +       46.25e-6 * Math.sin(                     AN[2]),
+        RQ :      -10.86e-6 * Math.cos(AI[0])
+           -       81.51e-6 * Math.cos(AI[1])
+           +     1113.36e-6 * Math.cos(AI[2])
+           +      350.14e-6 * Math.cos(AI[3])
+           +      106.50e-6 * Math.cos(AI[4]),
+        RP :      -10.86e-6 * Math.sin(AI[0])
+           -       81.51e-6 * Math.sin(AI[1])
+           +     1113.36e-6 * Math.sin(AI[2])
+           +      350.14e-6 * Math.sin(AI[3])
+           +      106.50e-6 * Math.sin(AI[4])
+    };
+
+    const titania = {
+        RN : 721663.16e-6
+           -      2.64e-6 * Math.cos(AN[2]-2.0*AN[3]+AE[2])
+           -      2.16e-6 * Math.cos(      2.0*AN[3]-3.0*AN[4]+AE[4])
+           +      6.45e-6 * Math.cos(      2.0*AN[3]-3.0*AN[4]+AE[3])
+           -      1.11e-6 * Math.cos(      2.0*AN[3]-3.0*AN[4]+AE[2])
+           -     62.23e-6 * Math.cos(AN[1] -   AN[3])
+           -     56.13e-6 * Math.cos(AN[2] -   AN[3])
+           -     39.94e-6 * Math.cos(          AN[3] -   AN[4])
+           -     91.85e-6 * Math.cos(      2.0*AN[3]-2.0*AN[4])
+           -     58.31e-6 * Math.cos(      3.0*AN[3]-3.0*AN[4])
+           -     38.60e-6 * Math.cos(      4.0*AN[3]-4.0*AN[4])
+           -     26.18e-6 * Math.cos(      5.0*AN[3]-5.0*AN[4])
+           -     18.06e-6 * Math.cos(      6.0*AN[3]-6.0*AN[4]),
+        RL :  856358.79e-6
+           + 721718.51e-6 * T
+           +     20.61e-6 * Math.sin(AN[2]-4.0*AN[3]+3.0*AN[4])
+           -      2.07e-6 * Math.sin(AN[2]-2.0*AN[3]          +AE[4])
+           -      2.88e-6 * Math.sin(AN[2]-2.0*AN[3]          +AE[3])
+           -     40.79e-6 * Math.sin(AN[2]-2.0*AN[3]          +AE[2])
+           +      2.11e-6 * Math.sin(AN[2]-2.0*AN[3]          +AE[1])
+           -     51.83e-6 * Math.sin(      2.0*AN[3]-3.0*AN[4]+AE[4])
+           +    159.87e-6 * Math.sin(      2.0*AN[3]-3.0*AN[4]+AE[3])
+           -     35.05e-6 * Math.sin(      2.0*AN[3]-3.0*AN[4]+AE[2])
+           -      1.56e-6 * Math.sin(      3.0*AN[3]-4.0*AN[4]+AE[4])
+           +     40.54e-6 * Math.sin(AN[1]-    AN[3])
+           +     46.17e-6 * Math.sin(AN[2]-    AN[3])
+           -    317.76e-6 * Math.sin(          AN[3]-    AN[4])
+           -    305.59e-6 * Math.sin(      2.0*AN[3]-2.0*AN[4])
+           -    148.36e-6 * Math.sin(      3.0*AN[3]-3.0*AN[4])
+           -     82.92e-6 * Math.sin(      4.0*AN[3]-4.0*AN[4])
+           -     49.98e-6 * Math.sin(      5.0*AN[3]-5.0*AN[4])
+           -     31.56e-6 * Math.sin(      6.0*AN[3]-6.0*AN[4])
+           -     20.56e-6 * Math.sin(      7.0*AN[3]-7.0*AN[4])
+           -     13.69e-6 * Math.sin(      8.0*AN[3]-8.0*AN[4]),
+        RK :     -0.02e-6 * Math.cos(AE[0])
+           -      1.29e-6 * Math.cos(AE[1])
+           -    324.51e-6 * Math.cos(AE[2])
+           +    932.81e-6 * Math.cos(AE[3])
+           +   1120.89e-6 * Math.cos(AE[4])
+           +     33.86e-6 * Math.cos(AN[1])
+           +     17.46e-6 * Math.cos(AN[3])
+           +     16.58e-6 * Math.cos(-AN[1]+2.0*AN[3])
+           +     28.89e-6 * Math.cos(AN[2])
+           -     35.86e-6 * Math.cos(-AN[2]+2.0*AN[3])
+           -     17.86e-6 * Math.cos(AN[3])
+           -     32.10e-6 * Math.cos(AN[4])
+           -    177.83e-6 * Math.cos(    -AN[3]+2.0*AN[4])
+           +    793.43e-6 * Math.cos(-2.0*AN[3]+3.0*AN[4])
+           +     99.48e-6 * Math.cos(-3.0*AN[3]+4.0*AN[4])
+           +     44.83e-6 * Math.cos(-4.0*AN[3]+5.0*AN[4])
+           +     25.13e-6 * Math.cos(-5.0*AN[3]+6.0*AN[4])
+           +     15.43e-6 * Math.cos(-6.0*AN[3]+7.0*AN[4]),
+        RH :     -0.02e-6 * Math.sin(AE[0])
+           -      1.29e-6 * Math.sin(AE[1])
+           -    324.51e-6 * Math.sin(AE[2])
+           +    932.81e-6 * Math.sin(AE[3])
+           +   1120.89e-6 * Math.sin(AE[4])
+           +     33.86e-6 * Math.sin(AN[1])
+           +     17.46e-6 * Math.sin(AN[3])
+           +     16.58e-6 * Math.sin(-AN[1]+2.0*AN[3])
+           +     28.89e-6 * Math.sin(AN[2])
+           -     35.86e-6 * Math.sin(-AN[2]+2.0*AN[3])
+           -     17.86e-6 * Math.sin(AN[3])
+           -     32.10e-6 * Math.sin(AN[4])
+           -    177.83e-6 * Math.sin(    -AN[3]+2.0*AN[4])
+           +    793.43e-6 * Math.sin(-2.0*AN[3]+3.0*AN[4])
+           +     99.48e-6 * Math.sin(-3.0*AN[3]+4.0*AN[4])
+           +     44.83e-6 * Math.sin(-4.0*AN[3]+5.0*AN[4])
+           +     25.13e-6 * Math.sin(-5.0*AN[3]+6.0*AN[4])
+           +     15.43e-6 * Math.sin(-6.0*AN[3]+7.0*AN[4]),
+        RQ :     -1.43e-6 * Math.cos(AI[0])
+           -      1.06e-6 * Math.cos(AI[1])
+           -    140.13e-6 * Math.cos(AI[2])
+           +    685.72e-6 * Math.cos(AI[3])
+           +    378.32e-6 * Math.cos(AI[4]),
+        RP :     -1.43e-6 * Math.sin(AI[0])
+                 -1.06e-6 * Math.sin(AI[1])
+               -140.13e-6 * Math.sin(AI[2])
+               +685.72e-6 * Math.sin(AI[3])
+               +378.32e-6 * Math.sin(AI[4])
+    };
+
+    const oberon = {
+        RN : 466580.54e-6
+           +      2.08e-6 * Math.cos(2.0*AN[3]-3.0*AN[4]+AE[4])
+           -      6.22e-6 * Math.cos(2.0*AN[3]-3.0*AN[4]+AE[3])
+           +      1.07e-6 * Math.cos(2.0*AN[3]-3.0*AN[4]+AE[2])
+           -     43.10e-6 * Math.cos(AN[1]-AN[4])
+           -     38.94e-6 * Math.cos(AN[2]-AN[4])
+           -     80.11e-6 * Math.cos(AN[3]-AN[4])
+           +     59.06e-6 * Math.cos(2.0*AN[3]-2.0*AN[4])
+           +     37.49e-6 * Math.cos(3.0*AN[3]-3.0*AN[4])
+           +     24.82e-6 * Math.cos(4.0*AN[3]-4.0*AN[4])
+           +     16.84e-6 * Math.cos(5.0*AN[3]-5.0*AN[4]),
+        RL :-915591.80e-6
+           + 466692.12e-6 * T
+           -      7.82e-6 * Math.sin(AN[2]-4.0*AN[3]+3.0*AN[4])
+           +     51.29e-6 * Math.sin(2.0*AN[3]-3.0*AN[4]+AE[4])
+           -    158.24e-6 * Math.sin(2.0*AN[3]-3.0*AN[4]+AE[3])
+           +     34.51e-6 * Math.sin(2.0*AN[3]-3.0*AN[4]+AE[2])
+           +     47.51e-6 * Math.sin(AN[1]-AN[4])
+           +     38.96e-6 * Math.sin(AN[2]-AN[4])
+           +    359.73e-6 * Math.sin(AN[3]-AN[4])
+           +    282.78e-6 * Math.sin(2.0*AN[3]-2.0*AN[4])
+           +    138.60e-6 * Math.sin(3.0*AN[3]-3.0*AN[4])
+           +     78.03e-6 * Math.sin(4.0*AN[3]-4.0*AN[4])
+           +     47.29e-6 * Math.sin(5.0*AN[3]-5.0*AN[4])
+           +     30.00e-6 * Math.sin(6.0*AN[3]-6.0*AN[4])
+           +     19.62e-6 * Math.sin(7.0*AN[3]-7.0*AN[4])
+           +     13.11e-6 * Math.sin(8.0*AN[3]-8.0*AN[4]),
+        RK :     0.00e-6 * Math.cos(AE[0])
+           -     0.35e-6 * Math.cos(AE[1])
+           +    74.53e-6 * Math.cos(AE[2])
+           -   758.68e-6 * Math.cos(AE[3])
+           +  1397.34e-6 * Math.cos(AE[4])
+           +    39.00e-6 * Math.cos(AN[1])
+           +    17.66e-6 * Math.cos(-AN[1]+2.0*AN[4])
+           +    32.42e-6 * Math.cos(AN[2])
+           +    79.75e-6 * Math.cos(AN[3])
+           +    75.66e-6 * Math.cos(AN[4])
+           +   134.04e-6 * Math.cos(-AN[3]+2.0*AN[4])
+           -   987.26e-6 * Math.cos(-2.0*AN[3]+3.0*AN[4])
+           -   126.09e-6 * Math.cos(-3.0*AN[3]+4.0*AN[4])
+           -    57.42e-6 * Math.cos(-4.0*AN[3]+5.0*AN[4])
+           -    32.41e-6 * Math.cos(-5.0*AN[3]+6.0*AN[4])
+           -    19.99e-6 * Math.cos(-6.0*AN[3]+7.0*AN[4])
+           -    12.94e-6 * Math.cos(-7.0*AN[3]+8.0*AN[4]),
+        RH :     0.00e-6 * Math.sin(AE[0])
+           -     0.35e-6 * Math.sin(AE[1])
+           +    74.53e-6 * Math.sin(AE[2])
+           -   758.68e-6 * Math.sin(AE[3])
+           +  1397.34e-6 * Math.sin(AE[4])
+           +    39.00e-6 * Math.sin(AN[1])
+           +    17.66e-6 * Math.sin(-AN[1]+2.0*AN[4])
+           +    32.42e-6 * Math.sin(AN[2])
+           +    79.75e-6 * Math.sin(AN[3])
+           +    75.66e-6 * Math.sin(AN[4])
+           +   134.04e-6 * Math.sin(-AN[3]+2.0*AN[4])
+           -   987.26e-6 * Math.sin(-2.0*AN[3]+3.0*AN[4])
+           -   126.09e-6 * Math.sin(-3.0*AN[3]+4.0*AN[4])
+           -    57.42e-6 * Math.sin(-4.0*AN[3]+5.0*AN[4])
+           -    32.41e-6 * Math.sin(-5.0*AN[3]+6.0*AN[4])
+           -    19.99e-6 * Math.sin(-6.0*AN[3]+7.0*AN[4])
+           -    12.94e-6 * Math.sin(-7.0*AN[3]+8.0*AN[4]),
+        RQ :    -0.44e-6 * Math.cos(AI[0])
+           -     0.31e-6 * Math.cos(AI[1])
+           +    36.89e-6 * Math.cos(AI[2])
+           -   596.33e-6 * Math.cos(AI[3])
+           +   451.69e-6*Math.cos(AI[4]),
+        RP :    -0.44e-6 * Math.sin(AI[0])
+           -     0.31e-6 * Math.sin(AI[1])
+           +    36.89e-6 * Math.sin(AI[2])
+           -   596.33e-6 * Math.sin(AI[3])
+           +   451.69e-6 * Math.sin(AI[4])
+    };
+
+    function coordUme50Bcrs1950(r)
+    {
+        const alpha = deg2Rad(76.6067);
+        const delta = deg2Rad(15.0322);
+        const M = [
+            [ Math.sin(alpha),  Math.cos(alpha)*Math.sin(delta), Math.cos(alpha)*Math.cos(delta)],
+            [-Math.cos(alpha),  Math.sin(alpha)*Math.sin(delta), Math.sin(alpha)*Math.cos(delta)],
+            [ 0,                -Math.cos(delta),                Math.sin(delta)]
+        ];
+        return [
+            M[0][0] * r[0] + M[0][1] * r[1] + M[0][2] * r[2],
+            M[1][0] * r[0] + M[1][1] * r[1] + M[1][2] * r[2],
+            M[2][0] * r[0] + M[2][1] * r[1] + M[2][2] * r[2]
+        ];
+    }
+
+    function process(satelliteData)
+    {
+        // Semi-major axis (km).
+        satelliteData.a = Math.pow(RMU[0] * SEJ2 * Math.pow(satelliteData.RN, -2.0), 1/3);
+        // Eccentricity.
+        satelliteData.ecc = Math.sqrt(satelliteData.RK * satelliteData.RK + satelliteData.RH * satelliteData.RH);
+        // Longitude of periapsis (rad).
+        satelliteData.varpi = Math.atan2(satelliteData.RH, satelliteData.RK);
+        // Longitude of ascending node (rad).
+        satelliteData.Omega = Math.atan2(satelliteData.RP, satelliteData.RQ);
+        // Inclination (rad).
+        satelliteData.incl = 2.0 * Math.asin(Math.sqrt(satelliteData.RP*satelliteData.RP + satelliteData.RQ*satelliteData.RQ));
+        // Mean longitude (rad).
+        satelliteData.lambda = satelliteData.RL;
+        // Mean motion (rad / day).
+        satelliteData.n = satelliteData.RN;
+        // Compute semi-major axis from Kepler's Third Law.
+        satelliteData.a = Math.pow(RMU[0] * (86400.0 * 86400.0) / (satelliteData.n * satelliteData.n), 1/3);
+        // Semi-minor axis
+        satelliteData.b = Math.sqrt(satelliteData.a * satelliteData.a * (1 - satelliteData.ecc * satelliteData.ecc));
+        // Mean anomaly (rad).
+        satelliteData.M = satelliteData.lambda - satelliteData.varpi;
+        // Solve eccentric anomaly (rad).
+        satelliteData.E = deg2Rad(keplerSolve(rad2Deg(satelliteData.M), satelliteData.ecc, 1.0e-12));
+        // Compute perifocal coordinates.
+        satelliteData.rPeri = keplerPerifocal(satelliteData.a, satelliteData.b, rad2Deg(satelliteData.E), RMU[0], JTtdb);
+        //
+        satelliteData.rTmp = rotateCart3d(satelliteData.rPeri.r, rad2Deg(-satelliteData.varpi));
+        satelliteData.rUme50 = rotateCart3d(rotateCart1d(rotateCart3d(
+            satelliteData.rTmp, rad2Deg(satelliteData.Omega)), -rad2Deg(satelliteData.incl)), -rad2Deg(satelliteData.Omega));
+        
+        satelliteData.rBcrs1950 = coordUme50Bcrs1950(satelliteData.rUme50);
+        satelliteData.rBcrs1950Ecl = coordEqEcl({r : satelliteData.rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
+        satelliteData.rBcrs2000 = coordB1950J2000({r : satelliteData.rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
+        satelliteData.rBcrs2000Ecl = coordEqEcl({r : satelliteData.rBcrs2000, v : [0, 0, 0], JT : JTtdb}).r;
+    }
+
+    process(miranda);
+    process(ariel);
+    process(umbriel);
+    process(titania);
+    process(oberon);
+
+    console.log(miranda);
+    console.log(ariel);
+    console.log(umbriel);
+    console.log(titania);
+    console.log(oberon);
+}
+
+
+
+export function neptuneSatellites(JTtdb)
+{
+    const T = (JTtdb - 2433282.5) / 36525.0;
+
+    const triton = {
+        t_0   : 2433282.5,
+        a     : 488.49 / 3600.0,
+        e     : 0,
+        n     : 61.2588532,
+        L_0   : 200.913,
+        gamma : 158.996,
+        N     : 359.28 + 54.308 * T
+    };
+
+    triton.alpha_p = 298.72 + 2.58 * sind(triton.N) - 0.04 * sind(2.0 * triton.N);
+    triton.delta_p =  42.63 - 1.90 * cosd(triton.N) + 0.01 * cosd(2.0 * triton.N);
+    triton.N_e     = triton.alpha_p + 90.0;
+    triton.J_e     = 90.0 - triton.delta_p;
+    triton.theta = 151.401 + 0.57806 * (JTtdb - triton.t_0)/ 365.25;
+
+    triton.CB = asind(sind(triton.N - triton.N_e) * sind(triton.J_e) / sind(triton.gamma));
+
+    triton.M = triton.L - triton.P;
+    triton.E = keplerSolve(triton.M, triton.e, 1e-6, 20);
+    triton.b = triton.a * Math.sqrt(1 - triton.e * triton.e);
+    triton.osvPeri = keplerPerifocal(triton.a, triton.b, triton.E, planetData['saturn'].mu, JTtdb);
+
+    console.log(triton);
+}
