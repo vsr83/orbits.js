@@ -1378,54 +1378,75 @@ export function saturnSatellites(JTtdb)
     }
 }
 
+/**
+ * Compute positions of the satellites of Uranus.
+ * 
+ * This implementation is based on the GUST86 theory. The naming of coefficients is taken
+ * from 
+ * https://ftp.imcce.fr/pub/ephem/satel/gust86/gust86.f
+ * but the actual computation has been rewritten for more clarity.
+ * 
+ * @param {*} JTtdb 
+ *      Julian time (TDB).
+ */
 export function uranusSatellites(JTtdb)
 {
     // Section 2.1.
     const T = JTtdb - 2444239.5;
-    const DPI = Math.PI * 2;
-    const DGRAD = Math.PI / 180.0;
-    const ANJ = 365.25;
-    const SEJ = 86400.0;
-    const SEJ2 = SEJ*SEJ;
 
-    // Gravitational parameter (mu) of Uranus + satellites (km^3/s^2):
-    const GMSU = 5794554.5;
     // Gravitational parameters (mu) of the satellites (km^3/s^2):
-    const GMS = [4.4, 86.1, 84.0, 230.0, 200.0];
-    const GMU = 5794554.5 - GMS[0] - GMS[1] - GMS[2] - GMS[3] - GMS[4];
-    const RMU = [GMU + GMS[0], GMU + GMS[1], GMU + GMS[2], GMU + GMS[3], GMU + GMS[4]];
-
+    const muSatellite = {
+        miranda : 4.4, 
+        ariel   : 86.1, 
+        umbriel : 84.0, 
+        titania : 230.0, 
+        oberon  : 200.0
+    };
+    // Gravitational parameter of the planet without the satellites (km^3/s^2)
+    const muPlanet = 5793950;
     
-    // Table 5 - Other derived quantities of GUST86.
-    const mRel = [0.075e-5, 1.49e-5, 1.45e-5, 3.97e-5, 3.45e-5];
-
+    // According to equation (5) , the constants E_i and I_i, i = 1, .., 5 are computed as
+    //     E_i = c_i * T + phi_i
+    //     I_i = c_i * T + phi_i
     // Table 2a - Frequency c_i for E_1, .., E_5, I_1, .., I_5.
-    const FQE = [ 20.082,  6.217,  2.865,  2.078,  0.386];
-    const FQI = [-20.309, -6.288, -2.836, -1.843, -0.259];
-
-    // Table 2b - Other parameters determined by Voyager and Earth based data (FQN, PHN) 
-    // N_i (rad/day), lambda_0i (rad).
-    const FQN = [4445190.550e-6, 2492952.519e-6, 1516148.111e-6, 721718.509e-6, 466692.120e-6];
-    const PHN = [-238051e-6, 3098046e-6, 2285402.0e-6, 856359.0e-6, -915592.0e-6];
+    const c_i_E = [ 20.082,  6.217,  2.865,  2.078,  0.386];
+    const c_i_I = [-20.309, -6.288, -2.836, -1.843, -0.259];
 
     // Table 4 - phi_i for E_i and I_i
-    const PHE = [0.611392, 2.408974, 2.067774, 0.735131, 0.426767];
-    const PHI = [5.702313, 0.395757, 0.589326, 1.746237, 4.206896];
+    const phi_i_E = [0.611392, 2.408974, 2.067774, 0.735131, 0.426767];
+    const phi_i_I = [5.702313, 0.395757, 0.589326, 1.746237, 4.206896];
 
+    // The mean mean motion is computed as
+    //      N_i = N'_i * T + \lambda_{0i}
+    // Table 2b - Other parameters determined by Voyager and Earth based data (FQN, PHN) 
+    // N_i' (rad/day) - Linear part of mean mean motion.
+    // lambda_0i (rad) - Mean mean motion at epoch.
+    const N_i = [4445190.550e-6, 2492952.519e-6, 1516148.111e-6, 721718.509e-6, 466692.120e-6];
+    const lambda_0_i = [-238051e-6, 3098046e-6, 2285402.0e-6, 856359.0e-6, -915592.0e-6];
+
+    // Compute coefficients N_i, E_i and I_i:
     const AN = [];
     const AE = [];
     const AI = [];
     for (let i = 0; i < 5; i++)
     {
-        AN.push((FQN[i] * T + PHN[i]) % DPI);
-        AE.push((FQE[i] * (DGRAD/ANJ) * T + PHE[i]) % DPI);
-        AI.push((FQI[i] * (DGRAD/ANJ) * T + PHI[i]) % DPI);
+        AN.push((N_i[i] * T + lambda_0_i[i]) % (2.0 * Math.PI));
+        AE.push(((deg2Rad(c_i_E[i]) / 365.25) * T + phi_i_E[i]) % (2.0 * Math.PI));
+        AI.push(((deg2Rad(c_i_I[i]) / 365.25) * T + phi_i_I[i]) % (2.0 * Math.PI));
     }
 
-    const n_0 = [4443522.67e-6,  2492542.57e-6,  1515954.90e-6,  721663.16e-6,  466580.54e-6];
-    const a_0 = [129872.0e3, 190945.0e3, 265998.0e3, 436298.0e3, 583519.0e3];
-
+    // The following variables are defined Tables 6-10 of [1] as follows:
+    // - RN : Mean motion (rads/day).
+    // - RL : Mean longitude (rads)
+    // - RK + j * RH = e * exp(j * varpi), where:
+    //    * j = sqrt(-1)
+    //    * e is the eccentricity
+    //    * varpi is the longitude of perigee
+    // - RQ + j * RP = sin(i/2) * exp(j * Omega),
+    //    * i is the inclination
+    //    * Omega is the longitude of ascending node.
     const miranda = {
+        mu : muPlanet + muSatellite.miranda,
         RN :  4443522.67e-6
            -       37.92e-6 * Math.cos(      AN[0] - 3.0 * AN[1] + 2.0 * AN[2])
            +        8.47e-6 * Math.cos(2.0 * AN[0] - 6.0 * AN[1] + 4.0 * AN[2])
@@ -1470,6 +1491,7 @@ export function uranusSatellites(JTtdb)
     };
 
     const ariel = {
+        mu : muPlanet + muSatellite.ariel,
         RN :  2492542.57e-6
            +        2.55e-6 * Math.cos(AN[0] - 3.0 * AN[1] + 2.0 * AN[2])
            -       42.16e-6 * Math.cos(              AN[1] -       AN[2])
@@ -1515,6 +1537,7 @@ export function uranusSatellites(JTtdb)
         };
 
     const umbriel = {
+        mu : muPlanet + muSatellite.umbriel,
         RN :  1515954.90e-6
           +         9.74e-6 * Math.cos(                    AN[2] - 2.0 * AN[3] + AE[2])
           -       106.00e-6 * Math.cos(      AN[1] -       AN[2])
@@ -1588,6 +1611,7 @@ export function uranusSatellites(JTtdb)
     };
 
     const titania = {
+        mu : muPlanet + muSatellite.titania,
         RN : 721663.16e-6
            -      2.64e-6 * Math.cos(AN[2]-2.0*AN[3]+AE[2])
            -      2.16e-6 * Math.cos(      2.0*AN[3]-3.0*AN[4]+AE[4])
@@ -1671,6 +1695,7 @@ export function uranusSatellites(JTtdb)
     };
 
     const oberon = {
+        mu : muPlanet + muSatellite.oberon,
         RN : 466580.54e-6
            +      2.08e-6 * Math.cos(2.0*AN[3]-3.0*AN[4]+AE[4])
            -      6.22e-6 * Math.cos(2.0*AN[3]-3.0*AN[4]+AE[3])
@@ -1744,15 +1769,27 @@ export function uranusSatellites(JTtdb)
            +   451.69e-6 * Math.sin(AI[4])
     };
 
-    function coordUme50Bcrs1950(r)
+    /**
+     * Transform from EME50 to BCRS 1950.0 equatorial frame.
+     * 
+     * @param {*} r 
+     *      Position in EME50 frame.
+     * @returns Position in BCRS 1950.0 equatorial frame.
+     */
+    function coordEme50Bcrs1950(r)
     {
+        // Table 2b.
         const alpha = deg2Rad(76.6067);
         const delta = deg2Rad(15.0322);
+        
+        // (11)
         const M = [
             [ Math.sin(alpha),  Math.cos(alpha)*Math.sin(delta), Math.cos(alpha)*Math.cos(delta)],
             [-Math.cos(alpha),  Math.sin(alpha)*Math.sin(delta), Math.sin(alpha)*Math.cos(delta)],
             [ 0,                -Math.cos(delta),                Math.sin(delta)]
         ];
+
+        // (10)
         return [
             M[0][0] * r[0] + M[0][1] * r[1] + M[0][2] * r[2],
             M[1][0] * r[0] + M[1][1] * r[1] + M[1][2] * r[2],
@@ -1760,10 +1797,16 @@ export function uranusSatellites(JTtdb)
         ];
     }
 
+    /**
+     * Compute position of the satellite.
+     * 
+     * @param {*} satelliteData 
+     *      Satellite data.
+     */
     function process(satelliteData)
     {
         // Semi-major axis (km).
-        satelliteData.a = Math.pow(RMU[0] * SEJ2 * Math.pow(satelliteData.RN, -2.0), 1/3);
+        satelliteData.a = Math.pow(satelliteData.mu * (86400.0 * 86400.0) * Math.pow(satelliteData.RN, -2.0), 1/3);
         // Eccentricity.
         satelliteData.ecc = Math.sqrt(satelliteData.RK * satelliteData.RK + satelliteData.RH * satelliteData.RH);
         // Longitude of periapsis (rad).
@@ -1776,22 +1819,20 @@ export function uranusSatellites(JTtdb)
         satelliteData.lambda = satelliteData.RL;
         // Mean motion (rad / day).
         satelliteData.n = satelliteData.RN;
-        // Compute semi-major axis from Kepler's Third Law.
-        satelliteData.a = Math.pow(RMU[0] * (86400.0 * 86400.0) / (satelliteData.n * satelliteData.n), 1/3);
         // Semi-minor axis
         satelliteData.b = Math.sqrt(satelliteData.a * satelliteData.a * (1 - satelliteData.ecc * satelliteData.ecc));
         // Mean anomaly (rad).
         satelliteData.M = satelliteData.lambda - satelliteData.varpi;
         // Solve eccentric anomaly (rad).
-        satelliteData.E = deg2Rad(keplerSolve(rad2Deg(satelliteData.M), satelliteData.ecc, 1.0e-12));
+        satelliteData.E = deg2Rad(keplerSolve(rad2Deg(satelliteData.M), satelliteData.ecc, 1.0e-10, 10));
         // Compute perifocal coordinates.
-        satelliteData.rPeri = keplerPerifocal(satelliteData.a, satelliteData.b, rad2Deg(satelliteData.E), RMU[0], JTtdb);
+        satelliteData.rPeri = keplerPerifocal(satelliteData.a, satelliteData.b, rad2Deg(satelliteData.E), satelliteData.mu, JTtdb);
         //
         satelliteData.rTmp = rotateCart3d(satelliteData.rPeri.r, rad2Deg(-satelliteData.varpi));
         satelliteData.rUme50 = rotateCart3d(rotateCart1d(rotateCart3d(
             satelliteData.rTmp, rad2Deg(satelliteData.Omega)), -rad2Deg(satelliteData.incl)), -rad2Deg(satelliteData.Omega));
         
-        satelliteData.rBcrs1950 = coordUme50Bcrs1950(satelliteData.rUme50);
+        satelliteData.rBcrs1950 = coordEme50Bcrs1950(satelliteData.rUme50);
         satelliteData.rBcrs1950Ecl = coordEqEcl({r : satelliteData.rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
         satelliteData.rBcrs2000 = coordB1950J2000({r : satelliteData.rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
         satelliteData.rBcrs2000Ecl = coordEqEcl({r : satelliteData.rBcrs2000, v : [0, 0, 0], JT : JTtdb}).r;
@@ -1803,11 +1844,13 @@ export function uranusSatellites(JTtdb)
     process(titania);
     process(oberon);
 
-    console.log(miranda);
-    console.log(ariel);
-    console.log(umbriel);
-    console.log(titania);
-    console.log(oberon);
+    return {
+        miranda : vecMul(miranda.rBcrs2000, 1000),
+        ariel   : vecMul(ariel.rBcrs2000, 1000),
+        umbriel : vecMul(umbriel.rBcrs2000, 1000),
+        titania : vecMul(titania.rBcrs2000, 1000),
+        oberon  : vecMul(oberon.rBcrs2000, 1000)
+    };
 }
 
 

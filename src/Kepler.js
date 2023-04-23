@@ -33,7 +33,8 @@ export function keplerSolve(M, ecc, tolerance, maxIter)
     
         if (iterationCount > maxIter)
         {
-            console.error("Convergence failed");
+            console.error("Convergence failed error " + error);
+            return E;
         }
     
         // Newton-Raphson iteration:
