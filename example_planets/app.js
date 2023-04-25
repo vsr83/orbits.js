@@ -96,6 +96,8 @@ const pointShaders = new PointShaders(gl);
 pointShaders.init();
 
 let JTstart = orbitsjs.timeJulianTs(new Date()).JT;
+let JTclockStart = JTstart;
+let JTclock = JTstart;
 let JTprev = JTstart;
 let warpFactorPrev = 1;
 let warpPrev = false;
@@ -337,6 +339,7 @@ const constellationLines = createConstellationLines();
 const constellationBoundaries = createConstellationBoundaries();
 const starPoints = createStarPoints();
 
+
 /**
  * Draw the scene.
  * 
@@ -366,10 +369,9 @@ function drawScene(time)
 
     // Compute Julian time corresponding to the (hardware) clock.
     let dateNow = new Date();
-    let today = null;
-    today = new Date(dateNow.getTime());
+    //JTclock = new Date(dateNow.getTime());
+    JTclock = orbitsjs.timeJulianTs(new Date(dateNow.getTime())).JT;
 
-    let todayJT = 0;
     let warpFactorNew = 0; 
     
     if (guiControls.warpFactor > 0)
@@ -380,41 +382,22 @@ function drawScene(time)
     {
         warpFactorNew = -Math.pow(10, - guiControls.warpFactor - 1);
     }
-   
-    todayJT = orbitsjs.timeJulianTs(today).JT;        
-    if (guiControls.warp && warpFactorPrev != warpFactorNew && warpFactorNew != 0)
+    if (!guiControls.warp)
     {
-        // We need to take into account that the warp factor can change between
-        // two frames. In order to maintain continuity, we need to recompute 
-        // JTstart.
-
-        // warp * (todayJT - JTstartnew) = warpPrev * (todayJT - JTstartold) 
-        // todayJT - JTstartnew = (warpPrev / warp) * (todayJT - JTstartold)
-        // JTstartnew = todayJT - (warpPrev / warp) * (todayJT - JTstartold)
-        JTstart = (todayJT) - (warpFactorPrev / warpFactorNew)
-                * ((todayJT) - JTstart);
-    }
-    if (warpFactorNew == 0)
-    {
-        JTstart = todayJT;
-    }
-    if (guiControls.warp && !warpPrev)
-    {
-        JTstart = todayJT;
-        deltaTime = 0;
-    }
-    if (!guiControls.warp && warpPrev)
-    {
-        deltaTime = JTprev - todayJT;
+        warpFactorNew = 1;
     }
 
-    if (guiControls.warp)
+    let JT;
+    if (warpFactorPrev != warpFactorNew && warpFactorNew != 0)
     {
-        todayJT = (orbitsjs.timeJulianTs(today).JT - JTstart) * warpFactorNew + JTstart;
+        JTclockStart = JTclock;
+        JTstart = JTprev;
+        JT = JTprev;
+        console.log(JTclockStart);
     }
-    else 
+    else
     {
-        todayJT += deltaTime;
+         JT = JTstart + (JTclock - JTclockStart) * warpFactorNew;
     }
 
     //todayJT = orbitsjs.timeJulianYmdhms(2016, 4, 25, 2, 58, 0).JT + guiControls.deltaTime;
@@ -422,7 +405,7 @@ function drawScene(time)
     //todayJT = orbitsjs.timeJulianYmdhms(2022, 11, 24, 4, 33, 0).JT + guiControls.deltaTime;
 
     // Compute the Julian time taking into account the time warp.
-    let JT =  todayJT;
+    //let JT =  todayJT;
     JTprev = JT;
     warpPrev = guiControls.warp;
     warpFactorPrev = warpFactorNew;
