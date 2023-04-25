@@ -101,7 +101,7 @@ let JTclock = JTstart;
 let JTprev = JTstart;
 let warpFactorPrev = 1;
 let warpPrev = false;
-let deltaTime = 0;
+let deltaJT = 0;
 
 let drawing = false;
 console.log("done");
@@ -388,25 +388,28 @@ function drawScene(time)
     }
 
     let JT;
-    if (warpFactorPrev != warpFactorNew && warpFactorNew != 0)
+    if (guiControls.pause)
+    {
+        JTclockStart = JTclock;
+        JTstart = JTprev;
+        JT = JTprev;        
+    }
+    else if (warpFactorPrev != warpFactorNew && warpFactorNew != 0)
     {
         JTclockStart = JTclock;
         JTstart = JTprev;
         JT = JTprev;
-        console.log(JTclockStart);
     }
     else
     {
          JT = JTstart + (JTclock - JTclockStart) * warpFactorNew;
     }
 
-    //todayJT = orbitsjs.timeJulianYmdhms(2016, 4, 25, 2, 58, 0).JT + guiControls.deltaTime;
-    //todayJT = orbitsjs.timeJulianYmdhms(2022, 8, 6, 22, 34, 0).JT + guiControls.deltaTime;
-    //todayJT = orbitsjs.timeJulianYmdhms(2022, 11, 24, 4, 33, 0).JT + guiControls.deltaTime;
-
     // Compute the Julian time taking into account the time warp.
     //let JT =  todayJT;
     JTprev = JT;
+    JT += deltaJT;
+
     warpPrev = guiControls.warp;
     warpFactorPrev = warpFactorNew;
     //console.log(JT);

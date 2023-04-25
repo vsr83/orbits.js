@@ -41,15 +41,60 @@ guiControls = new function()
     this.colorMoons = [255, 255, 255];
     this.colorConstellations = [80, 80, 80];
     this.deltaTime = 0;
+    this.resetTime = function() 
+    {
+        console.log("resetTime");
+        let dateNow = new Date();
+        JTclock = orbitsjs.timeJulianTs(new Date(dateNow.getTime())).JT;
+        JTclockStart = JTclock;
+        JTstart = JTclock;
+        JTprev = JTclock;
+        deltaJT = 0.0;
+    }
+
+    this.setTime = function() 
+    {
+        var timeIn = prompt("Select date and time:", 
+        createTimestamp(JTprev) + "Z");   
+        const JTin = orbitsjs.timeJulianTs(new Date(timeIn)).JT;
+        console.log(JTin);
+
+        let dateNow = new Date();
+        JTclock = orbitsjs.timeJulianTs(new Date(dateNow.getTime())).JT;
+        JTclockStart = JTclock;
+        JTstart = JTin;
+        JTprev = JTin;
+        deltaJT = 0.0;
+    }
+    this.deltaPlusDay = function() 
+    {
+        deltaJT += 1.0;
+    }
+    this.deltaMinusDay = function() 
+    {
+        deltaJT -= 1.0;
+    }
+    this.deltaPlusHour = function() 
+    {
+        deltaJT += 1.0/24.0;
+    }
+    this.deltaMinusHour = function() 
+    {
+        deltaJT -= 1.0/24.0;
+    }
+    this.deltaPlusMinute = function() 
+    {
+        deltaJT += 1.0/1440.0;
+    }
+    this.deltaMinusMinute = function() 
+    {
+        deltaJT -= 1.0/1440.0;
+    }
 
     this.enableCaptions = true; 
 
     this.warp = false;
     this.warpFactor = 5.0;
-    this.resetTime = function() {
-        const today = new Date(dateNow.getTime());
-        JTstart = orbitsjs.timeJulianTs(today).JT
-    };
     this.skipToNext = false;
 
     this.grayscale = false;
@@ -187,9 +232,16 @@ cameraControls.fillPercentage = cameraFolder.add(guiControls, 'fillPercentage', 
 
 
 const timeFolder = gui.addFolder('Time');
+timeControls.resetTime = timeFolder.add(guiControls, 'resetTime').name("Reset Time");
+timeControls.setTime = timeFolder.add(guiControls, 'setTime').name("Set Time");
 timeControls.warpFactor = timeFolder.add(guiControls, 'warpFactor', -10, 10, 1).name('Warp Factor');
 timeControls.pause = timeFolder.add(guiControls, 'warp').name("Enable Warp");
 timeControls.pause = timeFolder.add(guiControls, 'pause').name("Pause");
-timeControls.deltaTime = timeFolder.add(guiControls, 'deltaTime', -0.5, 0.5, 0.01).name("Delta Time");
+timeControls.deltaPlusDay = timeFolder.add(guiControls, 'deltaPlusDay').name("+ Day");
+timeControls.deltaMinusDay = timeFolder.add(guiControls, 'deltaMinusDay').name("- Day");
+timeControls.deltaPlusHour = timeFolder.add(guiControls, 'deltaPlusHour').name("+ Hour");
+timeControls.deltaMinusHour = timeFolder.add(guiControls, 'deltaMinusHour').name("- Hour");
+timeControls.deltaPlusMinute = timeFolder.add(guiControls, 'deltaPlusMinute').name("+ Minute");
+timeControls.deltaMinusMinute = timeFolder.add(guiControls, 'deltaMinusMinute').name("- Minute");
 
 gui.add(guiControls, 'GitHub');
