@@ -526,10 +526,35 @@ function drawScene(time)
     }
 
     const rotParams = orbitsjs.planetRotationParams(target, JT - lightTimeJulian);
+    const rotParamsObserver = orbitsjs.planetRotationParams(observer, JT - lightTimeJulian);
+
 
     // Equatorial up direction of the observer in target frame. 
     // TODO: Take into account the up direction when the observer is not on Earth.
-    const upDirECEF = orbitsjs.coordBCRSFixed({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, rotParams).r;
+
+    //'Earth Equator', 'Ecliptic', 'Observer Equator', 'Target Equator'
+
+    let upDirECEF;
+    if (guiControls.orientation === "Earth Equator")
+    {
+        upDirECEF = orbitsjs.coordBCRSFixed({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, rotParams).r;        
+    }
+    else if (guiControls.orientation === "Ecliptic")
+    {
+        const eclUpEq = orbitsjs.coordEclEq({r : [0, 0, 1], v : [0, 0, 0], JT : JT}).r;
+        upDirECEF = orbitsjs.coordBCRSFixed({r : eclUpEq,   v : [0, 0, 0], JT : JT}, rotParams).r;
+    }
+    else if (guiControls.orientation === "Observer Equator")
+    {
+        const osvUpDirEq = orbitsjs.coordFixedBCRS({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, rotParamsObserver);
+        upDirECEF = orbitsjs.coordBCRSFixed(osvUpDirEq, rotParams).r;
+    }
+    else if (guiControls.orientation === "Target Equator")
+    {
+        upDirECEF = [0, 0, 1];
+    }
+
+
     const osvSunTargetEcef = orbitsjs.coordBCRSFixed(osvSunTargetEq, rotParams);
     const osvObserverTargetEcef = orbitsjs.coordBCRSFixed(osvObserverTargetEq, rotParams);
 

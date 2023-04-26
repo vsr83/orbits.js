@@ -107,6 +107,7 @@ guiControls = new function()
     this.fov = 10;
     this.fixSize = false;
     this.fillPercentage = 60;
+    this.orientation = "Earth Equator";
 
     this.observerMercury = function() {setObserver('mercury');}
     this.observerVenus   = function() {setObserver('venus');}
@@ -248,6 +249,7 @@ appearanceControls.colorConstellations = appearanceFolder.addColor(guiControls, 
 
 
 const cameraFolder = gui.addFolder('Camera');
+cameraControls.orientation = cameraFolder.add(guiControls, 'orientation', ['Earth Equator', 'Ecliptic', 'Observer Equator', 'Target Equator']).name('Orientation'); 
 cameraControls.fov = cameraFolder.add(guiControls, 'fov', 0.1, 100000, 0.01).name('Field of View');
 cameraControls.fixSize = cameraFolder.add(guiControls, 'fixSize').name('Fix Visual Size');
 cameraControls.fillPercentage = cameraFolder.add(guiControls, 'fillPercentage', 1, 200, 1).name('Percentage');
