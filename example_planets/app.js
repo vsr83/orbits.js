@@ -289,10 +289,13 @@ function scaleConstellations(linesIn, scale, offset, rotParams, JT)
  */
 function drawCaption(rTarget, caption, matrix)
 {
-    contextJs.fillStyle = "white";
+    //contextJs.fillStyle = "white";
+    contextJs.fillStyle = "rgba(255, 255, 255, 1.0)";
+
     contextJs.textAlign = "center";
     contextJs.textBaseline = "bottom";
     contextJs.textAlign = "right";
+    contextJs.strokeStyle = "#FFFFFF";
 
     const clipSpace = m4.transformVector(matrix, [rTarget[0], rTarget[1], rTarget[2], 1]);
     clipSpace[0] /= clipSpace[3];
@@ -300,6 +303,7 @@ function drawCaption(rTarget, caption, matrix)
     const pixelX = (clipSpace[0] *  0.5 + 0.5) * gl.canvas.width;
     const pixelY = (clipSpace[1] * -0.5 + 0.5) * gl.canvas.height;
     contextJs.fillText(caption + "    ", pixelX, pixelY); 
+    //contextJs.strokeText(caption + "    ", pixelX, pixelY); 
 
     //console.log(pixelX + " " + pixelY);
 }
@@ -339,6 +343,39 @@ const constellationLines = createConstellationLines();
 const constellationBoundaries = createConstellationBoundaries();
 const starPoints = createStarPoints();
 
+
+/**
+ * Draw osculating orbit.
+ * 
+ * @param {*} osc 
+ *      Osculating Keplerian parameters.
+ * @param {*} rotParams
+ *      Rotation parameters.
+ * @param {*} JT
+ *      Julian time.
+ * @param {*} matrix 
+ *      The view matrix.
+ */
+function drawOrbit(osc, rotParams, JT, matrix)
+{
+    const points = [];
+    for (let deltaE = -180; deltaE < 182; deltaE++)
+    {
+        const osvPer = orbitsjs.keplerPerifocal(osc.a, osc.b, osc.E + deltaE, osc.mu, JT);
+        const osvIne = orbitsjs.coordPerIne(osvPer, osc.Omega, osc.incl, osc.omega);    
+        const osvFixed = orbitsjs.coordBCRSFixed(osvIne, rotParams);
+
+        points.push(osvFixed.r);
+        if (points.length > 1)
+        {
+            points.push(osvFixed.r);
+        }
+    }
+    lineShaders.setGeometry(points);
+    lineShaders.colorOrbit = [50,50,50];
+    lineShaders.setColors();
+    lineShaders.draw(matrix);    
+}
 
 /**
  * Draw the scene.
@@ -399,7 +436,7 @@ function drawScene(time)
         JTclockStart = JTclock;
         JTstart = JTprev;
         JT = JTprev;
-    }
+        }
     else
     {
          JT = JTstart + (JTclock - JTclockStart) * warpFactorNew;
@@ -515,18 +552,34 @@ function drawScene(time)
             }
 
             let moonPosEq = orbitsjs.elp2000(JTmoons);
-            const osvJ2000 = orbitsjs.coordEclEq({r : moonPosEq, v : [0, 0, 0], JT : JT});
-            const osvMod = orbitsjs.coordJ2000Mod(osvJ2000);
+            let JTut1 = orbitsjs.correlationTdbUt1(JTmoons);
+            const osvJ2000 = orbitsjs.coordEclEq({r : moonPosEq, v : [0, 0, 0], JT : JTut1});
+            /*const osvMod = orbitsjs.coordJ2000Mod(osvJ2000);
             const osvTod = orbitsjs.coordModTod(osvMod);
             const osvPef = orbitsjs.coordTodPef(osvTod);
             const osvEcef = orbitsjs.coordPefEfi(osvPef, 0, 0);
+            */
+            const osvECEF = orbitsjs.coordBCRSFixed(osvJ2000, rotParams);
 
-            pointShaders.setGeometry([osvEcef.r]);
+            //console.log(osvEcef.r + " " + osvECEF.r);
+
+            if (guiControls.enableOrbits)
+            {
+                let moonPosEqPlus = orbitsjs.elp2000(JTmoons + 1.0/1440.0);
+                const osvJ2000Plus = orbitsjs.coordEclEq({r : moonPosEqPlus, v : [0, 0, 0], JT : JT});
+
+
+                const moonVelEq = orbitsjs.vecMul(orbitsjs.vecDiff(osvJ2000Plus.r, osvJ2000.r), 1.0/60.0);
+                const osculating = orbitsjs.keplerOsculating(osvJ2000.r, moonVelEq, orbitsjs.planetData['earth'].mu);
+                drawOrbit(osculating, rotParams, JT, matrix);
+            }
+
+            pointShaders.setGeometry([osvECEF.r]);
             pointShaders.draw(matrix);
 
             if (guiControls.enableMoonCaptions)
             {
-                drawCaption(osvEcef.r, "Moon", matrix);
+                drawCaption(osvECEF.r, "Moon", matrix);
             }
         }
         if (target === "mars")
@@ -539,10 +592,22 @@ function drawScene(time)
             }
             
             const moons =  orbitsjs.marsSatellites(JTmoons);
-            const rPhobosECEF = orbitsjs.coordBCRSFixed({r : moons.phobos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rDeimosECEF = orbitsjs.coordBCRSFixed({r : moons.deimos, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rPhobosECEF = orbitsjs.coordBCRSFixed(moons.phobos, rotParams).r;
+            const rDeimosECEF = orbitsjs.coordBCRSFixed(moons.deimos, rotParams).r;
+
+            if (guiControls.enableOrbits)
+            {
+                for (let moonName in moons)
+                {
+                    const osculating = orbitsjs.keplerOsculating(moons[moonName].r, moons[moonName].v, orbitsjs.planetData['mars'].mu);
+                    drawOrbit(osculating, rotParams, JT, matrix);
+                }
+            }
+
+            pointShaders.pointSize = 4.0;
             pointShaders.setGeometry([rPhobosECEF, rDeimosECEF]);
             pointShaders.draw(matrix);
+            pointShaders.pointSize = 2.0;
 
             if (guiControls.enableMoonCaptions)
             {
@@ -558,14 +623,30 @@ function drawScene(time)
             {
                 JTmoons -= lightTimeJulian;
             }
-            
+
+            // Jupiter moon computation does not include computation of the velocities.
             const moons =  orbitsjs.jupiterSatellites(JTmoons);
-            const rIoECEF = orbitsjs.coordBCRSFixed({r : moons.io, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rEuropaECEF = orbitsjs.coordBCRSFixed({r : moons.europa, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rGanymedeECEF = orbitsjs.coordBCRSFixed({r : moons.ganymede, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rCallistoECEF = orbitsjs.coordBCRSFixed({r : moons.callisto, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const moonsPlus =  orbitsjs.jupiterSatellites(JTmoons + 1/1440);
+
+            const rIoECEF = orbitsjs.coordBCRSFixed(moons.io, rotParams).r;
+            const rEuropaECEF = orbitsjs.coordBCRSFixed(moons.europa, rotParams).r;
+            const rGanymedeECEF = orbitsjs.coordBCRSFixed(moons.ganymede, rotParams).r;
+            const rCallistoECEF = orbitsjs.coordBCRSFixed(moons.callisto, rotParams).r;
+
+            if (guiControls.enableOrbits)
+            {
+                for (let moonName in moons)
+                {
+                    moons[moonName].v = orbitsjs.vecMul(orbitsjs.vecDiff(moonsPlus[moonName].r, moons[moonName].r), 1/60);
+                    const osculating = orbitsjs.keplerOsculating(moons[moonName].r, moons[moonName].v, orbitsjs.planetData['jupiter'].mu);
+                    drawOrbit(osculating, rotParams, JT, matrix);
+                }
+            }
+
+            pointShaders.pointSize = 4.0;
             pointShaders.setGeometry([rIoECEF, rEuropaECEF, rGanymedeECEF, rCallistoECEF]);
-            pointShaders.draw(matrix);
+            pointShaders.draw(matrix);            
+            pointShaders.pointSize = 2.0;
 
             if (guiControls.enableMoonCaptions)
             {
@@ -585,15 +666,27 @@ function drawScene(time)
             }
             
             const moons =  orbitsjs.saturnSatellites(JTmoons);
-            const rMimasEcef = orbitsjs.coordBCRSFixed({r : moons.mimas.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rEnceladusEcef= orbitsjs.coordBCRSFixed({r : moons.enceladus.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rTethysEcef = orbitsjs.coordBCRSFixed({r : moons.tethys.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rDioneEcef = orbitsjs.coordBCRSFixed({r : moons.dione.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rRheaEcef = orbitsjs.coordBCRSFixed({r : moons.rhea.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rTitanEcef = orbitsjs.coordBCRSFixed({r : moons.titan.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rIapetusEcef = orbitsjs.coordBCRSFixed({r : moons.iapetus.r, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rMimasEcef = orbitsjs.coordBCRSFixed(moons.mimas, rotParams).r;
+            const rEnceladusEcef= orbitsjs.coordBCRSFixed(moons.enceladus, rotParams).r;
+            const rTethysEcef = orbitsjs.coordBCRSFixed(moons.tethys,  rotParams).r;
+            const rDioneEcef = orbitsjs.coordBCRSFixed(moons.dione, rotParams).r;
+            const rRheaEcef = orbitsjs.coordBCRSFixed(moons.rhea, rotParams).r;
+            const rTitanEcef = orbitsjs.coordBCRSFixed(moons.titan, rotParams).r;
+            const rIapetusEcef = orbitsjs.coordBCRSFixed(moons.iapetus, rotParams).r;
+
+            if (guiControls.enableOrbits)
+            {
+                for (let moonName in moons)
+                {
+                    const osculating = orbitsjs.keplerOsculating(moons[moonName].r, moons[moonName].v, orbitsjs.planetData['saturn'].mu);
+                    drawOrbit(osculating, rotParams, JT, matrix);
+                }
+            }
+
             pointShaders.setGeometry([rMimasEcef, rEnceladusEcef, rTethysEcef, rDioneEcef, rRheaEcef, rTitanEcef, rIapetusEcef]);
+            pointShaders.pointSize = 4.0;
             pointShaders.draw(matrix);
+            pointShaders.pointSize = 2.0;
 
             if (guiControls.enableMoonCaptions)
             {
@@ -616,11 +709,21 @@ function drawScene(time)
             }
             
             const moons =  orbitsjs.uranusSatellites(JTmoons);
-            const rMirandaECEF = orbitsjs.coordBCRSFixed({r : moons.miranda, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rArielECEF   = orbitsjs.coordBCRSFixed({r : moons.ariel,   v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rUmbrielECEF = orbitsjs.coordBCRSFixed({r : moons.umbriel, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rTitaniaECEF = orbitsjs.coordBCRSFixed({r : moons.titania, v : [0, 0, 0], JT : JTmoons}, rotParams).r;
-            const rOberonECEF  = orbitsjs.coordBCRSFixed({r : moons.oberon,  v : [0, 0, 0], JT : JTmoons}, rotParams).r;
+            const rMirandaECEF = orbitsjs.coordBCRSFixed(moons.miranda, rotParams).r;
+            const rArielECEF   = orbitsjs.coordBCRSFixed(moons.ariel, rotParams).r;
+            const rUmbrielECEF = orbitsjs.coordBCRSFixed(moons.umbriel, rotParams).r;
+            const rTitaniaECEF = orbitsjs.coordBCRSFixed(moons.titania, rotParams).r;
+            const rOberonECEF  = orbitsjs.coordBCRSFixed(moons.oberon, rotParams).r;
+
+            if (guiControls.enableOrbits)
+            {
+                for (let moonName in moons)
+                {
+                    const osculating = orbitsjs.keplerOsculating(moons[moonName].r, moons[moonName].v, orbitsjs.planetData['uranus'].mu);
+                    drawOrbit(osculating, rotParams, JT, matrix);
+                }
+            }
+
             pointShaders.setGeometry([rMirandaECEF, rArielECEF, rUmbrielECEF, rTitaniaECEF, rOberonECEF]);
             pointShaders.draw(matrix);
 

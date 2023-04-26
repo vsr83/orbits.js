@@ -17,6 +17,7 @@ guiControls = new function()
     this.enableEquator = true;
     this.enableConstellations = false;
     this.enableMoons = true;
+    this.enableOrbits = true;
 
     this.enableTextures = true; 
     this.enableSubsolar = true;
@@ -59,6 +60,7 @@ guiControls = new function()
         const JTin = orbitsjs.timeJulianTs(new Date(timeIn)).JT;
         console.log(JTin);
 
+        // TODO: Validate.
         let dateNow = new Date();
         JTclock = orbitsjs.timeJulianTs(new Date(dateNow.getTime())).JT;
         JTclockStart = JTclock;
@@ -156,6 +158,7 @@ targetFolder.add(guiControls, 'targetNeptune').name('Neptune');
 const visibilityFolder = gui.addFolder('Visibility');
 displayControls.enableMoons = visibilityFolder.add(guiControls, 'enableMoons').name('Moons');
 displayControls.enableMoonCaptions = visibilityFolder.add(guiControls, 'enableMoonCaptions').name('Moon Captions');
+displayControls.enableOrbits = visibilityFolder.add(guiControls, 'enableOrbits').name('Osc. Orbits');
 displayControls.enableGrid = visibilityFolder.add(guiControls, 'enableGrid').name('Grid Lines');
 //displayControls.enableEcliptic = visibilityFolder.add(guiControls, 'enableEcliptic').name('Ecliptic');
 //displayControls.enableEquator = visibilityFolder.add(guiControls, 'enableEquator').name('Equator');
@@ -181,7 +184,7 @@ displayControls.drawClock = visibilityFolder.add(guiControls, 'drawClock').name(
 displayControls.drawTitle = visibilityFolder.add(guiControls, 'drawTitle').name('Title')
 .onChange(function() 
 {
-    const title = document.getElementById("nameContainer");
+    const title = document.getElementById("targetContainer");
     if (guiControls.drawTitle)
     {
         title.style.visibility = "visible";

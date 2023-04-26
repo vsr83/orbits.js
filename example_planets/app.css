@@ -13,7 +13,7 @@ body {
   height: 100%;
   border: none;
   outline: none;
-  /*z-index : 8;*/
+  /*z-index : 2;*/ 
 }
 
 #canvasJS {
@@ -25,7 +25,11 @@ body {
   border: none;
   outline: none;
   background-color: transparent;
-  z-index : 18;
+  z-index : 10;
+}
+
+#gui_css {
+  z-index : 3;
 }
 
 #dateContainer
