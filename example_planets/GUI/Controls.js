@@ -18,6 +18,7 @@ guiControls = new function()
     this.enableConstellations = false;
     this.enableMoons = true;
     this.enableOrbits = true;
+    this.enablePlOrbits = false;
 
     this.enableTextures = true; 
     this.enableSubsolar = true;
@@ -28,19 +29,18 @@ guiControls = new function()
 
     this.drawClock = true; 
     this.drawTitle = true;
+    this.drawInfo  = true;
     this.gridLonResolution = 30;
     this.gridLatResolution = 30; 
 
     this.brightness = 0.8;
     this.colorGrid = [80, 80, 80];
-    this.colorMap = [80, 80, 120];
     this.colorText = [255, 255, 255];
-    this.colorOrbit = [127, 127, 127];
-    this.colorSubsolar = [255, 255, 255];
-    this.colorSublunar = [255, 255, 255];
+    this.colorOrbit = [80, 80, 80];
     this.colorStars = [255, 255, 255];
     this.colorMoons = [255, 255, 255];
     this.colorConstellations = [80, 80, 80];
+    this.colorPlOrbit = [150,50,50]
     this.deltaTime = 0;
     this.resetTime = function() 
     {
@@ -159,6 +159,9 @@ const visibilityFolder = gui.addFolder('Visibility');
 displayControls.enableMoons = visibilityFolder.add(guiControls, 'enableMoons').name('Moons');
 displayControls.enableMoonCaptions = visibilityFolder.add(guiControls, 'enableMoonCaptions').name('Moon Captions');
 displayControls.enableOrbits = visibilityFolder.add(guiControls, 'enableOrbits').name('Osc. Orbits');
+displayControls.enablePlOrbits = visibilityFolder.add(guiControls, 'enablePlOrbits').name('Planetary Orbits');
+
+
 displayControls.enableGrid = visibilityFolder.add(guiControls, 'enableGrid').name('Grid Lines');
 //displayControls.enableEcliptic = visibilityFolder.add(guiControls, 'enableEcliptic').name('Ecliptic');
 //displayControls.enableEquator = visibilityFolder.add(guiControls, 'enableEquator').name('Equator');
@@ -194,6 +197,20 @@ displayControls.drawTitle = visibilityFolder.add(guiControls, 'drawTitle').name(
         title.style.visibility = "hidden";
     }
 }); 
+displayControls.drawInfo = visibilityFolder.add(guiControls, 'drawInfo').name('Info')
+.onChange(function() 
+{
+    const info = document.getElementById("infoContainer");
+    if (guiControls.drawInfo)
+    {
+        info.style.visibility = "visible";
+    }
+    else 
+    {
+        info.style.visibility = "hidden";
+    }
+}); 
+
 
 const appearanceFolder = gui.addFolder('Appearance');
 appearanceControls.grayscale = appearanceFolder.add(guiControls, 'grayscale').name('Grayscale');
@@ -221,6 +238,8 @@ appearanceControls.colorGrid = appearanceFolder.addColor(guiControls, 'colorGrid
 
 appearanceControls.colorText = appearanceFolder.addColor(guiControls, 'colorText').name('Text');
 appearanceControls.colorOrbit = appearanceFolder.addColor(guiControls, 'colorOrbit').name('Orbits');
+appearanceControls.colorPlOrbit = appearanceFolder.addColor(guiControls, 'colorPlOrbit').name('Planetary Orbits');
+
 //appearanceControls.colorSubsolar = appearanceFolder.addColor(guiControls, 'colorSubsolar').name('Subsolar Point');
 //appearanceControls.colorSublunar = appearanceFolder.addColor(guiControls, 'colorSublunar').name('Sublunar Point');
 appearanceControls.colorMoons = appearanceFolder.addColor(guiControls, 'colorMoons').name('Moons');

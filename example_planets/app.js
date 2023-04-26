@@ -290,12 +290,14 @@ function scaleConstellations(linesIn, scale, offset, rotParams, JT)
 function drawCaption(rTarget, caption, matrix)
 {
     //contextJs.fillStyle = "white";
-    contextJs.fillStyle = "rgba(255, 255, 255, 1.0)";
+    contextJs.fillStyle = "rgba(" + guiControls.colorText[0] + "," 
+                                  + guiControls.colorText[1] + ","
+                                  + guiControls.colorText[2] + ")";
 
     contextJs.textAlign = "center";
     contextJs.textBaseline = "bottom";
     contextJs.textAlign = "right";
-    contextJs.strokeStyle = "#FFFFFF";
+    contextJs.strokeStyle = contextJs.fillStyle;
 
     const clipSpace = m4.transformVector(matrix, [rTarget[0], rTarget[1], rTarget[2], 1]);
     clipSpace[0] /= clipSpace[3];
@@ -372,7 +374,45 @@ function drawOrbit(osc, rotParams, JT, matrix)
         }
     }
     lineShaders.setGeometry(points);
-    lineShaders.colorOrbit = [50,50,50];
+    lineShaders.colorOrbit = guiControls.colorOrbit;
+    lineShaders.setColors();
+    lineShaders.draw(matrix);    
+}
+
+/**
+ * Draw planetary osculating orbit.
+ * 
+ * @param {*} osvEclTarget 
+ *      Target OSV in ecliptic J2000 frame.
+ * @param {*} rotParams 
+ *      Rotational parameters of the target.
+ * @param {*} matrix 
+ *      The view matrix.
+ * @param {*} JT 
+ *      Julian time (TDB).
+ */
+function drawPlanetaryOrbit(osvEclTarget, rotParams, matrix, JT)
+{
+    const mu = 1.32712440018e20;
+    const osvEqTarget = orbitsjs.coordEclEq(osvEclTarget);
+    const osc = orbitsjs.keplerOsculating(osvEqTarget.r, osvEqTarget.v, mu);
+    const osvRef = orbitsjs.coordBCRSFixed(osvEqTarget, rotParams);
+
+    const points = [];
+    for (let deltaE = -100; deltaE < 100; deltaE++)
+    {
+        const osvPer = orbitsjs.keplerPerifocal(osc.a, osc.b, osc.E + deltaE*0.1, osc.mu, JT);
+        const osvIne = orbitsjs.coordPerIne(osvPer, osc.Omega, osc.incl, osc.omega);    
+        const osvFixed = orbitsjs.coordBCRSFixed(osvIne, rotParams);
+
+        points.push(orbitsjs.vecDiff(osvFixed.r, osvRef.r));
+        if (points.length > 1)
+        {
+            points.push(orbitsjs.vecDiff(osvFixed.r, osvRef.r));
+        }
+    }
+    lineShaders.setGeometry(points);
+    lineShaders.colorOrbit = guiControls.colorPlOrbit;
     lineShaders.setColors();
     lineShaders.draw(matrix);    
 }
@@ -529,6 +569,34 @@ function drawScene(time)
             osvMoonEfi.r, 
             osvSunTargetEcef.r);
     
+    }
+
+    if (guiControls.enablePlOrbits)
+    {
+        drawPlanetaryOrbit(osvEclTarget, rotParams, matrix, JT);
+        /*
+        const mu = 1.32712440018e20;
+        const osvEqTarget = orbitsjs.coordEclEq(osvEclTarget);
+        const osc = orbitsjs.keplerOsculating(osvEqTarget.r, osvEqTarget.v, mu);
+        const osvRef = orbitsjs.coordBCRSFixed(osvEqTarget, rotParams);
+
+        const points = [];
+        for (let deltaE = -100; deltaE < 100; deltaE++)
+        {
+            const osvPer = orbitsjs.keplerPerifocal(osc.a, osc.b, osc.E + deltaE*0.1, osc.mu, JT);
+            const osvIne = orbitsjs.coordPerIne(osvPer, osc.Omega, osc.incl, osc.omega);    
+            const osvFixed = orbitsjs.coordBCRSFixed(osvIne, rotParams);
+
+            points.push(orbitsjs.vecDiff(osvFixed.r, osvRef.r));
+            if (points.length > 1)
+            {
+                points.push(orbitsjs.vecDiff(osvFixed.r, osvRef.r));
+            }
+        }
+        lineShaders.setGeometry(points);
+        lineShaders.colorOrbit = [150,50,50];
+        lineShaders.setColors();
+        lineShaders.draw(matrix);    */
     }
 
     const offset = osvObserverTargetEcef.r;
@@ -764,7 +832,8 @@ function drawScene(time)
     const distanceAu = (distance / au).toFixed(5);
     const cameraStr = "Dist: " + distanceAu + " au" + "<br>"
                     + "FoV : " + guiControls.fov.toFixed(1) + "\"" + "<br>"
-                    + "Size: " + angularDiamEq.toFixed(2) + "\"/" + angularDiamPolar.toFixed(2) + "\" eq/polar";
+                    + "Size: " + angularDiamEq.toFixed(2) + "\"/" + angularDiamPolar.toFixed(2) + "\" eq/polar <br>"
+                    + "LT &nbsp;: " + (lightTimeJulian * 86400.0).toFixed(2) + " s";
     dateText.innerHTML = dateStr;
 
     if (guiControls.fixSize)
