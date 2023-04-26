@@ -295,7 +295,8 @@ export function coordFixedBCRS(osv, rotParams)
 {
     const rBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.r, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
-    // TODO: This is incorrect.
+
+    // TODO: This is inaccurate.
     const vBCRS = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.v, -rotParams.W), rotParams.delta_0 - 90), -rotParams.alpha_0 - 90);
 
@@ -315,7 +316,8 @@ export function coordBCRSFixed(osv, rotParams)
 {
     const rECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.r, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
-    // TODO: This is incorrect.
+        
+    // TODO: This is inaccurate.
     const vECEF = orbitsjs.rotateCart3d(orbitsjs.rotateCart1d(orbitsjs.rotateCart3d(
         osv.v, rotParams.alpha_0 + 90), 90 - rotParams.delta_0), rotParams.W);
     
@@ -346,7 +348,17 @@ export function coordB1950J2000(osv)
                   - 0.0000271702937440 * osv.r[1]
                   + 0.9999881946023742 * osv.r[2];
 
-    return {r : [rJ2000x, rJ2000y, rJ2000z], v : [0, 0, 0], JT : osv.JT};
+    const vJ2000x = 0.9999256794956877 * osv.v[0] 
+                  - 0.0111814832204662 * osv.v[1]
+                  - 0.0048590038153592 * osv.v[2];
+    const vJ2000y = 0.0111814832391717 * osv.v[0] 
+                  + 0.9999374848933135 * osv.v[1]
+                  - 0.0000271625947142 * osv.v[2];
+    const vJ2000z = 0.0048590037723143 * osv.v[0] 
+                  - 0.0000271702937440 * osv.v[1]
+                  + 0.9999881946023742 * osv.v[2];
+
+    return {r : [rJ2000x, rJ2000y, rJ2000z], v : [vJ2000x, vJ2000y, vJ2000z], JT : osv.JT};
 }
 
 /**
@@ -377,10 +389,14 @@ export function marsSatellites(JTtdb)
         // (9.18) : Solve Kepler's equation with NR iteration.
         kepler.E = keplerSolve(kepler.M, kepler.e, 1e-6, 20);
 
+        kepler.b = kepler.a * Math.sqrt(1 - kepler.e * kepler.e);
+        const osvPer = keplerPerifocal(kepler.a, kepler.b, kepler.E, planetData['mars'].mu, JTtdb);
+
+
         // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
-        const rPer = [kepler.a * (cosd(kepler.E) - kepler.e),
-                    kepler.a * Math.sqrt(1 - kepler.e * kepler.e) * sind(kepler.E),
-                    0];
+        //const rPer = [kepler.a * (cosd(kepler.E) - kepler.e),
+        //            kepler.a * Math.sqrt(1 - kepler.e * kepler.e) * sind(kepler.E),
+        //            0];
         const N = kepler.Na + atan2d(sind(kepler.gamma) * sind(kepler.theta), 
                 cosd(kepler.gamma) * sind(kepler.Ja) 
                 + sind(kepler.gamma) * cosd(kepler.Ja) * cosd(kepler.theta));
@@ -391,17 +407,11 @@ export function marsSatellites(JTtdb)
                         + sind(kepler.Ja)*cosd(kepler.gamma)*cosd(kepler.theta));
         const CD = kepler.P - kepler.Na - kepler.theta;
 
-        /*console.log(kepler);
-        console.log(rPer);
-        console.log(N);
-        console.log(J);
-        console.log(EC);
-        console.log(CD);
-        */ 
-        const rBCRS = rotateCart3d(rotateCart1d(rotateCart3d(rPer, -EC-CD), -J), -N);
-        const au = 1.495978707e11;
+        const rBCRS = rotateCart3d(rotateCart1d(rotateCart3d(osvPer.r, -EC-CD), -J), -N);
+        // TBD: There might be some error from change in the Keplerian parameters.
+        const vBCRS = rotateCart3d(rotateCart1d(rotateCart3d(osvPer.v, -EC-CD), -J), -N);
 
-        return vecMul(rBCRS, au);
+        return {r : rBCRS, v : vBCRS, JT : JTtdb};
     }
 
 
@@ -413,9 +423,10 @@ export function marsSatellites(JTtdb)
     // Fractional years of days after 1971-11-11 00:00:00.
     const y = d / 365.25;
 
-    // Semi-major axis (au).
-    phobos.a = 6.26974e-5;
-    deimos.a = 1.56828e-4;
+    const au = 1.495978707e11;
+    // Semi-major axis (m).
+    phobos.a = 6.26974e-5 * au;
+    deimos.a = 1.56828e-4 * au;
     // Mean motion (degrees/day).
     phobos.n = 1128.844556;
     deimos.n = 285.161888;
@@ -581,320 +592,15 @@ export function jupiterSatellites(JTtdb)
     const rBcrs1950_3 = rotateToBcrs1950(r_3, eps, Omega, J, Phi, I);
     const rBcrs1950_4 = rotateToBcrs1950(r_4, eps, Omega, J, Phi, I);
 
-    const rBcrsJ2000_1 = coordB1950J2000({r : rBcrs1950_1, v : [0, 0, 0], JT : JTtdb}).r;
-    const rBcrsJ2000_2 = coordB1950J2000({r : rBcrs1950_2, v : [0, 0, 0], JT : JTtdb}).r;
-    const rBcrsJ2000_3 = coordB1950J2000({r : rBcrs1950_3, v : [0, 0, 0], JT : JTtdb}).r;
-    const rBcrsJ2000_4 = coordB1950J2000({r : rBcrs1950_4, v : [0, 0, 0], JT : JTtdb}).r;
+    // TODO: The above computation method does not allow easy extraction of velocities unless 
+    // we compute difference between two positions.
+    const osvBcrsJ2000_1 = coordB1950J2000({r : rBcrs1950_1, v : [0, 0, 0], JT : JTtdb});
+    const osvBcrsJ2000_2 = coordB1950J2000({r : rBcrs1950_2, v : [0, 0, 0], JT : JTtdb});
+    const osvBcrsJ2000_3 = coordB1950J2000({r : rBcrs1950_3, v : [0, 0, 0], JT : JTtdb});
+    const osvBcrsJ2000_4 = coordB1950J2000({r : rBcrs1950_4, v : [0, 0, 0], JT : JTtdb});
 
-    return {io : rBcrsJ2000_1, europa : rBcrsJ2000_2, ganymede : rBcrsJ2000_3, 
-        callisto : rBcrsJ2000_4};
-}
-
-/**
- * Compute positions of the major moons of Saturn.
- * This method is based on the section 9.9 of 
- * Urban, Seidelmann - Explanatory Supplement to the Astronomical Almanac, 3rd edition, 2012.
- * 
- * @param {*} JTtdb 
- *      Julian time (TDB).
- * @returns Position vector for each satellite.
- */
-export function saturnSatellitesOld(JTtdb)
-{
-    // (9.56)-(9.68)
-    // fractional days after 1889-03-31 12:00:00.
-    const d = JTtdb - 2411093.0;
-    const t = d/365.25;
-
-    const T = 5.0616 * ((JTtdb - 2433282.423) / 365.25 + 1950.0 - 1866.06);
-    
-    // Astronomical unit:
-    const au = 1.495978707e11;
-
-    // Semi-major axis (m) (9.65-9.68)
-    const a_1 = 0.00124171 * au;
-    const a_2 = 0.00158935 * au;
-    const a_3 = 0.00197069 * au;
-    const a_4 = 0.00252413 * au;
-
-    // Mean motion (degrees / day) (9.65-9.68)
-    const n_1 = 381.994516;
-    const n_2 = 262.7319052;
-    const n_3 = 190.697920278;
-    const n_4 = 131.534920026;
-
-    // Eccentricity (9.65-9.68)
-    const e_1 = 0.01986;
-    const e_2 = 0.00532;
-    const e_3 = 0.000212;
-    const e_4 = 0.001715;
-
-    // Inclination of the orbit w.r.t. equatorial plane of Saturn (degrees) (9.65-9.68).
-    const gamma_1 = 1.570;
-    const gamma_2 = 0.036;
-    const gamma_3 = 1.1121;
-    const gamma_4 = 0.0289;
-
-    // Longitude of the ascending node (degrees) (9.65-9.68).
-    const theta_1_1 = 49.4 - 365.025 * t;
-    const theta_1_2 = 145.0 - 152.7 * t;
-    const theta_1_3 = 111.41 - 72.24754 * t;
-    const theta_1_4 = 228.0 - 30.6197 * t;
-
-    // Mean longitude (degrees) (9.65-9.68).
-    const L_1_1 = 128.839 + n_1 * d 
-                - 43.415 * sind(T) 
-                -  0.714 * sind(3.0*T) 
-                -  0.020 * sind(5.0*T);
-    const L_1_2 = 200.155 + n_2 * d 
-                + (15.38 / 60.0) * sind(59.4 + 32.72*t) 
-                + (13.04 / 60.0) * sind(119.2 + 93.18*t);
-    const L_1_3 = 284.9982 + n_3 * d
-                + 2.0751 * sind(T)
-                + 0.0341 * sind(3.0*T)
-                + 0.0010 * sind(5.0*T);
-    const L_1_4 = 255.1183 + n_4 * d
-                - (0.88 / 60.0) * sind(59.4 + 32.73*t)
-                - (0.75 / 60.0) * sind(119.2 + 93.18*t);
-
-    // Longitude of the pericenter w.r.t. vernal equinox (degrees) (9.65-9.68).
-    const P_1 = 107.0 + 365.560 * t;
-    const P_2 = 312.7 +  123.42 * t;
-    const P_3 =  97.0 +   72.29 * t;
-    const P_4 = 173.6 + 30.8381 * t;
-
-    // This is for J2000.0 epoch, which is probably incorrect.
-    const eps = 23.439279444444445;
-
-    // Angle along ecliptic between the vernal equinox and the corresponding 
-    // point on the equatorial plane of Saturn (degrees) (Figure 9.13).
-    const Omega_e = 168.8387;
-
-    // Obliquity of ecliptic for Saturn (degrees) (Figure 9.13).
-    const i_e = 28.0653;
-
-    function positionBcrs(a, e, gamma, theta_1, L_1, P)
-    {
-        // This is for J2000.0 epoch, which is probably incorrect.
-        const eps = 23.439279444444445;
-
-        const Omega_e = 168.8387;
-        const i_e = 28.0653;
-
-        // Distance between the intersection of equatorial and ecliptic planes and the ecliptic
-        // node of the satellite (9.69)
-        const BF = atan2d(sind(gamma)*sind(theta_1 - Omega_e), 
-                          cosd(gamma)*sind(i_e) + sind(gamma)*cosd(i_e)*cosd(theta_1 - Omega_e));
-        // Inclination of the satellite orbits w.r.t. ecliptic.
-        const i = asind((sind(gamma) * sind(theta_1 - Omega_e)) / sind(BF));
-        // Equation (9.70)
-        const FC = atan2d(sind(theta_1 - Omega_e)*sind(i_e),
-                         cosd(i_e)*sind(gamma) + sind(i_e)*cosd(gamma)*cosd(theta_1 - Omega_e));
-        // Angle between the vernal equinox and the node of the satellite orbit w.r.t. the equator
-        // of Earth (9.71).
-        const N = atan2d(sind(i)*sind(Omega_e + BF), 
-                         cosd(i)*cosd(eps) + sind(i)*cosd(eps)*cosd(Omega_e + BF));
-        // Inclination of the satellite orbits w.r.t. Earth equator.
-        const J = asind(sind(i)*sind(Omega_e + BF) / sind(N));
-
-        // Angle between satellite orbit nodes w.r.t. Earth and Ecliptic (9.72).
-        const EF = atan2d(sind(Omega_e + BF)*sind(eps), 
-                          cosd(eps)*sind(i) + sind(eps)*cosd(i)*cosd(Omega_e + BF));
-
-        // Angle between intersections of the equatorial plane of Saturn with the ecliptic 
-        // and Earth equator planes (9.74).
-        const AB = atan2d(sind(eps)*sind(Omega_e), 
-                          cosd(eps)*sind(i_e) + sind(eps)*cosd(i_e)*cosd(Omega_e));
-        const J_e = asind(sind(eps)*sind(Omega_e) / sind(AB));
-        
-        // Angle from the intersection of the orbital plane with the equator of Saturn
-        // to the pericenter.
-        const CD = P - theta_1;
-
-        // Mean anomaly (9.75).
-        const M = L_1 - P;
-
-        // Solve eccentric anomaly.
-        const E = keplerSolve(M, e, 1e-6, 20);
-    
-        // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
-        const rPer = [a * (cosd(E) - e),
-                      a * Math.sqrt(1 - e * e) * sind(E),
-                      0];
-
-        console.log(rPer);
-
-        // B1950.0 Earth equatorial coordinates.
-        const rBcrs1950 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer,
-                            -FC - CD), -i), -Omega_e - BF), -eps);
-        // J2000.0 equatorial.
-        const rBcrsJ2000 = coordB1950J2000({r : rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
-
-        return rBcrsJ2000;
-    }
-
-    // Compute positions
-    const rBcrsJ2000_1 = positionBcrs(a_1, e_1, gamma_1, theta_1_1, L_1_1, P_1);
-    const rBcrsJ2000_2 = positionBcrs(a_2, e_2, gamma_2, theta_1_2, L_1_2, P_2);
-    const rBcrsJ2000_3 = positionBcrs(a_3, e_3, gamma_3, theta_1_3, L_1_3, P_3);
-    const rBcrsJ2000_4 = positionBcrs(a_4, e_4, gamma_4, theta_1_4, L_1_4, P_4);
-
-    // (9.76) - (9.77)
-    const a_5 = 0.003524 * au;
-    const n_5 = 79.6900400700;
-    const gamma_0_5 = 0.3305;
-    const pi_5 = 305.0 + 10.2077 * t;
-    const omega_T_5 = 276.49 + 0.5219 * (JTtdb - 2411368.0) / 365.25;
-    const N_T_5 = 44.5 - 0.5219 * (JTtdb - 2411368.0) / 365.25;
-    const kappa = 57.29578;
-    const e_sin_omega_5 = 0.000210 * sind(pi_5) + 0.00100 * sind(omega_T_5);
-    const e_cos_omega_5 = 0.000210 * cosd(pi_5) + 0.00100 * cosd(omega_T_5);
-
-    // e^2 * sin^2 x + e^2 * cos^2 x = e^2
-    const e_5 = Math.sqrt(e_sin_omega_5*e_sin_omega_5 + e_cos_omega_5*e_cos_omega_5);
-    const omega_5 = atan2d(e_sin_omega_5, e_cos_omega_5) / e_5;
-
-    const lambda_5 = 359.4727 + n_5 * d 
-                   + kappa * sind(gamma_0_5) * tand(0.5 * i_e) * sind(356.87 - 10.2077*t);
-    const i_5 = i_e - 0.0455 
-              + kappa * sind(gamma_0_5) * cosd(356.87 - 10.2077*t)
-              + 0.0201 * cosd(N_T_5);
-    const Omega_5 = Omega_e - 0.0078 
-                  + (kappa * sind(gamma_0_5) * sind(356.87 - 10.2077*t)
-                  +  0.0201 * sind(N_T_5)) / sind(i_e);
-
-    const M_5 = lambda_5 - omega_5;
-    const E_5 = keplerSolve(M_5, e_5, 1e-6, 20);
-
-    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
-    const rPer_5 = [a_5 * (cosd(E_5) - e_5),
-                    a_5 * Math.sqrt(1 - e_5 * e_5) * sind(E_5),
-                    0];
-
-    // B1950.0 Earth equatorial coordinates.
-    const rBcrs1950_5 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_5,
-                        Omega_5 - omega_5), -i_5), -Omega_5), -eps);
-    // J2000.0 equatorial.
-    const rBcrsJ2000_5 = coordB1950J2000({r : rBcrs1950_5, v : [0, 0, 0], JT : JTtdb}).r;
-
-    const T_6 = (JTtdb - 2415020.0) / 36525.0;
-    const l_s_6 = 175.4762 + 1221.5515 * T_6;
-    const i_s_6 = 2.489139 + 0.002435 * T_6;
-    const Omega_s_6 = 113.350 - 0.2597 * T_6;
-
-    const lambda_s_6 = 267.2635 + 1222.1136 * T_6;
-    const t_6 = (JTtdb - 2411368.0) / 365.25;
-    const gamma_0_6 = 0.2990;
-    const i_a_6 = i_e - 0.6204 + kappa * sind(gamma_0_6) * cosd(41.28 - 0.5219 * t_6);
-    const Omega_a_6 = Omega_e - 0.1418 + kappa * sind(gamma_0_6) * sind(41.28 - 0.5219 * t_6) / sind(i_e);
-    const omega_a_6 = 275.837 + 0.5219 * t_6;
-
-    const Psi_6 = atan2d(sind(i_s_6)*sind(Omega_a_6 - Omega_s_6),
-                         cosd(i_s_6)*sind(i_a_6) - sind(i_s_6)*cosd(i_a_6)*cosd(Omega_a_6 - Omega_s_6));
-    const Gamma_6 = atan2d(sind(i_s_6)*sind(Omega_a_6 - Omega_s_6) / sind(Psi_6),
-                           cosd(i_s_6)*cosd(i_a_6) + sind(i_s_6)*sind(i_a_6)*cosd(Omega_a_6 - Omega_s_6));
-
-    const theta_Omega_s_6 = atan2d(sind(i_a_6)*sind(Omega_a_6 - Omega_s_6),
-                                  -sind(i_s_6)*cosd(i_a_6) + cosd(i_s_6)*sind(i_a_6)*cosd(Omega_a_6 - Omega_s_6));
-    const theta_6 = theta_Omega_s_6 + Omega_s_6;
-    const L_s_6 = lambda_s_6 - theta_6;
-    const g_6 = omega_a_6 - Omega_a_6 - Psi_6;
-
-    const a_6 = 0.00816765 * au;
-    const n_6 = 22.57697385;
-    const e_6 = 0.028815 - 0.000184 * cosd(2*g_6) + 0.000073 * cosd(2*(L_s_6 - g_6));
-    const omega_6 = omega_a_6 + kappa * (0.00630 * sind(2*g_6) + 0.00250 * sind(2*(L_s_6 - g_6)));
-    const lambda_6 = 261.3121 + n_6 * d
-                   + kappa * (sind(gamma_0_6) * tand(0.5*i_e) * sind(41.28 - 0.5219*t)
-                   - 0.000176 * sind(l_s_6) - 0.000215 * sind(2 * L_s_6) 
-                   + 0.000057 * sind(2*L_s_6 + Psi_6));
-    const i_6 = i_a_6 + 0.000232 * kappa * cosd(2*L_s_6 + Psi_6);
-    const Omega_6 = Omega_a_6 + 0.000503 * kappa * sind(2*L_s_6 + Psi_6);
-    const M_6 = lambda_6 - omega_6;
-    const E_6 = keplerSolve(M_6, e_6, 1e-6, 20);
-
-    console.log("Psi " + Psi_6);
-    console.log("Gamma_6 " + Gamma_6);
-    console.log("g_6 " + g_6);
-    console.log("lambda_6 " + lambda_6%360);
-
-    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
-    const rPer_6 = [a_6 * (cosd(E_6) - e_6),
-                    a_6 * Math.sqrt(1 - e_6 * e_6) * sind(E_6),
-                    0];
-
-    // B1950.0 Earth equatorial coordinates.
-    //const rBcrs1950_6 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_6,
-    //    Omega_6 - omega_6), -i_6), -Omega_6), -eps);
-    const rBcrs1950_6 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_6,
-        Omega_6 - omega_6), -i_6), -Omega_6), -eps);
-        // J2000.0 equatorial.
-    const rBcrsJ2000_6 = coordB1950J2000({r : rBcrs1950_6, v : [0, 0, 0], JT : JTtdb}).r;
-
-    const d_7 = JTtdb - 2415020.0;
-    const T_7 = (JTtdb - 2433282.42345905) / 365.2422 + 50.0;
-    const tau_7 = 93.13 + 0.562039 * d_7;
-    const zeta_7 = 148.72 - 19.184 * T_7;
-    const a_7 = (0.0099040 - 0.00003422 * cosd(tau_7)) * au;
-    const n_7 = 16.9199514;
-    const e_7 = 0.10441 
-              - 0.00401 * cosd(tau_7) 
-              + 0.00009 * cosd(zeta_7 - tau_7)
-              + 0.02321 * cosd(zeta_7)
-              - 0.00009 * cosd(zeta_7 + tau_7 )
-              - 0.00110 * cosd(2.0 * zeta_7)
-              + 0.00013 * cosd(31.9 + 61.7524 * T_7);
-    const i_7 = i_e - 0.747 + 0.62 * cosd(105.31 - 2.392 * T_7)
-              + 0.315 * sind(38.73 - 0.5353 * T_7)
-              - 0.018 * cosd(13.00 + 24.44 * T_7);
-    const Omega_7 = Omega_e + ((-0.061 + 0.6200 * sind(105.31 - 2.392*T))
-                  + 0.315 * sind(38.73 - 0.5353 * T_7)
-                  - 0.018 * sind(13.0 + 24.44 * T_7)) / sind(i_e - 0.747);
-    const lambda_7 = 176.7481 + n_7 * d_7 
-                   + 0.1507 * sind(105.31 - 2.392*T_7)
-                   + 9.089 * sind(tau_7) 
-                   + 0.007 * sind(2.0*tau_7)
-                   - 0.014 * sind(3.0*tau_7) 
-                   + 0.192 * sind(zeta_7 - tau_7)
-                   - 0.091 * sind(zeta_7)
-                   + 0.211 * sind(zeta_7 + tau_7)
-                   - 0.013 * sind(176.0 + 12.22 * T)
-                   + 0.017 * sind(8.0 + 24.44 * T_7);
-    const omega_7 = 69.993 - 18.6702 * T_7 
-                  + 0.1507 * sind(105.31 - 2.392 * T_7)
-                  - 0.47 * sind(tau_7)
-                  - 13.36 * sind(zeta_7)
-                  + 2.16 * sind(2.0*zeta_7)
-                  + 0.07 * sind(31.9 + 61.7524 * T_7);
-
-    const M_7 = lambda_7 - omega_7;
-    const E_7 = keplerSolve(M_7, e_7, 1e-6, 20);
-
-    // (9.19) : Solve coordinates on the orbital plane (Perifocal coordinates).
-    const rPer_7 = [a_7 * (cosd(E_7) - e_7),
-                    a_7 * Math.sqrt(1 - e_7 * e_7) * sind(E_7),
-                    0];
-
-    // B1950.0 Earth equatorial coordinates.
-    const rBcrs1950_7 = rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rPer_7,
-                        Omega_7 - omega_7), -i_7), -Omega_7), -0*eps);
-    // J2000.0 equatorial.
-    const rBcrsJ2000_7 = coordB1950J2000({r : rBcrs1950_7, v : [0, 0, 0], JT : JTtdb}).r;
-             
-    console.log("theta_1 " + theta_1_1 % 360);
-    console.log("P_1 " + P_1 % 360);
-    console.log("L_1 " + L_1_1 % 360);
-    console.log("M_1 " + (L_1_1 - P_1) % 360.0);
-    
-    return {
-        mimas     : rBcrsJ2000_1, 
-        enceladus : rBcrsJ2000_2, 
-        tethys    : rBcrsJ2000_3, 
-        dione     : rBcrsJ2000_4,
-        rhea      : rBcrsJ2000_5,
-        titan     : rBcrsJ2000_6,
-        hyperion  : rBcrsJ2000_7
-    };
+    return {io : osvBcrsJ2000_1, europa : osvBcrsJ2000_2, ganymede : osvBcrsJ2000_3, 
+        callisto : osvBcrsJ2000_4};
 }
 
 /**
@@ -906,6 +612,8 @@ export function saturnSatellitesOld(JTtdb)
  * Harper, Taylor - The orbits of major satellites of Saturn, Astronomy and Astrophysics, 1993.
  * 
  * @param {*} JTtdb 
+ *      Julian time (TDB).
+ * @returns Object with OSV for each major satellite.
  */
 export function saturnSatellites(JTtdb)
 {
@@ -1168,7 +876,7 @@ export function saturnSatellites(JTtdb)
         -(titan.g + titan.Psi)), -titan.i_a), -titan.Omega_a), -eps),
         v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
             titan.osvPeri.v,
-        -(titan.varpi_0 - titan.N)), -titan.i), -titan.varpi_0), -eps),
+        -(titan.g + titan.Psi)), -titan.i_a), -titan.Omega_a), -eps),
         JT : titan.osvPeri.JT
     }
 
@@ -1342,6 +1050,7 @@ export function saturnSatellites(JTtdb)
             r: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
                 satellite.osvPeri.r,
             -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -eps),
+            // TBD: There might be some error from change in the Keplerian parameters.
             v: rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(rotateCart1d(rotateCart3d(
                 satellite.osvPeri.v,
             -(satellite.P - satellite.N)), -satellite.gamma), -(satellite.N - Omega_e)), -i_e), -Omega_e), -eps),
@@ -1388,6 +1097,7 @@ export function saturnSatellites(JTtdb)
  * 
  * @param {*} JTtdb 
  *      Julian time (TDB).
+ * @returns Object with OSV for each major satellite.
  */
 export function uranusSatellites(JTtdb)
 {
@@ -1826,16 +1536,24 @@ export function uranusSatellites(JTtdb)
         // Solve eccentric anomaly (rad).
         satelliteData.E = deg2Rad(keplerSolve(rad2Deg(satelliteData.M), satelliteData.ecc, 1.0e-10, 10));
         // Compute perifocal coordinates.
-        satelliteData.rPeri = keplerPerifocal(satelliteData.a, satelliteData.b, rad2Deg(satelliteData.E), satelliteData.mu, JTtdb);
+        satelliteData.osvPeri = keplerPerifocal(satelliteData.a, satelliteData.b, rad2Deg(satelliteData.E), satelliteData.mu, JTtdb);
         //
-        satelliteData.rTmp = rotateCart3d(satelliteData.rPeri.r, rad2Deg(-satelliteData.varpi));
+        satelliteData.rTmp = rotateCart3d(satelliteData.osvPeri.r, rad2Deg(-satelliteData.varpi));
+        // TBD: There might be some error from change in the Keplerian parameters.
+        satelliteData.vTmp = rotateCart3d(satelliteData.osvPeri.v, rad2Deg(-satelliteData.varpi));
+
         satelliteData.rUme50 = rotateCart3d(rotateCart1d(rotateCart3d(
             satelliteData.rTmp, rad2Deg(satelliteData.Omega)), -rad2Deg(satelliteData.incl)), -rad2Deg(satelliteData.Omega));
-        
-        satelliteData.rBcrs1950 = coordEme50Bcrs1950(satelliteData.rUme50);
-        satelliteData.rBcrs1950Ecl = coordEqEcl({r : satelliteData.rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
-        satelliteData.rBcrs2000 = coordB1950J2000({r : satelliteData.rBcrs1950, v : [0, 0, 0], JT : JTtdb}).r;
-        satelliteData.rBcrs2000Ecl = coordEqEcl({r : satelliteData.rBcrs2000, v : [0, 0, 0], JT : JTtdb}).r;
+        // TBD: There might be some error from change in the Keplerian parameters.
+        satelliteData.vUme50 = rotateCart3d(rotateCart1d(rotateCart3d(
+            satelliteData.vTmp, rad2Deg(satelliteData.Omega)), -rad2Deg(satelliteData.incl)), -rad2Deg(satelliteData.Omega));
+        satelliteData.rBcrs1950 = vecMul(coordEme50Bcrs1950(satelliteData.rUme50), 1000.0);
+        satelliteData.vBcrs1950 = vecMul(coordEme50Bcrs1950(satelliteData.vUme50), 1000.0);
+
+        satelliteData.osvBcrs1950 = {r : satelliteData.rBcrs1950, v : satelliteData.vBcrs1950, JT : JTtdb};
+        satelliteData.osvBcrs1950Ecl = coordEqEcl(satelliteData.osvBcrs1950);
+        satelliteData.osvBcrs2000 = coordB1950J2000(satelliteData.osvBcrs1950);
+        satelliteData.osvBcrs2000Ecl = coordEqEcl(satelliteData.osvBcrs2000);
     }
 
     process(miranda);
@@ -1845,11 +1563,11 @@ export function uranusSatellites(JTtdb)
     process(oberon);
 
     return {
-        miranda : vecMul(miranda.rBcrs2000, 1000),
-        ariel   : vecMul(ariel.rBcrs2000, 1000),
-        umbriel : vecMul(umbriel.rBcrs2000, 1000),
-        titania : vecMul(titania.rBcrs2000, 1000),
-        oberon  : vecMul(oberon.rBcrs2000, 1000)
+        miranda : miranda.osvBcrs2000,
+        ariel   : ariel.osvBcrs2000,
+        umbriel : umbriel.osvBcrs2000,
+        titania : titania.osvBcrs2000,
+        oberon  : oberon.osvBcrs2000
     };
 }
 
@@ -1857,12 +1575,12 @@ export function uranusSatellites(JTtdb)
 
 export function neptuneSatellites(JTtdb)
 {
-    const T = (JTtdb - 2433282.5) / 36525.0;
+    const T = (JTtdb - 2451545.5) / 36525.0;
 
     const triton = {
         t_0   : 2433282.5,
-        a     : 488.49 / 3600.0,
-        e     : 0,
+        a     : 354611.773,
+        e     : Math.sqrt((0)),
         n     : 61.2588532,
         L_0   : 200.913,
         gamma : 158.996,
@@ -1880,7 +1598,12 @@ export function neptuneSatellites(JTtdb)
     triton.M = triton.L - triton.P;
     triton.E = keplerSolve(triton.M, triton.e, 1e-6, 20);
     triton.b = triton.a * Math.sqrt(1 - triton.e * triton.e);
+    triton.N = triton.N_e + atan2d(sind(triton.gamma) * sind(triton.theta), 
+                                   cosd(triton.gamma) * sind(triton.J_e) + sind(triton.gamma) * cosd(triton.J_e) * cosd(triton.theta));
+    triton.J = sind(triton.gamma) * sind(triton.theta) / sind(triton.N - triton.N_e);
+
     triton.osvPeri = keplerPerifocal(triton.a, triton.b, triton.E, planetData['saturn'].mu, JTtdb);
+
 
     console.log(triton);
 }
