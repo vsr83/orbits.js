@@ -553,6 +553,14 @@ function drawScene(time)
     {
         upDirECEF = [0, 0, 1];
     }
+    else if (guiControls.orientation === "Observer Zenith")
+    {
+        // There might be a small error due to translation assuming the semi-major axis of the Earth rather than other observer
+        // bodies.
+        const osvUpObsEcef = orbitsjs.coordEnuEfi({r : [0, 0, 1], v : [0, 0, 0], JT : JT}, guiControls.enuLat, guiControls.enuLon, 0.0);
+        const osvUpObsEq = orbitsjs.coordFixedBCRS(osvUpObsEcef, rotParamsObserver);
+        upDirECEF = orbitsjs.coordBCRSFixed(osvUpObsEq, rotParams).r;
+    }
 
 
     const osvSunTargetEcef = orbitsjs.coordBCRSFixed(osvSunTargetEq, rotParams);
